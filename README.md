@@ -9,24 +9,55 @@ This repository is the **standard**: the specification, the test vectors that
 hold implementations to it, and a reference implementation. It is deliberately
 dull, because a specification should be findable by someone typing what it is.
 
-## Status: empty on purpose
+## What is here
 
-Nothing has moved here yet. The specification, the vendored reference library
-and the pinned vectors currently live in
-[`Claude-State-Panel`](../Claude-State-Panel), where they were written and where
-three consumers already exercise them:
-
-| what | where, today |
+| file | what it is |
 |---|---|
-| specification | `docs/project-identicon-spec.md` |
-| reference library | `identicon/reference/vendor/identicon.js` |
-| pinned vectors | `identicon/vectors.json` |
-| full implementation | `identicon/claude-state-identicon.py` |
+| `SPEC.md` | the specification: how to derive the key, and how a key becomes a pattern and a colour |
+| `vectors.json` | pinned test vectors — the part that makes the spec unambiguous |
+| `repository-identicon.py` | the reference implementation, standard library only |
+| `text-identicon.py` | the text rendering, for media that display no image |
+| `reference/` | the library the derivation conforms to, committed rather than fetched, and the harness that regenerates the vectors from it |
+| `tests/` | the implementation against the vectors, and the vectors against the library |
 
-They will move when there is a reason. Two implementations that one person owns
-need a shared test, not a published standard — and that test exists. The reason
-to cut this repo out is a **third** implementation, especially one written by
-someone else, at which point the vectors have to be citable from outside.
+```bash
+python3 -m unittest discover -s tests -t tests
+```
+
+Nothing here reaches the network, and nothing needs installing.
+
+## Why the vectors matter more than the prose
+
+A specification that only describes a derivation can be read two ways by two
+careful people, and both will be sure. `vectors.json` removes the argument: an
+implementation either reproduces them or it does not.
+
+They are regenerated from `reference/vendor/identicon.js`, which is **committed
+rather than fetched**, so anyone can re-derive them offline for as long as this
+repository exists. A reference that has to be downloaded is a reference that can
+disappear, and one did during the week this was written. The test suite
+regenerates them and compares, where `node` is available, and skips where it is
+not — checking an implementation must never require the reference.
+
+The harness reads the library's **SVG** output rather than its PNG, because the
+grid then comes back exactly: one `<rect>` per foreground cell, with no pixel
+decoding and no resampling to argue about.
+
+## Implementations vendor this; they do not depend on it
+
+Two consumers exist, and each carries its own copy of the derivation:
+
+- [`Claude-State-Panel`](../Claude-State-Panel) — Konsole tabs, panel glyphs, a
+  terminal banner. Its copy differs in one line, `ICON_PREFIX`, which the
+  specification explicitly leaves to the implementing tool.
+- [`Claude-Colophon`](../Claude-Colophon) — a Claude Code plugin. It *must*
+  vendor, because a plugin is copied whole and has no dependency mechanism at
+  all.
+
+That is the intended shape rather than a compromise. The whole point of pinned
+vectors is that independent implementations agree without coordination, a shared
+registry, or a package manager. What holds them together is this repository's
+vectors, not an import.
 
 ## The layering
 
