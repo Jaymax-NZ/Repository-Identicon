@@ -80,7 +80,8 @@ Code plugin, for one — have no dependency mechanism at all.
 
 ## Licence
 
-Not yet chosen. `Claude-State-Panel` is AGPL-3.0-or-later, which is a poor fit
-for a specification meant to be reimplemented freely. Something permissive, or a
-public-domain dedication for the spec with a separate licence on the reference
-code, is likely the better answer.
+AGPL-3.0-or-later, in `LICENSE`, inherited from `Claude-State-Panel` — and
+provisional. It is a poor fit for a specification meant to be reimplemented
+freely, and the better answer is likely something permissive, or a public-domain
+dedication for the spec with a separate licence on the reference code. Recorded
+here so the current state is unambiguous, not because the question is settled.
