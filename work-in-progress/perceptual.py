@@ -69,13 +69,38 @@ OPPONENTS = {
 # is on the largest gap between *adjacent* members, not on the total extent.
 MAX_GAP = 125.0
 
-# Relative luminance, ITU-R BT.709. Below the first, black is honest; above the
-# second, white is. Between them neither is, and their appearance means the
-# mapping is using them as arithmetic.
+# Relative luminance, ITU-R BT.709. How strong a claim an achromatic square
+# makes depends on how many of them there are, so the threshold does too.
+#
+# **Two of them assert.** Two blacks say the target is at the dark end of the
+# gamut and two whites say it is at the light end, so they answer to DARK and
+# LIGHT. `purple white white` on luminance 0.29 is the case that fails here.
+#
+# **One of them tints.** A single achromatic among two chromatics shades the
+# mix rather than claiming anything about where the colour sits, and reads
+# honestly almost anywhere -- `blue purple white` on 0.28 is a violet with a
+# lift, not a claim that violet is light. It answers only to the far end of the
+# gamut, five hundredths inside each extreme, which is TINT_DARK and TINT_LIGHT.
+#
+# This replaces a per-hue exception. A rule naming one colour is a rule that has
+# stopped explaining anything, and the count is what was actually doing the work.
 DARK = 0.33
 LIGHT = 0.58
+TINT_DARK = 0.75
+TINT_LIGHT = 0.25
 
 ACHROMATIC = {"black", "white"}
+
+# Multisets rejected outright, by eye, for reasons no threshold captures. Keyed
+# by the sorted names so order and arrangement cannot smuggle one past.
+FORBIDDEN = {
+    ("black", "black", "purple"):
+        "two blacks take purple past dark and into black; blue darkens it "
+        "without obliterating it",
+}
+# `purple white white` needs no entry here: two whites on luminance 0.29 fails
+# the LIGHT rule already. `purple purple white` is fine and stays -- Justin's
+# correction, 2026-08-19, against an earlier guess of mine that forbade it.
 
 
 def luminance(rgb):
@@ -124,9 +149,19 @@ def violations(rgb, indices):
 
     lum = luminance(rgb)
     names = [n for n, _ in squares]
-    if "black" in names and lum > DARK:
+
+    forbidden = tuple(sorted(names))
+    if forbidden in FORBIDDEN:
+        out.append(f"forbidden {' '.join(forbidden)}: {FORBIDDEN[forbidden]}")
+
+    blacks, whites = names.count("black"), names.count("white")
+    if blacks >= 2 and lum > DARK:
+        out.append(f"two blacks on a target of luminance {lum:.2f}")
+    elif blacks == 1 and lum > TINT_DARK:
         out.append(f"black on a target of luminance {lum:.2f}")
-    if "white" in names and lum < LIGHT:
+    if whites >= 2 and lum < LIGHT:
+        out.append(f"two whites on a target of luminance {lum:.2f}")
+    elif whites == 1 and lum < TINT_LIGHT:
         out.append(f"white on a target of luminance {lum:.2f}")
     return out
 
@@ -162,6 +197,7 @@ REQUIRED = [
     (("red", "red", "black"), "darkest reds"),
     (("blue", "blue", "black"), "darkest blues"),
     (("blue", "white", "white"), "the light blues"),
+    (("blue", "purple", "white"), "scope around Q16 on sheet 5"),
 ]
 
 

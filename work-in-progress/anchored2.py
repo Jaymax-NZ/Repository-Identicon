@@ -145,13 +145,20 @@ def _straddles(target, names):
             and any(STANDS_FOR[n] > target for n in names))
 
 
-def classify(rgb):
-    """(multiset, class name) for a colour."""
+def classify(rgb, anchors=None):
+    """(multiset, class name) for a colour.
+
+    `anchors` defaults to this module's own list, so calling it with one
+    argument is exactly what sheets 4 and 5 were rendered with. A later
+    candidate passes its own rather than editing this one, which keeps
+    `sheet.py --verify` a real check rather than a moving target.
+    """
+    anchors = ANCHORS if anchors is None else anchors
     hue = hue_of(rgb)
     target = luminance(rgb)
-    n = len(ANCHORS)
+    n = len(anchors)
     for k in range(n):
-        low, high = ANCHORS[k], ANCHORS[(k + 1) % n]
+        low, high = anchors[k], anchors[(k + 1) % n]
         span = (high[0] - low[0]) % 360
         offset = (hue - low[0]) % 360
         if not (offset < span or span == 0):
@@ -168,9 +175,9 @@ def classify(rgb):
         for at, anchor_index in ((where < CENTRED, k), (where > 1 - CENTRED, (k + 1) % n)):
             if not at:
                 continue
-            before = ANCHORS[(anchor_index - 1) % n]
-            after = ANCHORS[(anchor_index + 1) % n]
-            here = ANCHORS[anchor_index]
+            before = anchors[(anchor_index - 1) % n]
+            after = anchors[(anchor_index + 1) % n]
+            here = anchors[anchor_index]
             names = [before[1], here[1], after[1]]
             if len(set(names)) == 3 and _straddles(target, names) \
                     and not _unbridgeable(before, after):
@@ -201,9 +208,9 @@ def classify(rgb):
     raise AssertionError("anchors do not cover the circle")
 
 
-def triple_indices(rgb):
-    return classify(rgb)[0]
+def triple_indices(rgb, anchors=None):
+    return classify(rgb, anchors)[0]
 
 
-def triple(rgb):
-    return text.arrange(triple_indices(rgb), rgb)
+def triple(rgb, anchors=None):
+    return text.arrange(triple_indices(rgb, anchors), rgb)
