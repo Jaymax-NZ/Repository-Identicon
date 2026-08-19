@@ -1,0 +1,199 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="648" height="1210" viewBox="0 0 648 1210">
+<rect width="648" height="1210" fill="#ffffff"/>
+<g font-family="monospace" font-size="10" fill="#555">
+<text x="250" y="16">the three squares</text>
+<text x="394" y="16">mixes to</text>
+<text x="458" y="16">reads as / wanted</text>
+<text x="16" y="46">#37  red orange purple</text>
+<rect x="250" y="24" width="34" height="34" fill="#ff0000" stroke="#999" stroke-width="0.5"/>
+<rect x="290" y="24" width="34" height="34" fill="#ffa500" stroke="#999" stroke-width="0.5"/>
+<rect x="330" y="24" width="34" height="34" fill="#800080" stroke="#999" stroke-width="0.5"/>
+<text x="374" y="46">=</text>
+<rect x="394" y="24" width="34" height="34" fill="#df634c" stroke="#999" stroke-width="0.5"/>
+<rect x="458" y="24" width="34" height="34" fill="#d94026" stroke="#999" stroke-width="0.5"/>
+<text x="542" y="46">#df634c  reads as hue 8 (dE 0.066)</text>
+<text x="16" y="94">#38  orange purple brown</text>
+<rect x="250" y="72" width="34" height="34" fill="#ffa500" stroke="#999" stroke-width="0.5"/>
+<rect x="290" y="72" width="34" height="34" fill="#800080" stroke="#999" stroke-width="0.5"/>
+<rect x="330" y="72" width="34" height="34" fill="#a52a2a" stroke="#999" stroke-width="0.5"/>
+<text x="374" y="94">=</text>
+<rect x="394" y="72" width="34" height="34" fill="#c16650" stroke="#999" stroke-width="0.5"/>
+<rect x="458" y="72" width="34" height="34" fill="#d94926" stroke="#999" stroke-width="0.5"/>
+<text x="542" y="94">#c16650  reads as hue 12 (dE 0.065)</text>
+<text x="16" y="142">#39  orange purple black</text>
+<rect x="250" y="120" width="34" height="34" fill="#ffa500" stroke="#999" stroke-width="0.5"/>
+<rect x="290" y="120" width="34" height="34" fill="#800080" stroke="#999" stroke-width="0.5"/>
+<rect x="330" y="120" width="34" height="34" fill="#000000" stroke="#999" stroke-width="0.5"/>
+<text x="374" y="142">=</text>
+<rect x="394" y="120" width="34" height="34" fill="#ab634c" stroke="#999" stroke-width="0.5"/>
+<rect x="458" y="120" width="34" height="34" fill="#d95526" stroke="#999" stroke-width="0.5"/>
+<text x="542" y="142">#ab634c  reads as hue 16 (dE 0.087)</text>
+<text x="16" y="190">#2  red orange black</text>
+<rect x="250" y="168" width="34" height="34" fill="#ff0000" stroke="#999" stroke-width="0.5"/>
+<rect x="290" y="168" width="34" height="34" fill="#ffa500" stroke="#999" stroke-width="0.5"/>
+<rect x="330" y="168" width="34" height="34" fill="#000000" stroke="#999" stroke-width="0.5"/>
+<text x="374" y="190">=</text>
+<rect x="394" y="168" width="34" height="34" fill="#d56300" stroke="#999" stroke-width="0.5"/>
+<rect x="458" y="168" width="34" height="34" fill="#d96e26" stroke="#999" stroke-width="0.5"/>
+<text x="542" y="190">#d56300  reads as hue 24 (dE 0.026)</text>
+<text x="16" y="238">#43  orange brown black</text>
+<rect x="250" y="216" width="34" height="34" fill="#ffa500" stroke="#999" stroke-width="0.5"/>
+<rect x="290" y="216" width="34" height="34" fill="#a52a2a" stroke="#999" stroke-width="0.5"/>
+<rect x="330" y="216" width="34" height="34" fill="#000000" stroke="#999" stroke-width="0.5"/>
+<text x="374" y="238">=</text>
+<rect x="394" y="216" width="34" height="34" fill="#b46615" stroke="#999" stroke-width="0.5"/>
+<rect x="458" y="216" width="34" height="34" fill="#d97f26" stroke="#999" stroke-width="0.5"/>
+<text x="542" y="238">#b46615  reads as hue 30 (dE 0.095)</text>
+<text x="16" y="286">#44  orange black white</text>
+<rect x="250" y="264" width="34" height="34" fill="#ffa500" stroke="#999" stroke-width="0.5"/>
+<rect x="290" y="264" width="34" height="34" fill="#000000" stroke="#999" stroke-width="0.5"/>
+<rect x="330" y="264" width="34" height="34" fill="#ffffff" stroke="#999" stroke-width="0.5"/>
+<text x="374" y="286">=</text>
+<rect x="394" y="264" width="34" height="34" fill="#cba07c" stroke="#999" stroke-width="0.5"/>
+<rect x="458" y="264" width="34" height="34" fill="#d98226" stroke="#999" stroke-width="0.5"/>
+<text x="542" y="286">#cba07c  reads as hue 31 (dE 0.090)</text>
+<text x="16" y="334">#47  red yellow purple</text>
+<rect x="250" y="312" width="34" height="34" fill="#ff0000" stroke="#999" stroke-width="0.5"/>
+<rect x="290" y="312" width="34" height="34" fill="#ffff00" stroke="#999" stroke-width="0.5"/>
+<rect x="330" y="312" width="34" height="34" fill="#800080" stroke="#999" stroke-width="0.5"/>
+<text x="374" y="334">=</text>
+<rect x="394" y="312" width="34" height="34" fill="#df9c4c" stroke="#999" stroke-width="0.5"/>
+<rect x="458" y="312" width="34" height="34" fill="#d98d26" stroke="#999" stroke-width="0.5"/>
+<text x="542" y="334">#df9c4c  reads as hue 34 (dE 0.042)</text>
+<text x="16" y="382">#49  red yellow brown</text>
+<rect x="250" y="360" width="34" height="34" fill="#ff0000" stroke="#999" stroke-width="0.5"/>
+<rect x="290" y="360" width="34" height="34" fill="#ffff00" stroke="#999" stroke-width="0.5"/>
+<rect x="330" y="360" width="34" height="34" fill="#a52a2a" stroke="#999" stroke-width="0.5"/>
+<text x="374" y="382">=</text>
+<rect x="394" y="360" width="34" height="34" fill="#e69e15" stroke="#999" stroke-width="0.5"/>
+<rect x="458" y="360" width="34" height="34" fill="#d99826" stroke="#999" stroke-width="0.5"/>
+<text x="542" y="382">#e69e15  reads as hue 38 (dE 0.028)</text>
+<text x="16" y="430">#50  red orange yellow</text>
+<rect x="250" y="408" width="34" height="34" fill="#ff0000" stroke="#999" stroke-width="0.5"/>
+<rect x="290" y="408" width="34" height="34" fill="#ffa500" stroke="#999" stroke-width="0.5"/>
+<rect x="330" y="408" width="34" height="34" fill="#ffff00" stroke="#999" stroke-width="0.5"/>
+<text x="374" y="430">=</text>
+<rect x="394" y="408" width="34" height="34" fill="#ffb400" stroke="#999" stroke-width="0.5"/>
+<rect x="458" y="408" width="34" height="34" fill="#d99c26" stroke="#999" stroke-width="0.5"/>
+<text x="542" y="430">#ffb400  reads as hue 40 (dE 0.091)</text>
+<text x="16" y="478">#4  red yellow black</text>
+<rect x="250" y="456" width="34" height="34" fill="#ff0000" stroke="#999" stroke-width="0.5"/>
+<rect x="290" y="456" width="34" height="34" fill="#ffff00" stroke="#999" stroke-width="0.5"/>
+<rect x="330" y="456" width="34" height="34" fill="#000000" stroke="#999" stroke-width="0.5"/>
+<text x="374" y="478">=</text>
+<rect x="394" y="456" width="34" height="34" fill="#d59c00" stroke="#999" stroke-width="0.5"/>
+<rect x="458" y="456" width="34" height="34" fill="#d9a226" stroke="#999" stroke-width="0.5"/>
+<text x="542" y="478">#d59c00  reads as hue 42 (dE 0.018)</text>
+<text x="16" y="526">#52  yellow purple brown</text>
+<rect x="250" y="504" width="34" height="34" fill="#ffff00" stroke="#999" stroke-width="0.5"/>
+<rect x="290" y="504" width="34" height="34" fill="#800080" stroke="#999" stroke-width="0.5"/>
+<rect x="330" y="504" width="34" height="34" fill="#a52a2a" stroke="#999" stroke-width="0.5"/>
+<text x="374" y="526">=</text>
+<rect x="394" y="504" width="34" height="34" fill="#c19e50" stroke="#999" stroke-width="0.5"/>
+<rect x="458" y="504" width="34" height="34" fill="#d9a726" stroke="#999" stroke-width="0.5"/>
+<text x="542" y="526">#c19e50  reads as hue 43 (dE 0.056)</text>
+<text x="16" y="574">#53  orange yellow purple</text>
+<rect x="250" y="552" width="34" height="34" fill="#ffa500" stroke="#999" stroke-width="0.5"/>
+<rect x="290" y="552" width="34" height="34" fill="#ffff00" stroke="#999" stroke-width="0.5"/>
+<rect x="330" y="552" width="34" height="34" fill="#800080" stroke="#999" stroke-width="0.5"/>
+<text x="374" y="574">=</text>
+<rect x="394" y="552" width="34" height="34" fill="#dfb44c" stroke="#999" stroke-width="0.5"/>
+<rect x="458" y="552" width="34" height="34" fill="#d9a926" stroke="#999" stroke-width="0.5"/>
+<text x="542" y="574">#dfb44c  reads as hue 44 (dE 0.034)</text>
+<text x="16" y="622">#5  orange yellow black</text>
+<rect x="250" y="600" width="34" height="34" fill="#ffa500" stroke="#999" stroke-width="0.5"/>
+<rect x="290" y="600" width="34" height="34" fill="#ffff00" stroke="#999" stroke-width="0.5"/>
+<rect x="330" y="600" width="34" height="34" fill="#000000" stroke="#999" stroke-width="0.5"/>
+<text x="374" y="622">=</text>
+<rect x="394" y="600" width="34" height="34" fill="#d5b400" stroke="#999" stroke-width="0.5"/>
+<rect x="458" y="600" width="34" height="34" fill="#d9b926" stroke="#999" stroke-width="0.5"/>
+<text x="542" y="622">#d5b400  reads as hue 49 (dE 0.016)</text>
+<text x="16" y="670">#57  yellow brown white</text>
+<rect x="250" y="648" width="34" height="34" fill="#ffff00" stroke="#999" stroke-width="0.5"/>
+<rect x="290" y="648" width="34" height="34" fill="#a52a2a" stroke="#999" stroke-width="0.5"/>
+<rect x="330" y="648" width="34" height="34" fill="#ffffff" stroke="#999" stroke-width="0.5"/>
+<text x="374" y="670">=</text>
+<rect x="394" y="648" width="34" height="34" fill="#e1cd7e" stroke="#999" stroke-width="0.5"/>
+<rect x="458" y="648" width="34" height="34" fill="#d9b926" stroke="#999" stroke-width="0.5"/>
+<text x="542" y="670">#e1cd7e  reads as hue 49 (dE 0.077)</text>
+<text x="16" y="718">#58  yellow purple white</text>
+<rect x="250" y="696" width="34" height="34" fill="#ffff00" stroke="#999" stroke-width="0.5"/>
+<rect x="290" y="696" width="34" height="34" fill="#800080" stroke="#999" stroke-width="0.5"/>
+<rect x="330" y="696" width="34" height="34" fill="#ffffff" stroke="#999" stroke-width="0.5"/>
+<text x="374" y="718">=</text>
+<rect x="394" y="696" width="34" height="34" fill="#d8cb92" stroke="#999" stroke-width="0.5"/>
+<rect x="458" y="696" width="34" height="34" fill="#d9bb26" stroke="#999" stroke-width="0.5"/>
+<text x="542" y="718">#d8cb92  reads as hue 50 (dE 0.091)</text>
+<text x="16" y="766">#27  orange yellow green</text>
+<rect x="250" y="744" width="34" height="34" fill="#ffa500" stroke="#999" stroke-width="0.5"/>
+<rect x="290" y="744" width="34" height="34" fill="#ffff00" stroke="#999" stroke-width="0.5"/>
+<rect x="330" y="744" width="34" height="34" fill="#00ff00" stroke="#999" stroke-width="0.5"/>
+<text x="374" y="766">=</text>
+<rect x="394" y="744" width="34" height="34" fill="#d5e600" stroke="#999" stroke-width="0.5"/>
+<rect x="458" y="744" width="34" height="34" fill="#c9d926" stroke="#999" stroke-width="0.5"/>
+<text x="542" y="766">#d5e600  reads as hue 65 (dE 0.040)</text>
+<text x="16" y="814">#60  orange green white</text>
+<rect x="250" y="792" width="34" height="34" fill="#ffa500" stroke="#999" stroke-width="0.5"/>
+<rect x="290" y="792" width="34" height="34" fill="#00ff00" stroke="#999" stroke-width="0.5"/>
+<rect x="330" y="792" width="34" height="34" fill="#ffffff" stroke="#999" stroke-width="0.5"/>
+<text x="374" y="814">=</text>
+<rect x="394" y="792" width="34" height="34" fill="#cbe17c" stroke="#999" stroke-width="0.5"/>
+<rect x="458" y="792" width="34" height="34" fill="#bcd926" stroke="#999" stroke-width="0.5"/>
+<text x="542" y="814">#cbe17c  reads as hue 70 (dE 0.069)</text>
+<text x="16" y="862">#8  yellow green purple</text>
+<rect x="250" y="840" width="34" height="34" fill="#ffff00" stroke="#999" stroke-width="0.5"/>
+<rect x="290" y="840" width="34" height="34" fill="#00ff00" stroke="#999" stroke-width="0.5"/>
+<rect x="330" y="840" width="34" height="34" fill="#800080" stroke="#999" stroke-width="0.5"/>
+<text x="374" y="862">=</text>
+<rect x="394" y="840" width="34" height="34" fill="#abd54c" stroke="#999" stroke-width="0.5"/>
+<rect x="458" y="840" width="34" height="34" fill="#a9d926" stroke="#999" stroke-width="0.5"/>
+<text x="542" y="862">#abd54c  reads as hue 76 (dE 0.027)</text>
+<text x="16" y="910">#61  green brown white</text>
+<rect x="250" y="888" width="34" height="34" fill="#00ff00" stroke="#999" stroke-width="0.5"/>
+<rect x="290" y="888" width="34" height="34" fill="#a52a2a" stroke="#999" stroke-width="0.5"/>
+<rect x="330" y="888" width="34" height="34" fill="#ffffff" stroke="#999" stroke-width="0.5"/>
+<text x="374" y="910">=</text>
+<rect x="394" y="888" width="34" height="34" fill="#a0cd7e" stroke="#999" stroke-width="0.5"/>
+<rect x="458" y="888" width="34" height="34" fill="#85d926" stroke="#999" stroke-width="0.5"/>
+<text x="542" y="910">#a0cd7e  reads as hue 88 (dE 0.098)</text>
+<text x="16" y="958">#12  green black white</text>
+<rect x="250" y="936" width="34" height="34" fill="#00ff00" stroke="#999" stroke-width="0.5"/>
+<rect x="290" y="936" width="34" height="34" fill="#000000" stroke="#999" stroke-width="0.5"/>
+<rect x="330" y="936" width="34" height="34" fill="#ffffff" stroke="#999" stroke-width="0.5"/>
+<text x="374" y="958">=</text>
+<rect x="394" y="936" width="34" height="34" fill="#7ccb7c" stroke="#999" stroke-width="0.5"/>
+<rect x="458" y="936" width="34" height="34" fill="#26d93d" stroke="#999" stroke-width="0.5"/>
+<text x="542" y="958">#7ccb7c  reads as hue 128 (dE 0.103)</text>
+<text x="16" y="1006">#13  green blue black</text>
+<rect x="250" y="984" width="34" height="34" fill="#00ff00" stroke="#999" stroke-width="0.5"/>
+<rect x="290" y="984" width="34" height="34" fill="#0000ff" stroke="#999" stroke-width="0.5"/>
+<rect x="330" y="984" width="34" height="34" fill="#000000" stroke="#999" stroke-width="0.5"/>
+<text x="374" y="1006">=</text>
+<rect x="394" y="984" width="34" height="34" fill="#009c9c" stroke="#999" stroke-width="0.5"/>
+<rect x="458" y="984" width="34" height="34" fill="#26d9d9" stroke="#999" stroke-width="0.5"/>
+<text x="542" y="1006">#009c9c  reads as hue 180 (dE 0.179)</text>
+<text x="16" y="1054">#31  red blue black</text>
+<rect x="250" y="1032" width="34" height="34" fill="#ff0000" stroke="#999" stroke-width="0.5"/>
+<rect x="290" y="1032" width="34" height="34" fill="#0000ff" stroke="#999" stroke-width="0.5"/>
+<rect x="330" y="1032" width="34" height="34" fill="#000000" stroke="#999" stroke-width="0.5"/>
+<text x="374" y="1054">=</text>
+<rect x="394" y="1032" width="34" height="34" fill="#9c009c" stroke="#999" stroke-width="0.5"/>
+<rect x="458" y="1032" width="34" height="34" fill="#d926d8" stroke="#999" stroke-width="0.5"/>
+<text x="542" y="1054">#9c009c  reads as hue 300 (dE 0.153)</text>
+<text x="16" y="1102">#21  red blue brown</text>
+<rect x="250" y="1080" width="34" height="34" fill="#ff0000" stroke="#999" stroke-width="0.5"/>
+<rect x="290" y="1080" width="34" height="34" fill="#0000ff" stroke="#999" stroke-width="0.5"/>
+<rect x="330" y="1080" width="34" height="34" fill="#a52a2a" stroke="#999" stroke-width="0.5"/>
+<text x="374" y="1102">=</text>
+<rect x="394" y="1080" width="34" height="34" fill="#b4159e" stroke="#999" stroke-width="0.5"/>
+<rect x="458" y="1080" width="34" height="34" fill="#d926bf" stroke="#999" stroke-width="0.5"/>
+<text x="542" y="1102">#b4159e  reads as hue 308 (dE 0.089)</text>
+<text x="16" y="1150">#23  red purple brown</text>
+<rect x="250" y="1128" width="34" height="34" fill="#ff0000" stroke="#999" stroke-width="0.5"/>
+<rect x="290" y="1128" width="34" height="34" fill="#800080" stroke="#999" stroke-width="0.5"/>
+<rect x="330" y="1128" width="34" height="34" fill="#a52a2a" stroke="#999" stroke-width="0.5"/>
+<text x="374" y="1150">=</text>
+<rect x="394" y="1128" width="34" height="34" fill="#c11550" stroke="#999" stroke-width="0.5"/>
+<rect x="458" y="1128" width="34" height="34" fill="#d9265e" stroke="#999" stroke-width="0.5"/>
+<text x="542" y="1150">#c11550  reads as hue 341 (dE 0.057)</text>
+</g></svg>

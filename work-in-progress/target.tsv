@@ -1,0 +1,82 @@
+# The intended triple at each division: primary first, no arrangement,
+# no square-versus-circle. This file is the specification. It is tracked
+# per spike and maintained by hand -- an algorithm is fitted to it, never
+# the other way round, so --emit refuses to overwrite it without --force.
+#
+# origin: 'eye' means Justin has judged it and it is settled.
+#         'seed' means it still carries whatever the mapping said and
+#         has not been looked at yet.
+#
+# hue	one	two	three	origin
+0.0000	purple	purple	orange	eye
+5.0000	red	brown	black	seed
+10.0000	red	red	brown	seed
+15.0000	brown	red	orange	eye
+20.0000	brown	red	orange	eye
+25.0000	brown	brown	brown	seed
+30.0000	brown	brown	orange	eye
+35.0000	orange	orange	brown	eye
+40.0000	orange	yellow	brown	seed
+45.0000	orange	yellow	brown	seed
+50.0000	orange	orange	yellow	seed
+55.0000	yellow	yellow	orange	seed
+60.0000	yellow	yellow	yellow	seed
+65.0000	yellow	yellow	green	seed
+70.0000	yellow	green	brown	eye
+75.0000	yellow	green	brown	eye
+80.0000	yellow	yellow	green	seed
+85.0000	yellow	yellow	green	seed
+90.0000	yellow	yellow	green	seed
+95.0000	yellow	yellow	green	seed
+100.0000	green	green	yellow	seed
+105.0000	green	green	yellow	seed
+110.0000	green	green	yellow	seed
+115.0000	green	green	black	eye
+120.0000	green	green	black	eye
+125.0000	green	green	white	seed
+130.0000	green	green	white	seed
+135.0000	green	green	green	eye
+140.0000	green	green	green	eye
+145.0000	green	blue	white	seed
+150.0000	green	green	blue	seed
+155.0000	green	blue	blue	eye
+160.0000	green	green	blue	seed
+165.0000	green	blue	blue	eye
+170.0000	green	blue	white	seed
+175.0000	green	blue	white	seed
+180.0000	blue	white	white	eye
+185.0000	blue	blue	white	seed
+190.0000	blue	blue	white	seed
+195.0000	blue	blue	white	seed
+200.0000	blue	green	purple	eye
+205.0000	blue	green	purple	eye
+210.0000	blue	blue	blue	seed
+215.0000	blue	blue	blue	seed
+220.0000	blue	blue	blue	seed
+225.0000	blue	blue	black	seed
+230.0000	blue	blue	black	seed
+235.0000	blue	black	black	eye
+240.0000	blue	blue	black	seed
+245.0000	blue	blue	purple	eye
+250.0000	blue	blue	purple	eye
+255.0000	blue	blue	brown	eye
+260.0000	blue	purple	purple	eye
+265.0000	blue	purple	purple	eye
+270.0000	blue	brown	black	eye
+275.0000	blue	purple	brown	eye
+280.0000	blue	purple	brown	eye
+285.0000	blue	blue	red	eye
+290.0000	blue	blue	red	eye
+295.0000	blue	purple	red	eye
+300.0000	purple	purple	purple	seed
+305.0000	purple	purple	red	seed
+310.0000	purple	purple	red	seed
+315.0000	purple	purple	red	seed
+320.0000	red	red	purple	seed
+325.0000	red	red	purple	seed
+330.0000	red	red	purple	seed
+335.0000	red	purple	purple	eye
+340.0000	red	red	purple	seed
+345.0000	red	red	purple	seed
+350.0000	red	red	red	seed
+355.0000	purple	purple	orange	eye
