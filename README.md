@@ -19,7 +19,7 @@ dull, because a specification should be findable by someone typing what it is.
 | `text-identicon.py` | the text rendering, for media that display no image |
 | `reference/` | the library the derivation conforms to, committed rather than fetched, and the harness that regenerates the vectors from it |
 | `tests/` | the implementation against the vectors, and the vectors against the library |
-| `work-in-progress/` | the emoji-square mapping, settled but not yet adopted — nothing here is imported by anything |
+| `work-in-progress/` | the emoji-square mapping, settled but not yet adopted — a fallback for media that can show neither an image nor styled text; nothing here is imported by anything |
 
 ```bash
 python3 -m unittest discover -s tests -t tests

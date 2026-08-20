@@ -289,12 +289,26 @@ Two caveats an implementation must handle rather than discover:
   drawn in 2024, and the seam is visible within one mark. There is no alternative
   encoding for most of them, so do not substitute lookalikes.
 
-#### Emoji squares, where the medium styles nothing at all
+#### Emoji squares: a patch, and the last thing to reach for
 
-Where even colour is unavailable — a plain-text channel that will not take an
-escape sequence — the colour is carried by **three emoji squares** appended to
-the octant grid, from a palette of nine: red, orange, yellow, green, blue,
-purple, brown, black, white.
+**This is a fallback for when the identicon proper cannot be emitted, and
+nothing more.** The identicon is a pattern and a colour. Where an image can be
+sent, send the image; where it cannot but text can be styled, the octants carry
+the pattern and an escape sequence carries the colour. The emoji triple exists
+only for the case where *neither* is possible — a plain-text channel that will
+take no escape sequence and no image, and where the colour would otherwise be
+lost entirely.
+
+It is a poor substitute and should be described as one. Three squares are a
+lossy paraphrase of a 24-bit colour, they cost three double-width columns, and
+they carry semantic weight that a coloured pattern does not. An implementation
+SHOULD prefer, in order: inline image, octants with colour, octants without
+colour, octants plus the emoji triple. Reaching for the triple first because it
+looks striking inverts the whole ordering.
+
+The colour is carried by **three emoji squares** appended to the octant grid,
+from a palette of nine: red, orange, yellow, green, blue, purple, brown, black,
+white.
 
 ```
 $ python3 text-identicon.py '#2692d9' '01010,01010,10001,10101,01010'
@@ -311,6 +325,43 @@ combinations that are numerically close and perceptually wrong. A replacement is
 settled but not adopted: `work-in-progress/in-use.tsv` is a hand-placed table of
 fifty arcs tiling 0–360, each naming its three squares, with `work-in-progress/`
 carrying how it was arrived at. It will land here, with vectors, once it ships.
+
+#### Colour vision, stated plainly
+
+**The emoji triple encodes colour and only colour, so it is the weakest part of
+this specification for anyone who does not see colour the way it assumes.** That
+is not a defect to be argued away; it is the cost of a channel whose entire job
+is to carry a hue through a medium that will not carry one.
+
+Simulating dichromatic vision (Viénot, Brettel and Mollon 1999) over the nine
+squares **as the emoji font actually paints them**, and calling a pair confusable
+below 0.10 in Oklab: all 36 pairs are distinct for normal trichromatic vision;
+**7 pairs collapse under deuteranopia, 5 under protanopia, 4 under tritanopia.**
+
+| | worst collapses |
+|---|---|
+| deuteranopia | red/green 0.043, blue/purple 0.047, orange/green 0.059 |
+| protanopia | orange/green 0.020, red/brown 0.051, blue/purple 0.054 |
+| tritanopia | purple/brown 0.041, orange/yellow 0.041 |
+
+Deuteranomaly and deuteranopia together affect on the order of one man in
+twelve, so this is a common case rather than an edge one.
+
+Three things limit the damage, and an implementation should understand which is
+doing the work:
+
+- **Colour is never the only channel.** The grid is the identity; the octants
+  carry it with no colour at all, and they come first. A reader who cannot
+  separate red from green still has the full 5×5 pattern.
+- **Order is a channel, and it is colour-blind.** Which squares appear answers
+  *what colour*; the order they appear in is separate information that survives
+  any colour deficiency intact.
+- **Shape, where it is used, is preattentive and independent of hue.** A circle
+  among squares is found without search whatever the reader's cone response.
+
+What is *not* claimed: that the triple names a colour reliably for a dichromat.
+It does not, and an implementation that needs colour to be legible for everyone
+should send the image or use the octants.
 
 #### Colour depth, where escape sequences are available
 
