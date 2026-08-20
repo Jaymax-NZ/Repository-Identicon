@@ -44,7 +44,6 @@ def load(path, module):
 
 
 text = load(D + "text-identicon.py", "t")
-anchored = load(str(S / "anchored2.py"), "a2")
 wheel = load(str(S / "wheel.py"), "wheel")
 
 INDEX = {name: k for k, (_e, name, _cp, _rgb) in enumerate(text.PALETTE)}
@@ -86,7 +85,7 @@ def analyse(names, hue=None, number=None):
         "n": number,
     }
     if hue is not None:
-        want = anchored.gamut_at(hue)
+        want = wheel.gamut_at(hue)
         row["want"] = want
         row["want_hex"] = text.hex_colour(want)
         row["want_d"] = distance(mixed, want)

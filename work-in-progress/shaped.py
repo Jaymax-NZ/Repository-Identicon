@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The shape channel: square or circle, laid over the anchored triple.
+"""The shape channel: square or circle, laid over the triple from in-use.tsv.
 
 `arrange` already takes a second channel out of the colour — which squares to
 use answers fidelity, what order to lay them in answers identity, and the two
@@ -45,6 +45,7 @@ a consumer holding only a hex string can still compute the whole mark, shape
 included, without being able to re-resolve the key.
 """
 
+import bisect
 import hashlib
 import importlib.util
 import itertools
@@ -62,7 +63,34 @@ def load(path, module):
 
 
 text = load(D + "text-identicon.py", "t")
-anchored = load(str(S / "anchored2.py"), "a2")
+wheel = load(str(S / "wheel.py"), "wheel")
+
+# **The triple comes from the table now, not from an algorithm.** This used to
+# call into the anchored mapping, which was one candidate implementation of a
+# target file; both are gone. `in-use.tsv` is the mapping, so the shape channel
+# is laid over whatever it says, and the two cannot fall out of step.
+_ARCS = []
+for _line in (S / "in-use.tsv").read_text().splitlines():
+    if _line.startswith("#") or not _line.strip():
+        continue
+    _f = _line.split("\t")
+    _ARCS.append((float(_f[0]), float(_f[1]),
+                  tuple(text.PALETTE[wheel.ORDER[n]][1] for n in _f[3:6])))
+_ARCS.sort()
+_STARTS = [a[0] for a in _ARCS]
+
+
+def triple(rgb):
+    """The three palette indices for `rgb`, in laid-out order.
+
+    Which three squares is a table lookup on hue; what order they go in is
+    `arrange`, unchanged, because arrangement is an identity channel and has
+    never depended on which squares were chosen.
+    """
+    hue = wheel.hue_of(rgb)
+    lo, _hi, names = _ARCS[bisect.bisect_right(_STARTS, hue) - 1]
+    return text.arrange(tuple(wheel.ORDER[n] for n in names), rgb)
+
 
 # Never circled. See the module docstring: their circles are MEDIUM where every
 # square is LARGE, and the Unicode name is the palette's definition.
@@ -123,7 +151,7 @@ def shapes(arranged, rgb):
 
 def mark(rgb):
     """`(arranged indices, shape flags)` -- the whole choice for a colour."""
-    arranged = anchored.triple(rgb)
+    arranged = triple(rgb)
     return arranged, shapes(arranged, rgb)
 
 
@@ -161,7 +189,7 @@ def _selftest():
 
     # Arrangement is untouched by the shape channel.
     for rgb in colours:
-        assert mark(rgb)[0] == anchored.triple(rgb)
+        assert mark(rgb)[0] == triple(rgb)
 
     # Black and white are never circles.
     for rgb in colours:
@@ -173,7 +201,7 @@ def _selftest():
     for rgb in colours:
         assert len(emoji(rgb)) == 3, (text.hex_colour(rgb), emoji(rgb))
 
-    before = len({anchored.triple(rgb) for rgb in colours})
+    before = len({triple(rgb) for rgb in colours})
     after = len({key(rgb) for rgb in colours})
     print(f"gamut {len(colours)}   arrangements {before}   with shape {after}")
 

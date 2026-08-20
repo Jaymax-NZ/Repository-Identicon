@@ -43,19 +43,15 @@ by eye against the gamut it sits beside.
 | `in-use.tsv` | **the mapping** — generated, the only file a consumer would read |
 | `bench.tsv` | the working document: every triple the vocabulary knows, in use or not, with where each is placed and how far it is stretched |
 | `wheel.py` | the renderer and the generator |
+| `shaped.py` | the shape channel — square or circle, laid over the triple |
 | `perceptual.py` | the harness — what is forbidden, and what must exist |
 | `mix.py` | what a given triple averages to, and where that reads |
-| `anchored2.py`, `anchored3.py` | the second attempt: declared anchors and interpolation. Superseded; `anchored2` is frozen so `sheet.py --verify` stays a real check |
-| `shaped.py` | the shape channel — square or circle, laid over the triple |
-| `target.tsv` | the earlier specification, per five-degree division. Historical: the ring superseded it |
-| `sheet.py`, `row.py` | the contact sheet renderer, and one row of it enlarged |
-| `sample.js`, `sample.tsv` | 400 identicons straight from the reference library, and its output so the sheet rebuilds without node |
-| `sheet*.svg` | the contact sheets, eight iterations |
-| `wheel*.svg` | the wheels, sixty-one iterations |
 
-Both series are kept whole rather than as one current file. Each render differs
-from its neighbour in one decision, so a change is legible by flipping between
-two of them and in essentially no other way.
+The anchored mapping, the target file it was fitted to, the contact sheets and
+sixty-one wheel renders have been deleted. They were the route, not the answer,
+and git has every one of them if a question needs re-opening. `wheel.py` no
+longer depends on any of it: `gamut_at` and `hue_of` are inlined, so the wheel
+needs only the reference implementation and the palette.
 
 ## The wheel
 
@@ -68,12 +64,9 @@ Reading outward: the drift ticks and their leaders, a narrow technical band
 carrying the stretch rules, the block numbers, the gamut, **the block ring**,
 and the trefoils on neutral ground.
 
-Four bands are off by default, each having finished its job. `--spokes` brings
-back what the algorithm produced at every division; `--blend-band` each
-division's mixture beside the gamut; `--base-band` the primary of each triple as
-a contiguous territory; `--tables` the corner lists and the unused colours. They
-are switched off rather than deleted because each answers a question that may be
-asked again.
+`--tables` restores the corner lists and the unused colours. They travel
+together because both are the apparatus of choosing, and it is off while there
+is nothing left to choose.
 
 ### What the widths mean
 
@@ -89,12 +82,24 @@ stretch, so the class price stays readable under a block that has outgrown it.
 
 ### Coverage, as it stands
 
-- 50 blocks, 1,720 marks reachable
-- **1,549 effective distinct marks** — two random projects collide 1 in 1,549
-- **46 projects before a 50% chance any pair collides**, which is birthday-bound
-  and barely moves with packing. Raising it needs more marks, not better layout.
-- unstretched, the same fifty triples would give 1,719 effective: all the
-  widening costs 9.9%
+**The 8/4/1 pricing overcounts, and this is a real fault rather than a rounding.**
+It assumes eight shape combinations per block, which holds only when all three
+squares are circleable. Black and white never are, so a triple containing one
+has four and a triple containing both has two. A three-distinct block with a
+black in it is worth twelve marks and is drawn as wide as one worth forty-eight.
+
+| | assuming 8 | actually |
+|---|---|---|
+| marks reachable | 1,720 | **1,420** |
+| effective distinct | 1,549 | **1,003** |
+| 50% chance any pair collides at | 46 projects | **37 projects** |
+
+Twenty-three of the fifty blocks carry an achromatic. The fix is to price a
+block by `arrangements × 2^circleable` rather than by class alone — which would
+make several current widths wrong, so it is a re-layout, not an edit.
+
+Measured over the gamut rather than over projects, `shaped.py` reports 214
+arrangements, 732 distinct marks with shape, 546 effective.
 
 ### Numbers are positional
 
@@ -153,26 +158,28 @@ fault and cannot be fixed by placement.
 
 ## What is still open
 
+- **The wedge widths are priced wrong** wherever a block contains black or
+  white — see the coverage table above. Re-pricing changes the layout.
+- **`REQUIRED` now contradicts the ring.** The table violates nothing — zero of
+  1074 gamut colours break a rule, which is the first time that has been true —
+  but seven of the twelve required triples are not on it, and at least one of
+  them, `blue purple white`, was rejected by eye afterwards. The list records
+  what was wanted at the time it was written; the ring records what was chosen.
+  One of them has to give, and it is probably the list.
 - `SPEC.md` records this table as not yet normative. Adopting it means replacing
   the search in `../text-identicon.py`, pinning vectors for it, and saying so
   there.
-- The shape channel in `shaped.py` predates the ring and has not been re-scored
-  against it. The coverage figures above assume it: 48 marks for three distinct
-  squares is 6 arrangements × 8 shape combinations.
-- `target.tsv` is historical and is still read by `wheel.py --score` and
-  `--emit`. Neither is used any more.
 
 ## Running it
 
 ```bash
 python3 wheel.py --reference
-python3 -c "import perceptual, anchored2; perceptual.audit(anchored2.triple, 'candidate')"
 python3 shaped.py
-python3 sheet.py --verify && python3 sheet.py sheet8.svg
+python3 -c "import shaped, perceptual; perceptual.audit(shaped.triple, 'in-use')"
+python3 mix.py "yellow green orange"
 ```
 
-The audit prints violations by kind, spread, and which required triples are
-missing. `shaped.py` checks the shape channel against the whole gamut.
-`sheet.py --verify` reproduces `sheet4.svg` byte for byte — the renderer was
-lost with its session scratchpad and is a reconstruction, so that check is what
-makes it trustworthy. No network, no fonts, no human eyes.
+`shaped.py` checks the shape channel across the whole gamut — determinism,
+arrangement untouched, no circled neutral, three characters out — and reports
+spread. The audit prints violations by kind and which required triples are
+missing. No network, no fonts, no human eyes.

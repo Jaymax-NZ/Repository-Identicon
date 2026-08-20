@@ -1,32 +1,25 @@
 #!/usr/bin/env python3
-"""The target wheel: the gamut as a ring, the intended triple as a spike.
+"""The wheel: the gamut as a ring, and the blocks placed by hand against it.
 
-    python3 wheel.py --emit            seed target.tsv from the current mapping
-    python3 wheel.py                   render target.tsv to wheel.svg
-    python3 wheel.py --score           how closely a mapping reproduces the target
-    python3 wheel.py --spikes 144      finer divisions, when the target needs them
+    python3 wheel.py                   render the next free wheelN.svg
+    python3 wheel.py --reference       regenerate in-use.tsv from bench.tsv
+    python3 wheel.py --refill          add newly admissible triples to bench.tsv
+    python3 wheel.py --tables          also draw the corner lists and the unused
 
-**This inverts what the sheets do.** A sheet renders whatever the algorithm
-currently says and asks whether it looks right. The wheel is the other way
-round: `target.tsv` says what the answer *should* be at each division, judged by
-eye and edited by hand, and the algorithm is then hunted for until it reproduces
-it -- or comes close enough. The artifact is the specification; the anchors,
-the reading table and the interpolation are one candidate implementation of it.
+**No algorithm is being scored here any more.** The wheel was built to hold an
+algorithm to a target file, and that route ended: `bench.tsv` is now the answer
+itself, fifty blocks placed by eye, and `in-use.tsv` is generated from it. What
+survives from that era is the measurement -- every block still reports the hue
+its blend reads as, and how far it was moved from it.
 
-**One concern per artifact.** The spike carries the multiset only -- three
-squares in palette order, no arrangement, no square-versus-circle. Those two are
-identity, and identity is a separate question from whether the mark names the
-colour. Mixing them is what made the contact sheets hard to read: a change of
-arrangement and a change of mapping look identical at a glance, and only one of
-them is a colour judgement.
-
-**It is meant to grow.** `--spikes` sets the divisions. Start coarse enough to
-tune by hand, then double when a band turns out to need finer resolution than
-the current step can express. Re-emitting preserves nothing, so a target that
-has been edited should be widened by editing, not by `--emit`.
+**One concern per artifact.** A block carries the multiset only: three squares,
+no arrangement, no square-versus-circle. Those two are identity, and identity is
+a separate question from whether the mark names the colour. Mixing them is what
+made the contact sheets hard to read, because a change of arrangement and a
+change of mapping look identical at a glance and only one is a colour judgement.
 
 Nothing here reads a font or a screen. The ring is the gamut identicon.js
-actually produces, at its own fixed saturation and lightness, so a spike sits
+actually produces, at its own fixed saturation and lightness, so a block sits
 directly against the colour it is meant to name.
 """
 
@@ -37,7 +30,6 @@ import sys
 
 D = "/home/justin/Code/Projects/Repository-Identicon/"
 S = pathlib.Path(__file__).parent
-TARGET = S / "target.tsv"
 
 
 def load(path, module):
@@ -48,8 +40,7 @@ def load(path, module):
 
 
 text = load(D + "text-identicon.py", "t")
-anchored = load(str(S / "anchored2.py"), "a2")
-current = load(str(S / "anchored3.py"), "a3")
+identicon = load(D + "repository-identicon.py", "i")
 
 NOMINAL = {name: "#{:02x}{:02x}{:02x}".format(*rgb)
            for _e, name, _cp, rgb in text.PALETTE}
@@ -66,24 +57,17 @@ ORDER = {name: k for k, (_e, name, _cp, _rgb) in enumerate(text.PALETTE)}
 # wheel: 27 rows at 15px, twice over, plus margins.
 SIZE = 720
 CENTRE = SIZE / 2
-BASE_IN, BASE_OUT = 112, 163   # the base-colour band, off by default
 TECH_IN, TECH_OUT = 152, 160   # the workings: stretch rules and drift ticks
 NUM_R = 165                    # the numbers, in the gap before the gamut
 RING_IN, RING_OUT = 170, 212   # the gamut itself
-BLEND_IN, BLEND_OUT = 216, 238  # in use: what each division mixes to; off
 OUTER_IN, OUTER_OUT = 218, 268  # the ring to look at: the blocks, wide
 # The second gamut ring, and the trefoils that sit on it. Deep enough for the
 # cluster (about 2.9 disc radii) with a little air at each edge.
 TREF_IN, TREF_OUT = 272, 296
 TREF_BG = "#ececec"
 TABLE_W = 232                  # the roster, beside the wheel
-OFFER_OUT = TECH_OUT            # where the lane stack starts, with --tables
-OFFER_LANES, LANE_H, LANE_GAP = 3, 14, 2.5
-OFFER_IN = OFFER_OUT - OFFER_LANES * (LANE_H + LANE_GAP)
-SPIKE_START = 246
-SWATCH_W, SWATCH_H, SWATCH_GAP = 15, 22, 4
-LABEL_GAP = 10
-RING_STEP = 0.25          # degrees per ring segment
+LANE_H, LANE_GAP = 14, 2.5      # the lane stack, with --tables
+RING_STEP = 0.25                # degrees per ring segment
 
 
 def polar(radius, degrees):
@@ -108,18 +92,11 @@ def sector(r0, r1, a0, a1):
             f'L{x2:.2f},{y2:.2f} A{r0},{r0} 0 {large} 0 {x3:.2f},{y3:.2f} Z')
 
 
-def spike_end():
-    return SPIKE_START + 3 * SWATCH_H + 2 * SWATCH_GAP
-
-
 # ---------------------------------------------------------------------------
 # The bench: triples that are not on the wheel but might deserve to be.
 # ---------------------------------------------------------------------------
 
 BENCH_PER_CORNER = 27
-CHROMATIC = ("red", "orange", "yellow", "green", "blue", "purple", "brown")
-
-
 BENCH = S / "bench.tsv"
 
 # Where the line falls between a triple that names a colour and one that
@@ -141,7 +118,7 @@ def read_bench():
     return out
 
 
-def pool(target, roster):
+def pool(roster):
     """Every unused triple the harness allows, best first, minus the rejected."""
     perceptual = load(str(S / "perceptual.py"), "perc")
     # **One class.** Whether a triple is currently on the wheel is not a
@@ -168,7 +145,7 @@ def pool(target, roster):
     return sorted(rows)
 
 
-def candidates(target, limit, placed_only=True):
+def candidates(limit, placed_only=True):
     """What the bench currently offers, with its own numbers.
 
     **The numbers used to be positional and moved under the reader.** Placing
@@ -208,7 +185,7 @@ def candidates(target, limit, placed_only=True):
     return rows[:limit]
 
 
-def refill(target, limit):
+def refill(limit):
     """Append every triple good enough to belong in the vocabulary.
 
     No slot count and no sector quota any more. The roster is meant to hold all
@@ -221,7 +198,7 @@ def refill(target, limit):
     # identity it affords -- eight degrees for three distinct squares, four
     # for a pair, one for three of a kind -- so a weak triple shows as a
     # thin sliver rather than being left out of the picture entirely.
-    chosen = list(pool(target, roster))
+    chosen = list(pool(roster))
     if not chosen:
         print("nothing new under the good line")
         return 0
@@ -240,8 +217,6 @@ def bench(out, rows):
     """The candidates, parked in the four corners the wheel does not reach."""
     SW, GAP, ROW = 11, 2, 15
     margin = 14
-    reach = spike_end() + LABEL_GAP
-    box = CENTRE - reach / math.sqrt(2)          # how far in the circle stays
     # Right-hand columns are right-aligned to the margin rather than mirrored
     # from the circle, so they use the full width instead of hugging the wheel.
     entry_w = 3 * (SW + GAP) + 8 + SW + 6 + 52
@@ -280,130 +255,28 @@ def bench(out, rows):
 
 
 def gamut_at(hue):
-    """The colour identicon.js produces at this hue."""
-    return anchored.gamut_at(hue)
+    """The colour identicon.js produces at this hue, at its fixed s and l."""
+    return tuple(identicon._quantise(v)
+                 for v in identicon._hsl_to_rgb((hue % 360) / 360,
+                                                identicon.SATURATION,
+                                                identicon.LIGHTNESS))
 
 
-def divisions(spikes):
-    return [i * 360.0 / spikes for i in range(spikes)]
-
-
-ACHROMATIC = {"black", "white"}
-NOMINAL_HUE = {name: (None if max(rgb) == min(rgb) else anchored.hue_of(rgb))
-               for _e, name, _cp, rgb in text.PALETTE}
-
-
-def canonical(names, hue):
-    """A first guess at the order, used only when seeding a fresh target.
-
-    **This is not the authority.** `target.tsv` records the order as written,
-    inner to outer, and the first square is the division's declared base. That
-    is a judgement, not an arithmetic property, so nothing recomputes it -- hue
-    165 is a green with two blues on it because it sits in the green block, even
-    though blue holds two of the three slots. A majority rule got that backwards
-    and would quietly get it backwards again on every read.
-
-    What remains here is the heuristic that produced the initial ordering:
-    majority first, then nearest the target hue, achromatics last, palette order
-    to settle the rest. It runs once, at seed time, and never again.
-    """
-    counts = {n: list(names).count(n) for n in names}
-
-    def distance(name):
-        own = NOMINAL_HUE[name]
-        if own is None:
-            return 1e6
-        d = abs(own - hue) % 360
-        return min(d, 360 - d)
-
-    return tuple(sorted(names, key=lambda n: (-counts[n], distance(n), ORDER[n])))
+def hue_of(rgb):
+    """Plain HSL hue in degrees. Zero for an achromatic."""
+    r, g, b = rgb
+    mx, mn = max(rgb), min(rgb)
+    if mx == mn:
+        return 0.0
+    d = mx - mn
+    h = ((g - b) / d) % 6 if mx == r else \
+        ((b - r) / d + 2 if mx == g else (r - g) / d + 4)
+    return (h * 60) % 360
 
 
 def multiset(names):
-    """Order-free form, for comparing a target against a candidate."""
+    """Order-free form, for asking whether two triples use the same squares."""
     return tuple(sorted(names, key=lambda n: ORDER[n]))
-
-
-def _catalogue():
-    """Every triple the palette can make, numbered once and for all.
-
-    **The bench used to number by position**, so a candidate's number changed
-    whenever the pool did -- place six triples and free three, and everything
-    renumbers even though nothing moved. `red red blue` went from 22 to 21
-    without shifting a degree, which makes referring to a candidate across two
-    renders impossible.
-
-    These are catalogue numbers instead: the index of the multiset in the fixed
-    enumeration of all 165, in palette order. Number 22 is the same three
-    squares today, after any edit, and in any future wheel. They are sparse on
-    the bench and out of order, which is the price of meaning something.
-    """
-    palette = [name for _e, name, _cp, _rgb in text.PALETTE]
-    out, n = {}, 0
-    for i in range(len(palette)):
-        for j in range(i, len(palette)):
-            for k in range(j, len(palette)):
-                n += 1
-                out[(palette[i], palette[j], palette[k])] = n
-    return out
-
-
-CATALOGUE = _catalogue()
-
-
-# ---------------------------------------------------------------------------
-# The target file
-# ---------------------------------------------------------------------------
-
-HEADER = [
-    "# The intended triple at each division. No arrangement, no square-versus-",
-    "# circle. This file is the specification. It is tracked per spike and",
-    "# maintained by hand -- an algorithm is fitted to it, never the other way",
-    "# round, so --emit refuses to overwrite it without --force.",
-    "#",
-    "# ORDER IS INNER TO OUTER, as the wheel draws it, and the first square is",
-    "# the division's base. That is a judgement and is never recomputed: hue 165",
-    "# is green-blue-blue because it sits in the green block, even though blue",
-    "# holds two of its three slots.",
-    "#",
-    "# origin: 'eye' means Justin has judged it and it is settled.",
-    "#         'seed' means it still carries whatever the mapping said and",
-    "#         has not been looked at yet.",
-    "#",
-    "# hue\tone\ttwo\tthree\torigin",
-]
-
-
-def emit(spikes, mapping, force):
-    if TARGET.exists() and not force:
-        judged = sum(1 for _h, _n, o in read_target() if o == "eye")
-        raise SystemExit(
-            f"{TARGET.name} already exists, with {judged} division(s) judged by eye.\n"
-            "Reseeding would discard them. This file is now the specification, not\n"
-            "an output -- widen or correct it by editing. Use --force to overrule.")
-    lines = list(HEADER)
-    for hue in divisions(spikes):
-        rgb = gamut_at(hue)
-        names = canonical([text.PALETTE[k][1] for k in mapping.triple_indices(rgb)], hue)
-        lines.append(f"{hue:.4f}\t" + "\t".join(names) + "\tseed")
-    TARGET.write_text("\n".join(lines) + "\n")
-    return len(lines) - len(HEADER)
-
-
-def read_target():
-    if not TARGET.exists():
-        raise SystemExit(f"no {TARGET.name}; run --emit first")
-    out = []
-    for line in TARGET.read_text().splitlines():
-        if not line.strip() or line.lstrip().startswith("#"):
-            continue
-        f = line.split("\t")
-        hue = float(f[0])
-        origin = f[4].strip() if len(f) > 4 and f[4].strip() else "seed"
-        # Verbatim, inner to outer. The first square is the declared base and
-        # nothing here may second-guess it.
-        out.append((hue, tuple(n.strip() for n in f[1:4]), origin))
-    return out
 
 
 # ---------------------------------------------------------------------------
@@ -469,20 +342,11 @@ _GAMUT = [(h * RING_STEP, gamut_at(h * RING_STEP))
           for h in range(int(360 / RING_STEP))]
 
 
-def chroma_of(rgb):
-    _L, a, b = oklab(rgb)
-    return math.hypot(a, b)
-
-
 def hue_angle(rgb):
     """The blend's hue in Oklab, in degrees. Not an HSL hue."""
     _L, a, b = oklab(rgb)
     return math.degrees(math.atan2(b, a)) % 360
 
-
-# Below this, a blend is near enough neutral that its hue angle is noise and
-# should not be reported as if it meant something.
-FAINT = 0.055
 
 _GAMUT_HUE = [(h, colour, hue_angle(colour)) for h, colour in _GAMUT]
 
@@ -510,39 +374,26 @@ def nearest_gamut(rgb):
     return hue, colour, math.dist(oklab(colour), oklab(rgb))
 
 
-def blend_band(out, target):
-    """What each division's triple mixes to, sitting against the gamut.
-
-    Outside the ring and inside the spikes, at the division's own hue, so the
-    three squares of a spike and the colour they average to are radially in
-    line, with the gamut they are meant to name immediately inside. Where the
-    blend departs from the ring beside it, that division is claiming something
-    it does not deliver.
-    """
-    step = 360.0 / len(target)
-    for hue, names, _origin in target:
-        out.append(
-            f'<path d="{sector(BLEND_IN, BLEND_OUT, hue - step / 2, hue + step / 2)}" '
-            f'fill="{text.hex_colour(mix_rgb(names))}"/>')
-
-
 # A wedge is as wide as the identity its triple affords. Three distinct
 # squares give six arrangements and eight shape combinations -- forty-eight
 # marks -- against a pair's three-by-eight and three-of-a-kind's one-by-eight.
 # Eight degrees, four and one price that, near enough, and make the picture
 # say what each entry is worth rather than merely that it exists.
+#
+# **The eight is optimistic and the wheel does not currently show it.** Black
+# and white are never circled, so a triple containing one has four shape
+# combinations and one containing both has two. A three-distinct block with a
+# black in it is worth twelve marks, not forty-eight, and is drawn as wide as
+# one worth forty-eight. See the README: it is a real fault in the pricing, not
+# a rounding.
 WEDGE = {3: 8.0, 2: 4.0, 1: 1.0}
 # Wedges may touch. They are meant to: an eight-degree run of eight-degree
 # wedges tiles exactly, and demanding clear air between them pushed a
 # perfectly packed row inward one wedge at a time for no reason. Only a real
 # overlap sends an entry to the next lane.
 WEDGE_TOL = 1e-6
-OFFER_SEP = 0.5        # clear air between two blocks sharing a lane
 OFFER_FLOOR = 62       # nearest the middle a lane may reach
 DISC_R = 6.0           # a constituent disc; what a 4 degree block can carry
-DISC_GAP = 6.0         # clear air between the block and its discs, and room
-                       # for the stacked stretch rules that now sit in it
-DISC_BAND = 13         # room reserved for the trefoils, before lane 1
 
 
 def offer_band(out, rows, tables=False):
@@ -811,7 +662,6 @@ def drift(out, ticks):
 # regions drawn as explicit polygons they show at any separation, so the
 # cluster can be as compact as it was to begin with.
 DISC_SEP = 1.0
-DISC_C = DISC_SEP * DISC_R / math.sqrt(3)
 
 
 def venn(out, idx, names, top, hue, radius=None):
@@ -936,100 +786,17 @@ def table(out, rows):
     out.append('</g>')
 
 
-def contrast(rgb):
-    """Black or white, whichever will be readable on this fill."""
-    return "#000" if pc_luminance(rgb) > 0.5 else "#fff"
+def render(show_tables=False):
+    """The wheel: the gamut, the blocks placed against it, and the workings.
 
-
-def pc_luminance(rgb):
-    r, g, b = (v / 255 for v in rgb)
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b
-
-
-def base_band(out, target):
-    """The primary of each triple, as a contiguous band inside the gamut.
-
-    Every division owns the arc centred on it, and neighbours meet with no gap,
-    so a run of divisions sharing a primary reads as one solid block. That is
-    the point of it: the spikes show what each division does, and this shows
-    where the mapping's territories actually begin and end -- which is the thing
-    that was impossible to see on the contact sheets.
-    """
-    step = 360.0 / len(target)
-    for hue, names, _origin in target:
-        a0, a1 = hue - step / 2, hue + step / 2
-        out.append(f'<path d="{sector(BASE_IN, BASE_OUT, a0, a1)}" '
-                   f'fill="{NOMINAL[names[0]]}"/>')
-    # A hairline where the primary changes, so a boundary between two similar
-    # colours is still findable.
-    for k, (hue, names, _origin) in enumerate(target):
-        previous = target[k - 1][1][0]
-        if previous == names[0]:
-            continue
-        x0, y0 = polar(BASE_IN, hue - step / 2)
-        x1, y1 = polar(BASE_OUT, hue - step / 2)
-        out.append(f'<line x1="{x0:.2f}" y1="{y0:.2f}" x2="{x1:.2f}" '
-                   f'y2="{y1:.2f}" stroke="#fff" stroke-width="1"/>')
-
-
-def spike(out, hue, names):
-    """Three swatches marching outward, nearest the ring first."""
-    out.append(f'<g transform="rotate({hue:.4f} {CENTRE} {CENTRE})">')
-    out.append(f'<line x1="{CENTRE}" y1="{CENTRE - RING_OUT}" x2="{CENTRE}" '
-               f'y2="{CENTRE - SPIKE_START}" stroke="#bbb" stroke-width="0.6"/>')
-    for k, name in enumerate(names):
-        top = CENTRE - SPIKE_START - (k + 1) * SWATCH_H - k * SWATCH_GAP
-        out.append(
-            f'<rect x="{CENTRE - SWATCH_W / 2:.1f}" y="{top:.1f}" '
-            f'width="{SWATCH_W}" height="{SWATCH_H}" fill="{NOMINAL[name]}" '
-            f'stroke="#999" stroke-width="0.5"/>')
-    out.append('</g>')
-
-
-def label(out, hue, origin):
-    """The division's hue, upright on both halves of the wheel.
-
-    A judged division gets a filled dot under its number. The wheel is the
-    tracking surface as well as the specification, so what has been looked at
-    has to be visible without opening the file.
-    """
-    r = spike_end() + LABEL_GAP
-    flip = 90 < hue < 270
-    turn = hue + 180 if flip else hue
-    y = CENTRE + r if flip else CENTRE - r
-    fill = "#222" if origin == "eye" else "#888"
-    out.append(
-        f'<text x="{CENTRE}" y="{y:.1f}" text-anchor="middle" '
-        f'transform="rotate({turn:.4f} {CENTRE} {CENTRE})" '
-        f'font-family="monospace" font-size="9" fill="{fill}">{hue:.0f}</text>')
-    if origin == "eye":
-        dy = 7 if flip else -7
-        out.append(f'<circle cx="{CENTRE}" cy="{y + dy:.1f}" r="1.8" fill="#222" '
-                   f'transform="rotate({turn:.4f} {CENTRE} {CENTRE})"/>')
-
-
-def render(target, show_base_band=False, show_spikes=False, show_blend=False,
-           show_tables=False):
-    """The wheel.
-
-    **Three of the four bands are now off by default, each having finished its
-    job.** The base band turned twenty-three ragged runs into eight clean
-    blocks by making the boundaries visible. The spikes showed what the
-    algorithm produced at every division, which is what the whole target file
-    was built to replace -- the block ring inside the gamut is now the answer,
-    hand-placed and complete, and the spikes only compete with it. The blend
-    band showed each division's mixture beside the ring, a check the blocks
-    make continuously through their own fill and their trefoils.
-
-    They are switched off rather than deleted: `--base-band`, `--spokes` and
-    `--blend-band` each bring one back when a question needs it.
+    `--tables` restores the corner lists and the unused colours -- the
+    apparatus of choosing, which travels together and is off while there is
+    nothing left to choose.
     """
     wide = SIZE + TABLE_W
     out = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{wide}" '
            f'height="{SIZE}" viewBox="0 0 {wide} {SIZE}">',
            f'<rect width="{wide}" height="{SIZE}" fill="#ffffff"/>']
-    if show_base_band:
-        base_band(out, target)
     ring(out)
     # Neutral, not a second gamut. Putting the gamut back there sounded right
     # -- read each trio against the colour it stands in for -- but it gave
@@ -1038,22 +805,11 @@ def render(target, show_base_band=False, show_spikes=False, show_blend=False,
     # the same everywhere and biases nothing.
     out.append(f'<path d="{sector(TREF_IN, TREF_OUT, 0, 180)}" fill="{TREF_BG}"/>')
     out.append(f'<path d="{sector(TREF_IN, TREF_OUT, 180, 360)}" fill="{TREF_BG}"/>')
-    offers = candidates(target, 4 * BENCH_PER_CORNER, not show_tables)
-    if show_blend:
-        blend_band(out, target)
+    offers = candidates(4 * BENCH_PER_CORNER, not show_tables)
     offer_band(out, offers, show_tables)
     table(out, [r for r in offers if r[5]])
     if show_tables:
         bench(out, offers)
-    if show_spikes:
-        for hue, names, _o in target:
-            spike(out, hue, names)
-        for hue, _n, origin in target:
-            label(out, hue, origin)
-
-    # Nothing in the middle. The count of divisions and how many had been
-    # judged belonged to the spikes, which are gone: it described target.tsv,
-    # not the ring, and had been counting something the wheel no longer draws.
     out.append('</svg>')
     return "\n".join(out)
 
@@ -1136,36 +892,9 @@ def next_path():
     return S / f"wheel{n}.svg"
 
 
-def score(target, mapping, name):
-    hits, misses = 0, []
-    for hue, want, _origin in target:
-        rgb = gamut_at(hue)
-        got = multiset([text.PALETTE[k][1] for k in mapping.triple_indices(rgb)])
-        if got == multiset(want):
-            hits += 1
-        else:
-            misses.append((hue, multiset(want), got))
-    print(f"{name}: {hits}/{len(target)} divisions "
-          f"({hits / len(target) * 100:.1f}%)")
-    for hue, want, got in misses:
-        print(f"   {hue:6.1f}  want {' '.join(want):26} got {' '.join(got)}")
-    return hits
-
-
 def main(argv):
-    spikes = 72
-    if "--spikes" in argv:
-        i = argv.index("--spikes")
-        spikes = int(argv[i + 1])
-        argv = argv[:i] + argv[i + 2:]
-
-    if "--emit" in argv:
-        n = emit(spikes, current, "--force" in argv)
-        print(f"{TARGET} seeded with {n} divisions from anchored3")
-        return 0
-
     if "--refill" in argv:
-        added = refill(read_target(), 4 * BENCH_PER_CORNER)
+        added = refill(4 * BENCH_PER_CORNER)
         print(f"{added} added to {BENCH.name}")
         return 0
 
@@ -1174,25 +903,16 @@ def main(argv):
         print(f"{IN_USE} {arcs} arcs from {blocks} blocks, tiling 0-360")
         return 0
 
-    if "--score" in argv:
-        target = read_target()
-        score(target, current, "anchored3")
-        score(target, anchored, "anchored2")
-        return 0
-
-    target = read_target()
     if "--out" in argv:
         path = pathlib.Path(argv[argv.index("--out") + 1])
         if not path.is_absolute():
             path = S / path
     else:
         path = next_path()
-    svg = render(target, "--base-band" in argv, "--spokes" in argv,
-                 "--blend-band" in argv, "--tables" in argv)
+    svg = render("--tables" in argv)
     path.write_text(svg)
-    judged = sum(1 for _h, _n, o in target if o == "eye")
-    print(f"{path} {len(svg)} bytes, {len(target)} divisions, "
-          f"{judged} judged by eye")
+    placed = sum(1 for r in read_bench() if r[3] is not None)
+    print(f"{path} {len(svg)} bytes, {placed} blocks")
     return 0
 
 
