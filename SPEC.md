@@ -241,11 +241,17 @@ dropped into `docs/`, a file called `icon.png` describes nothing. The prefix
 also anticipates a repository carrying more than one mark — a user's alongside
 the repository's — at which point the unqualified name is the ambiguous one.
 
-An implementation MUST write these three at these paths, and SHOULD be
-idempotent: the mark is a pure function of the key, so a second run writes
-identical bytes. It SHOULD offer a check mode that reports drift without
-writing, since a repository whose committed mark no longer matches its remote
-is the failure worth catching — it means the project moved or was renamed.
+An implementation MUST write these three at these paths, and MUST re-derive the
+key on every run rather than caching it. **For an unchanged key that makes the
+write idempotent** — the mark is a pure function of the key, so the second run
+produces identical bytes and need not touch the files. For a *changed* key it
+is the opposite, and deliberately so: renaming a repository or moving it
+between forges changes the mark, and re-running is how the artifacts catch up.
+There is nothing to invalidate and nothing to ask for.
+
+An implementation SHOULD offer a check mode that reports drift without writing,
+since a committed mark that no longer matches the key is the failure worth
+catching — it means the project moved and nobody re-ran anything.
 
 `SVG` carries a declared size so `![]()` renders it as an inline mark rather
 than at column width; a consumer that wants it larger supplies the size

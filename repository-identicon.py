@@ -789,10 +789,16 @@ def install_into_repo(path=None, key=None, size=ARTIFACT_SIZE, check=False,
                       **render_kwargs):
     """Create or update the identicon artifacts in one repository.
 
-    Idempotent by construction: the mark is a pure function of the key, so a
-    second run writes identical bytes and reports nothing changed. `check`
-    reports what *would* change and writes nothing, which is what a dependent
-    tool or a CI job should call.
+    **Idempotent for an unchanged key, and deliberately not otherwise.** The
+    mark is a pure function of the key, so running this twice against the same
+    key writes identical bytes and reports nothing changed. Rename the
+    repository and the key changes with it, so the next run rewrites every
+    artifact -- which is the update path, not an exception to it. The key is
+    re-derived here on every call and never cached, so there is nothing to
+    invalidate and no switch to ask for.
+
+    `check` reports what *would* change and writes nothing, which is what a
+    dependent tool or a CI job should call.
 
     Returns a dict describing what happened, suitable for --json.
     """

@@ -205,11 +205,15 @@ class TestInstallingIntoARepository(unittest.TestCase):
         self.assertEqual(body, result["colour"] + "\n")
         self.assertRegex(body, r"^#[0-9a-f]{6}\n$")
 
-    def test_running_it_twice_changes_nothing(self):
-        identicon.install_into_repo(self.tmp)
+    def test_running_it_twice_on_an_unchanged_key_changes_nothing(self):
+        """Idempotent for a *fixed* key, which is the only sense in which it
+        is idempotent: the sibling test below renames the remote and expects
+        every artifact to be rewritten."""
+        first = identicon.install_into_repo(self.tmp)
         again = identicon.install_into_repo(self.tmp)
         self.assertTrue(again["current"])
         self.assertEqual({"unchanged"}, set(again["changes"].values()))
+        self.assertEqual(first["colour"], again["colour"])
 
     def test_check_reports_drift_without_writing(self):
         first = identicon.install_into_repo(self.tmp)

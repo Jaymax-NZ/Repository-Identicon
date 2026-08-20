@@ -29,10 +29,15 @@ Commit them. Point a README at one with
 `![](.identicon/repository-identicon.svg)`, and read the colour anywhere with
 `$(cat .identicon/repository-identicon.colour)`.
 
-Running it again writes identical bytes, because the mark is a pure function of
-the key. `--check` reports drift and exits 1 without writing, for CI or for a
-tool asking whether a repository is current; `--json` gives a dependent tool
-the whole result without parsing prose.
+The mark is a pure function of the key, so **for an unchanged key a second run
+writes identical bytes** and reports nothing changed. When the key changes —
+the repository is renamed, or moves between forges — the next run rewrites the
+artifacts, and that is the whole update path: there is no switch to ask for it,
+because nothing is cached to invalidate.
+
+`--check` reports drift and exits 1 without writing, for CI or for a tool
+asking whether a repository is current; `--json` gives a dependent tool the
+whole result without parsing prose.
 
 If the repository has no git remote the key falls back to its path, which will
 not survive being cloned. `apply` says so, and the fix is a
