@@ -22,6 +22,7 @@ import hashlib
 import json
 import os
 import pathlib
+import re
 import shutil
 import struct
 import subprocess
@@ -818,8 +819,97 @@ def artifact_bytes(key, size=ARTIFACT_SIZE, **render_kwargs):
     }
 
 
+# The artifacts are inert until something points at them, and the one thing
+# every repository already has is a README. So the line goes in by default and
+# --no-readme is the way out, rather than the other way round: an identicon
+# nobody put on the page is an identicon nobody sees.
+README_MARK = f"![]({IDENTICON_DIR}/{ARTIFACT_STEM}.svg)"
+
+# **What counts as the mark already being there, twice corrected by
+# dogfooding.** Matching the bare path anywhere was wrong: a README that
+# *documents* these paths reads as one that displays them, so exactly the
+# projects integrating with this would never get a mark. Requiring an image
+# reference was still wrong, because this repository's own README shows the
+# markdown in a fenced block as an example. So: strip fenced code first, then
+# look for an image. A mark inside a code fence is a mark being talked about.
+README_NEEDLE = re.compile(
+    r"!\[[^\]]*\]\([^)]*{path}|<img[^>]+src\s*=\s*[\"'][^\"']*{path}".format(
+        path=re.escape(f"{IDENTICON_DIR}/{ARTIFACT_STEM}.")))
+README_FENCE = re.compile(r"^(```|~~~)", re.MULTILINE)
+
+
+def without_code_fences(body):
+    """The prose of a markdown file, with fenced blocks blanked out.
+
+    Blanked rather than deleted so line numbers survive, which matters for
+    anything that reports a position later.
+    """
+    out, inside = [], False
+    for line in body.split("\n"):
+        if README_FENCE.match(line):
+            inside = not inside
+            out.append("")
+            continue
+        out.append("" if inside else line)
+    return "\n".join(out)
+
+
+def find_readme(root):
+    """The repository's own README, or None. Markdown only, top level only.
+
+    Case is not decided by the filesystem here -- README.md and readme.md are
+    both common -- so match on the lowered name rather than trusting a glob.
+    """
+    root = pathlib.Path(root)
+    if not root.is_dir():
+        return None
+    candidates = [entry for entry in root.iterdir()
+                  if entry.is_file() and entry.suffix.lower() == ".md"
+                  and entry.stem.lower() == "readme"]
+    if not candidates:
+        return None
+    exact = [entry for entry in candidates if entry.name == "README.md"]
+    return (exact or sorted(candidates))[0]
+
+
+def readme_state(root, check=False):
+    """Put the mark in the README, once, and report what happened.
+
+    Inserted after the first heading rather than above it, so the file still
+    opens with what the project is called. Recognised on the way back in by
+    the artifact path, which never changes -- so a line an author has moved,
+    resized with an <img> tag, or pointed at the PNG instead is left exactly
+    where they put it. This writes once and then keeps out of the way.
+    """
+    readme = find_readme(root)
+    if readme is None:
+        return "absent", None
+
+    body = readme.read_text(encoding="utf-8", errors="replace")
+    prose = without_code_fences(body)
+    if README_NEEDLE.search(prose):
+        return "unchanged", readme
+
+    lines = body.split("\n")
+    at = 0
+    for index, line in enumerate(prose.split("\n")):
+        if line.startswith("# "):
+            at = index + 1
+            break
+    while at < len(lines) and not lines[at].strip():
+        at += 1
+
+    block = [README_MARK, ""]
+    if at > 0 and lines[at - 1].strip():
+        block.insert(0, "")
+    if not check:
+        readme.write_text("\n".join(lines[:at] + block + lines[at:]),
+                          encoding="utf-8")
+    return "updated", readme
+
+
 def install_into_repo(path=None, key=None, size=ARTIFACT_SIZE, check=False,
-                      reseed=False, **render_kwargs):
+                      reseed=False, readme=True, **render_kwargs):
     """Create or update the identicon artifacts in one repository.
 
     **Two things you might want from a re-run, and they are separate.**
@@ -897,6 +987,12 @@ def install_into_repo(path=None, key=None, size=ARTIFACT_SIZE, check=False,
         seed_file.write_bytes(seed_wanted)
     changes["key"] = seed_state
     paths["key"] = seed_file
+
+    if readme:
+        state, readme_file = readme_state(root, check)
+        if readme_file is not None:
+            changes["readme"] = state
+            paths["readme"] = readme_file
 
     colour = identicon_colour(resolved_key,
                               render_kwargs.get("saturation", SATURATION),
@@ -1171,7 +1267,8 @@ def cmd_apply(args):
     branch on it without parsing anything.
     """
     result = install_into_repo(args.path, args.key, args.size, args.check,
-                               args.reseed, **_render_kwargs(args))
+                               args.reseed, not args.no_readme,
+                               **_render_kwargs(args))
     if args.json:
         print(json.dumps(result, indent=2))
         return 0 if result["current"] or not args.check else 1
@@ -1528,6 +1625,8 @@ def build_parser():
     apply_cmd.add_argument("--reseed", action="store_true",
                            help="re-derive the key and change the mark; the "
                                 "only thing that does")
+    apply_cmd.add_argument("--no-readme", action="store_true",
+                           help="do not add the mark to the README")
     apply_cmd.add_argument("--json", action="store_true",
                            help="machine-readable result, for a dependent tool")
     apply_cmd.set_defaults(func=cmd_apply)

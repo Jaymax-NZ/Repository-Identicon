@@ -305,6 +305,86 @@ class TestInstallingIntoARepository(unittest.TestCase):
                          identicon.normalise_remote_url(
                              identicon.repo_remote_url(None)))
 
+    def _readme(self, body):
+        path = pathlib.Path(self.tmp) / "README.md"
+        path.write_text(body, encoding="utf-8")
+        return path
+
+    def test_the_mark_goes_into_the_readme_after_the_title(self):
+        readme = self._readme("# Thing\n\nA tool that does a thing.\n")
+        result = identicon.install_into_repo(self.tmp)
+        self.assertEqual("updated", result["changes"]["readme"])
+        self.assertEqual(
+            ["# Thing", "", identicon.README_MARK, "",
+             "A tool that does a thing.", ""],
+            readme.read_text(encoding="utf-8").split("\n"))
+
+    def test_it_goes_in_once(self):
+        readme = self._readme("# Thing\n")
+        identicon.install_into_repo(self.tmp)
+        first = readme.read_text(encoding="utf-8")
+        again = identicon.install_into_repo(self.tmp)
+        self.assertEqual("unchanged", again["changes"]["readme"])
+        self.assertEqual(first, readme.read_text(encoding="utf-8"))
+
+    def test_a_line_the_author_has_reworked_is_left_alone(self):
+        """Recognised by the artifact path, so a moved, resized or PNG-pointed
+        line counts as present and keeps whatever shape its author gave it."""
+        body = ('<img src=".identicon/repository-identicon.png" width="60">\n'
+                "\n# Thing\n")
+        readme = self._readme(body)
+        result = identicon.install_into_repo(self.tmp)
+        self.assertEqual("unchanged", result["changes"]["readme"])
+        self.assertEqual(body, readme.read_text(encoding="utf-8"))
+
+    def test_a_readme_that_documents_the_path_still_gets_a_mark(self):
+        """Found by dogfooding. A README that *describes* these files -- in a
+        fenced block, a table, or prose -- is not a README that displays one,
+        and matching the bare path meant exactly the projects integrating with
+        this never got their own mark."""
+        readme = self._readme(
+            "# Docs\n\nIt writes:\n\n```\n"
+            ".identicon/repository-identicon.svg    vector\n```\n")
+        result = identicon.install_into_repo(self.tmp)
+        self.assertEqual("updated", result["changes"]["readme"])
+        self.assertIn(identicon.README_MARK,
+                      readme.read_text(encoding="utf-8"))
+
+    def test_the_mark_shown_as_a_fenced_example_does_not_count(self):
+        """The second dogfooding correction: this repository's own README
+        shows the markdown in a code block. A mark inside a fence is a mark
+        being talked about, not one being displayed."""
+        readme = self._readme(
+            "# Docs\n\nPut this in your README:\n\n```markdown\n"
+            f"{identicon.README_MARK}\n```\n")
+        result = identicon.install_into_repo(self.tmp)
+        self.assertEqual("updated", result["changes"]["readme"])
+        body = readme.read_text(encoding="utf-8")
+        self.assertEqual(2, body.count(identicon.README_MARK))
+
+    def test_a_repository_with_no_readme_is_not_given_one(self):
+        result = identicon.install_into_repo(self.tmp)
+        self.assertNotIn("readme", result["changes"])
+
+    def test_no_readme_option_writes_the_artifacts_only(self):
+        readme = self._readme("# Thing\n")
+        result = identicon.install_into_repo(self.tmp, readme=False)
+        self.assertNotIn("readme", result["changes"])
+        self.assertEqual("# Thing\n", readme.read_text(encoding="utf-8"))
+        self.assertEqual("created", result["changes"]["png"])
+
+    def test_check_does_not_touch_the_readme(self):
+        readme = self._readme("# Thing\n")
+        result = identicon.install_into_repo(self.tmp, check=True)
+        self.assertEqual("updated", result["changes"]["readme"])
+        self.assertEqual("# Thing\n", readme.read_text(encoding="utf-8"))
+
+    def test_a_readme_with_no_heading_takes_the_mark_at_the_top(self):
+        readme = self._readme("Just prose, no heading.\n")
+        identicon.install_into_repo(self.tmp)
+        self.assertTrue(
+            readme.read_text(encoding="utf-8").startswith(identicon.README_MARK))
+
     def test_a_repository_with_no_remote_falls_back_and_says_so(self):
         bare = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, bare, ignore_errors=True)

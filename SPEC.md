@@ -268,6 +268,33 @@ key, so a later run produces identical bytes and need not touch the files.
 An implementation SHOULD offer a check mode that reports what would change and
 writes nothing, for CI and for dependent tools.
 
+### Pointing the README at it
+
+The artifacts are inert until something references them, and the one thing a
+repository reliably has is a README. An implementation SHOULD add the mark to
+it by default, with a way to decline — an identicon nobody put on the page is
+an identicon nobody sees.
+
+```markdown
+![](.identicon/repository-identicon.svg)
+```
+
+Three constraints on doing it politely:
+
+- **Insert after the first heading**, so the file still opens with what the
+  project is called.
+- **Write once.** Recognise the mark by the artifact path, which never changes,
+  and treat any line containing it as present. An author who has moved it,
+  resized it with an `<img>` tag or pointed it at the PNG has decided
+  something, and a tool that re-flattens that on every run is a tool people
+  turn off.
+- **Never create a README.** A repository without one has not asked for one.
+
+The alt text is empty on purpose. The mark carries no information the project
+name beside it does not already give, so it is decorative in the accessibility
+sense, and an empty `alt` is what tells a screen reader to skip it rather than
+announce a filename.
+
 **Precedence**, most specific first: an explicitly supplied key; a committed
 `.repository-identicon`, which is a decision somebody made; the recorded seed,
 which is a record of what was used; then the resolution order in *The key*

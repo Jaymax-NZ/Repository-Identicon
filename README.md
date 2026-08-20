@@ -1,5 +1,7 @@
 # Repository Identicon
 
+![](.identicon/repository-identicon.svg)
+
 A deterministic visual identity for a software project, derived from the project
 itself and from nothing else. Any tool implementing this specification produces
 the same identicon for the same project as any other, without coordination,
@@ -26,9 +28,19 @@ It derives the key from the git remote and writes four files:
 .identicon/repository-identicon.key       the seed the others came from
 ```
 
-Commit them. Point a README at one with
-`![](.identicon/repository-identicon.svg)`, and read the colour anywhere with
-`$(cat .identicon/repository-identicon.colour)`.
+It also adds the mark to the repository's README, after the first heading:
+
+```markdown
+![](.identicon/repository-identicon.svg)
+```
+
+That happens by default because an identicon nobody put on the page is one
+nobody sees. `--no-readme` declines it. It goes in once — a line you have since
+moved, resized with an `<img>` tag or pointed at the PNG is recognised and left
+exactly as you left it — and a repository with no README is never given one.
+
+Commit the lot. To read the colour anywhere else,
+`$(cat .identicon/repository-identicon.colour)` is the whole integration.
 
 **The seed is recorded once and reused after that.** Re-running refreshes the
 artifacts from it — so a better renderer or a different size reaches every
