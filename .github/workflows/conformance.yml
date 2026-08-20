@@ -1,0 +1,69 @@
+# The vectors are the specification, so they are checked on every push.
+#
+# Two jobs on purpose. `suite` runs with no node at all, which is the case an
+# implementer is in: checking an implementation must never require the
+# reference. `vectors` adds node and re-derives every pinned vector from the
+# vendored library, which is what stops vectors.json quietly agreeing with the
+# code that reads it.
+name: conformance
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  suite:
+    name: suite (no node)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The reference implementation is standard library only, so the floor
+        # is whatever the oldest supported Python is rather than a dependency.
+        python: ["3.9", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Run the suite
+        run: python3 -m unittest discover -s tests -t tests -v
+      - name: The octant table re-derives from the Unicode database
+        run: python3 text-identicon.py --selftest
+
+  vectors:
+    name: vectors regenerate from the vendored library
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Regenerate and compare
+        run: python3 -m unittest discover -s tests -t tests -v
+
+  offline:
+    name: nothing reaches the network
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: No imports that could fetch anything
+        # A specification should be implementable by reading it, and this
+        # repository holds itself to that: no urllib, no requests, no sockets.
+        run: |
+          if grep -rnE '^\s*(import|from)\s+(urllib|http|socket|requests|ssl)\b' \
+               --include='*.py' . ; then
+            echo "::error::a networking import appeared in the tree"
+            exit 1
+          fi
+          echo "no networking imports"
