@@ -130,11 +130,20 @@ def normalise_remote_url(url):
     return "/".join([host] + parts).lower()
 
 
-def _git(args, cwd):
-    """Run a git command, returning stripped stdout or None if it fails."""
+def _git(args, cwd=None):
+    """Run a git command, returning stripped stdout or None if it fails.
+
+    `cwd` of None means the current directory. It used to be interpolated
+    straight into `git -C`, so a caller that passed None ran `git -C None`,
+    which fails and comes back indistinguishable from "not a repository" --
+    silent, and wrong in the direction that looks like a valid answer.
+    `resolve_key` never hit it because it normalises the path first; anything
+    calling these helpers directly did.
+    """
     try:
         completed = subprocess.run(
-            ["git", "-C", str(cwd), *args], capture_output=True, text=True
+            ["git", "-C", str(cwd if cwd else os.getcwd()), *args],
+            capture_output=True, text=True
         )
     except OSError:
         return None
@@ -789,6 +798,21 @@ def install_into_repo(path=None, key=None, size=ARTIFACT_SIZE, check=False,
     """
     resolved_key, source = resolve_key(path, key)
     root = repo_toplevel(path) or (path or os.getcwd())
+
+    # **An override outranks the remote, which is the point of it and also the
+    # one way a rename can go unnoticed.** Re-running picks up a new remote by
+    # itself, so no switch is needed for that -- but a repository that pinned
+    # its key early and then moved will keep the old identity for ever, with
+    # every artifact correct and every check passing. So look at what the
+    # remote would have said, and report the disagreement rather than resolve
+    # it: which one is wanted is a judgement, and the file is the record of a
+    # decision somebody made on purpose.
+    masking = None
+    if source == "override":
+        url = repo_remote_url(path)
+        remote_key = normalise_remote_url(url) if url else None
+        if remote_key and remote_key != resolved_key:
+            masking = remote_key
     paths = artifact_paths(root)
     wanted = artifact_bytes(resolved_key, size, **render_kwargs)
 
@@ -815,6 +839,7 @@ def install_into_repo(path=None, key=None, size=ARTIFACT_SIZE, check=False,
         "changes": changes,
         "current": all(state == "unchanged" for state in changes.values()),
         "checked": bool(check),
+        "masking": masking,
     }
 
 
@@ -1084,7 +1109,15 @@ def cmd_apply(args):
     for name, state in sorted(result["changes"].items()):
         mark = " " if state == "unchanged" else "*"
         print(f" {mark} {result['files'][name]}  {verb} {state}".rstrip())
-    if result["source"] != "remote":
+    if result["masking"]:
+        print()
+        print(f"{OVERRIDE_FILENAME} pins this repository to "
+              f"{result['key']}, but its remote now says "
+              f"{result['masking']}.")
+        print("The override wins, which is what it is for. If the move was "
+              "meant to change the identity, delete the file and re-run; if "
+              "it was not, nothing needs doing.")
+    elif result["source"] not in ("remote", "override"):
         print()
         print(f"This repository has no usable git remote, so the key is a path "
               f"and will not survive being cloned elsewhere. Commit a "

@@ -14,6 +14,7 @@ something is one that stops working the day the something moves.
 
 import importlib.util
 import json
+import os
 import pathlib
 import shutil
 import subprocess
@@ -223,6 +224,49 @@ class TestInstallingIntoARepository(unittest.TestCase):
 
         identicon.install_into_repo(self.tmp)
         self.assertEqual(first["colour"] + "\n", target.read_text())
+
+    def test_a_rename_is_picked_up_with_no_switch_to_ask_for_it(self):
+        """The key is re-derived every run, so moving the repository and
+        re-running is the whole update path."""
+        before = identicon.install_into_repo(self.tmp)
+        subprocess.run(["git", "-C", self.tmp, "remote", "set-url", "origin",
+                        "git@github.com:someone/renamed.git"],
+                       check=True, timeout=30)
+        after = identicon.install_into_repo(self.tmp, check=True)
+        self.assertEqual("github.com/someone/renamed", after["key"])
+        self.assertNotEqual(before["colour"], after["colour"])
+        self.assertFalse(after["current"])
+
+    def test_an_override_masking_a_renamed_remote_is_reported(self):
+        """An override outranks the remote, which is the point of it and the
+        one way a rename can pass unnoticed. It is reported, not resolved."""
+        pinned = "github.com/someone/a-project"
+        (pathlib.Path(self.tmp) / identicon.OVERRIDE_FILENAME).write_text(
+            pinned + "\n")
+        subprocess.run(["git", "-C", self.tmp, "remote", "set-url", "origin",
+                        "git@github.com:someone/moved-on.git"],
+                       check=True, timeout=30)
+
+        result = identicon.install_into_repo(self.tmp, check=True)
+        self.assertEqual("override", result["source"])
+        self.assertEqual(pinned, result["key"])
+        self.assertEqual("github.com/someone/moved-on", result["masking"])
+
+    def test_an_override_agreeing_with_the_remote_is_not_reported(self):
+        (pathlib.Path(self.tmp) / identicon.OVERRIDE_FILENAME).write_text(
+            "github.com/someone/a-project\n")
+        result = identicon.install_into_repo(self.tmp, check=True)
+        self.assertIsNone(result["masking"])
+
+    def test_git_helpers_accept_a_default_cwd(self):
+        """`git -C None` fails and reads as "not a repository", which is the
+        wrong answer in the direction that looks right."""
+        original = os.getcwd()
+        os.chdir(self.tmp)
+        self.addCleanup(os.chdir, original)
+        self.assertEqual("github.com/someone/a-project",
+                         identicon.normalise_remote_url(
+                             identicon.repo_remote_url(None)))
 
     def test_a_repository_with_no_remote_falls_back_and_says_so(self):
         bare = tempfile.mkdtemp()
