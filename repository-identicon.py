@@ -527,16 +527,30 @@ RESET = "\033[0m"
 CHIP = "█"
 
 # The text rendering lives in text-identicon.py, which takes a grid and a colour
-# and nothing else. Loaded by path because the file name carries a hyphen; it is
-# a sibling of this one and reaches nothing outside the repository.
+# and nothing else. Loaded by path because the file name carries a hyphen.
+#
+# **These two files are a pair and must be deployed together.** This one was
+# self-contained until the half-block grid was removed; the octant table and the
+# emoji palette live next door, and duplicating either to keep one file would
+# guarantee they diverge. `doctor` reports whether the sibling is present,
+# because the alternative is a hook that prints nothing and exits 0.
+TEXT_MODULE = "text-identicon.py"
 _TEXT = None
+
+
+def text_module_path():
+    return pathlib.Path(__file__).with_name(TEXT_MODULE)
 
 
 def _text_module():
     global _TEXT
     if _TEXT is None:
         import importlib.util
-        path = pathlib.Path(__file__).with_name("text-identicon.py")
+        path = text_module_path()
+        if not path.is_file():
+            raise FileNotFoundError(
+                f"{TEXT_MODULE} must sit beside {pathlib.Path(__file__).name}; "
+                f"the text renderings need its octant table")
         spec = importlib.util.spec_from_file_location("text_identicon", path)
         _TEXT = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(_TEXT)
@@ -1219,6 +1233,10 @@ def cmd_hooks(args):
 
 
 def cmd_doctor(args):
+    sibling = text_module_path()
+    print(f"{TEXT_MODULE:16} "
+          f"{sibling if sibling.is_file() else 'NOT FOUND - text styles will '
+                                              'print nothing'}")
     print(f"qdbus            {find_qdbus() or 'NOT FOUND'}")
     print(f"gdbus            {find_gdbus() or 'NOT FOUND'}")
     print(f"icon theme root  {icon_theme_root()}")
