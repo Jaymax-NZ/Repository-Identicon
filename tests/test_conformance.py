@@ -229,17 +229,50 @@ class TestInstallingIntoARepository(unittest.TestCase):
         identicon.install_into_repo(self.tmp)
         self.assertEqual(first["colour"] + "\n", target.read_text())
 
-    def test_a_rename_is_picked_up_with_no_switch_to_ask_for_it(self):
-        """The key is re-derived every run, so moving the repository and
-        re-running is the whole update path."""
-        before = identicon.install_into_repo(self.tmp)
+    def _rename_remote(self, to="git@github.com:someone/renamed.git"):
         subprocess.run(["git", "-C", self.tmp, "remote", "set-url", "origin",
-                        "git@github.com:someone/renamed.git"],
-                       check=True, timeout=30)
+                        to], check=True, timeout=30)
+
+    def test_the_seed_is_recorded_on_the_first_run(self):
+        result = identicon.install_into_repo(self.tmp)
+        self.assertEqual("remote", result["source"])
+        self.assertEqual(result["key"], identicon.recorded_seed(self.tmp))
+
+    def test_a_rename_does_not_change_the_mark(self):
+        """The whole point of an identity: it does not re-derive itself."""
+        before = identicon.install_into_repo(self.tmp)
+        self._rename_remote()
+        after = identicon.install_into_repo(self.tmp)
+        self.assertEqual(before["key"], after["key"])
+        self.assertEqual(before["colour"], after["colour"])
+        self.assertEqual("seed", after["source"])
+        self.assertTrue(after["current"])
+
+    def test_a_rename_is_reported_as_seed_drift(self):
+        identicon.install_into_repo(self.tmp)
+        self._rename_remote()
         after = identicon.install_into_repo(self.tmp, check=True)
+        self.assertEqual("github.com/someone/renamed", after["seed_drift"])
+
+    def test_artifacts_refresh_without_touching_the_seed(self):
+        """A better renderer or a different size must reach every repository
+        without disturbing anybody's identity."""
+        before = identicon.install_into_repo(self.tmp)
+        self._rename_remote()
+        after = identicon.install_into_repo(self.tmp, size=128)
+        self.assertEqual(before["key"], after["key"])
+        self.assertEqual("unchanged", after["changes"]["key"])
+        self.assertEqual("updated", after["changes"]["png"])
+
+    def test_reseed_is_the_only_thing_that_changes_the_mark(self):
+        before = identicon.install_into_repo(self.tmp)
+        self._rename_remote()
+        after = identicon.install_into_repo(self.tmp, reseed=True)
         self.assertEqual("github.com/someone/renamed", after["key"])
         self.assertNotEqual(before["colour"], after["colour"])
-        self.assertFalse(after["current"])
+        self.assertEqual("github.com/someone/renamed",
+                         identicon.recorded_seed(self.tmp))
+        self.assertIsNone(after["seed_drift"])
 
     def test_an_override_masking_a_renamed_remote_is_reported(self):
         """An override outranks the remote, which is the point of it and the

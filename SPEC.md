@@ -226,6 +226,7 @@ stale.
 .identicon/repository-identicon.png       raster, 256px
 .identicon/repository-identicon.svg       vector, same geometry
 .identicon/repository-identicon.colour    "#rrggbb\n", nothing else
+.identicon/repository-identicon.key       the seed these were derived from
 ```
 
 **Three files rather than one.** A combined file would be readable by every
@@ -241,17 +242,36 @@ dropped into `docs/`, a file called `icon.png` describes nothing. The prefix
 also anticipates a repository carrying more than one mark — a user's alongside
 the repository's — at which point the unqualified name is the ambiguous one.
 
-An implementation MUST write these three at these paths, and MUST re-derive the
-key on every run rather than caching it. **For an unchanged key that makes the
-write idempotent** — the mark is a pure function of the key, so the second run
-produces identical bytes and need not touch the files. For a *changed* key it
-is the opposite, and deliberately so: renaming a repository or moving it
-between forges changes the mark, and re-running is how the artifacts catch up.
-There is nothing to invalidate and nothing to ask for.
+### The seed is recorded, and replacing it MUST be deliberate
 
-An implementation SHOULD offer a check mode that reports drift without writing,
-since a committed mark that no longer matches the key is the failure worth
-catching — it means the project moved and nobody re-ran anything.
+An implementation MUST record the key it derived from, and on every later run
+MUST reuse the recorded seed rather than re-deriving. Re-deriving each time
+means a rename silently changes a repository's identity, and not doing that is
+what an identity is for.
+
+This separates two unrelated reasons to re-run, which otherwise collide:
+
+- **Refresh the artifacts.** A better renderer, a different size, a new file in
+  the set. This must reach every repository without disturbing any identity, so
+  it is the default.
+- **Change the mark.** Only on explicit instruction — a `--reseed` switch or
+  equivalent. An implementation MUST NOT do this because the remote changed.
+
+Once seeded, the mark is stable against renaming, moving between forges, and
+being cloned to a path that would resolve differently. Where the key would now
+derive differently, an implementation SHOULD report it — call it seed drift —
+and MUST NOT act on it.
+
+For a fixed seed the write is idempotent: the mark is a pure function of the
+key, so a later run produces identical bytes and need not touch the files.
+
+An implementation SHOULD offer a check mode that reports what would change and
+writes nothing, for CI and for dependent tools.
+
+**Precedence**, most specific first: an explicitly supplied key; a committed
+`.repository-identicon`, which is a decision somebody made; the recorded seed,
+which is a record of what was used; then the resolution order in *The key*
+above. The last of these applies on the first run, and after a reseed.
 
 `SVG` carries a declared size so `![]()` renders it as an inline mark rather
 than at column width; a consumer that wants it larger supplies the size

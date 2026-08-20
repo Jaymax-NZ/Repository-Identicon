@@ -17,27 +17,35 @@ Run this inside the repository you want marked:
 python3 /path/to/repository-identicon.py apply
 ```
 
-It derives the key from the git remote and writes three files:
+It derives the key from the git remote and writes four files:
 
 ```
 .identicon/repository-identicon.png       raster, 256px
 .identicon/repository-identicon.svg       vector
 .identicon/repository-identicon.colour    "#rrggbb", and a newline
+.identicon/repository-identicon.key       the seed the others came from
 ```
 
 Commit them. Point a README at one with
 `![](.identicon/repository-identicon.svg)`, and read the colour anywhere with
 `$(cat .identicon/repository-identicon.colour)`.
 
-The mark is a pure function of the key, so **for an unchanged key a second run
-writes identical bytes** and reports nothing changed. When the key changes —
-the repository is renamed, or moves between forges — the next run rewrites the
-artifacts, and that is the whole update path: there is no switch to ask for it,
-because nothing is cached to invalidate.
+**The seed is recorded once and reused after that.** Re-running refreshes the
+artifacts from it — so a better renderer or a different size reaches every
+repository — and leaves the identity alone. Renaming the repository, moving it
+between forges, or cloning it somewhere else does not change the mark. That is
+reported as seed drift and nothing more:
 
-`--check` reports drift and exits 1 without writing, for CI or for a tool
-asking whether a repository is current; `--json` gives a dependent tool the
-whole result without parsing prose.
+```bash
+python3 /path/to/repository-identicon.py apply --reseed
+```
+
+is the only thing that adopts a new key and changes the mark, and it has to be
+asked for.
+
+`--check` reports what would change and exits 1 without writing, for CI or for
+a tool asking whether a repository is current; `--json` gives a dependent tool
+the whole result without parsing prose.
 
 If the repository has no git remote the key falls back to its path, which will
 not survive being cloned. `apply` says so, and the fix is a

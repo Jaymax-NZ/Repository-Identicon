@@ -768,6 +768,39 @@ def artifact_paths(root):
     }
 
 
+# **The seed is recorded, and changing it is a positive act.**
+#
+# The key was re-derived from the remote on every run, which made a rename
+# silently change a repository's identity -- the one thing an identity is for
+# is not doing that. It also conflated two unrelated reasons to re-run:
+# wanting newer artifacts, and wanting a different mark. Those are now
+# separate. `apply` refreshes the artifacts from the recorded seed, so an
+# improved renderer or a different size reaches every repository without
+# touching anybody's identity; `--reseed` is the only thing that changes what
+# the mark is derived from.
+#
+# This file is a record, not a decision: it says what these artifacts were
+# built from. `.repository-identicon` is the decision, is hand-written, and
+# still outranks it.
+SEED_NAME = f"{ARTIFACT_STEM}.key"
+
+
+def seed_path(root):
+    return pathlib.Path(root) / IDENTICON_DIR / SEED_NAME
+
+
+def recorded_seed(root):
+    """The key these artifacts were built from, or None if never seeded."""
+    path = seed_path(root)
+    if not path.is_file():
+        return None
+    for line in path.read_text(errors="replace").splitlines():
+        line = line.strip()
+        if line and not line.startswith("#"):
+            return line
+    return None
+
+
 def artifact_bytes(key, size=ARTIFACT_SIZE, **render_kwargs):
     """What each artifact should contain for this key.
 
@@ -786,39 +819,52 @@ def artifact_bytes(key, size=ARTIFACT_SIZE, **render_kwargs):
 
 
 def install_into_repo(path=None, key=None, size=ARTIFACT_SIZE, check=False,
-                      **render_kwargs):
+                      reseed=False, **render_kwargs):
     """Create or update the identicon artifacts in one repository.
 
-    **Idempotent for an unchanged key, and deliberately not otherwise.** The
-    mark is a pure function of the key, so running this twice against the same
-    key writes identical bytes and reports nothing changed. Rename the
-    repository and the key changes with it, so the next run rewrites every
-    artifact -- which is the update path, not an exception to it. The key is
-    re-derived here on every call and never cached, so there is nothing to
-    invalidate and no switch to ask for.
+    **Two things you might want from a re-run, and they are separate.**
+    Refreshing the artifacts -- a better renderer, a different size, a new
+    file in the set -- must reach every repository without disturbing any
+    identity. Changing what the mark is derived from must not happen by
+    accident. So the seed is recorded on the first run and reused on every
+    run after it, and `reseed` is the only thing that replaces it.
+
+    Once seeded, the mark is stable against anything: renaming the repository,
+    moving it between forges, cloning it to a path that would resolve
+    differently. Those change what the key *would* be, which is reported as
+    `seed_drift`, and nothing more. Acting on it is somebody's decision.
+
+    For a fixed seed this writes identical bytes on every run and reports
+    nothing changed.
 
     `check` reports what *would* change and writes nothing, which is what a
     dependent tool or a CI job should call.
 
     Returns a dict describing what happened, suitable for --json.
     """
-    resolved_key, source = resolve_key(path, key)
     root = repo_toplevel(path) or (path or os.getcwd())
+    derived_key, derived_source = resolve_key(path, key)
 
-    # **An override outranks the remote, which is the point of it and also the
-    # one way a rename can go unnoticed.** Re-running picks up a new remote by
-    # itself, so no switch is needed for that -- but a repository that pinned
-    # its key early and then moved will keep the old identity for ever, with
-    # every artifact correct and every check passing. So look at what the
-    # remote would have said, and report the disagreement rather than resolve
-    # it: which one is wanted is a judgement, and the file is the record of a
-    # decision somebody made on purpose.
+    recorded = None if key else recorded_seed(root)
+    if key or reseed or recorded is None:
+        resolved_key, source = derived_key, derived_source
+    else:
+        resolved_key, source = recorded, "seed"
+
+    # What the key would be if this were seeded today. Reported, never acted
+    # on: an identity that changes itself is not one.
+    seed_drift = derived_key if derived_key != resolved_key else None
+
+    # An override outranks the remote, which is the point of it. Where one is
+    # in force and the remote disagrees, say so rather than resolve it -- the
+    # file is the record of a decision somebody made on purpose.
     masking = None
-    if source == "override":
+    if derived_source == "override":
         url = repo_remote_url(path)
         remote_key = normalise_remote_url(url) if url else None
-        if remote_key and remote_key != resolved_key:
+        if remote_key and remote_key != derived_key:
             masking = remote_key
+
     paths = artifact_paths(root)
     wanted = artifact_bytes(resolved_key, size, **render_kwargs)
 
@@ -833,6 +879,25 @@ def install_into_repo(path=None, key=None, size=ARTIFACT_SIZE, check=False,
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes(wanted[name])
 
+    # The seed is written last and only when the artifacts it describes are
+    # there, so a half-written directory never claims to be seeded.
+    seed_file = seed_path(root)
+    seed_wanted = (f"# What this repository's identicon is derived from.\n"
+                   f"# Recorded on the first run and reused thereafter; "
+                   f"`apply --reseed` is the only thing that changes it.\n"
+                   f"{resolved_key}\n").encode("utf-8")
+    seed_state = "unchanged"
+    if seed_file.read_bytes() if seed_file.is_file() else None:
+        seed_state = ("unchanged" if seed_file.read_bytes() == seed_wanted
+                      else "updated")
+    else:
+        seed_state = "created"
+    if seed_state != "unchanged" and not check:
+        seed_file.parent.mkdir(parents=True, exist_ok=True)
+        seed_file.write_bytes(seed_wanted)
+    changes["key"] = seed_state
+    paths["key"] = seed_file
+
     colour = identicon_colour(resolved_key,
                               render_kwargs.get("saturation", SATURATION),
                               render_kwargs.get("lightness", LIGHTNESS))
@@ -846,6 +911,8 @@ def install_into_repo(path=None, key=None, size=ARTIFACT_SIZE, check=False,
         "current": all(state == "unchanged" for state in changes.values()),
         "checked": bool(check),
         "masking": masking,
+        "seed_drift": seed_drift,
+        "reseeded": bool(reseed),
     }
 
 
@@ -1104,7 +1171,7 @@ def cmd_apply(args):
     branch on it without parsing anything.
     """
     result = install_into_repo(args.path, args.key, args.size, args.check,
-                               **_render_kwargs(args))
+                               args.reseed, **_render_kwargs(args))
     if args.json:
         print(json.dumps(result, indent=2))
         return 0 if result["current"] or not args.check else 1
@@ -1115,7 +1182,14 @@ def cmd_apply(args):
     for name, state in sorted(result["changes"].items()):
         mark = " " if state == "unchanged" else "*"
         print(f" {mark} {result['files'][name]}  {verb} {state}".rstrip())
-    if result["masking"]:
+    if result["seed_drift"]:
+        print()
+        print(f"The recorded seed is {result['key']}, but this repository "
+              f"would seed as {result['seed_drift']} today.")
+        print("The identicon is unchanged, which is the point: a mark that "
+              "re-derived itself would not be an identity. Run "
+              "`apply --reseed` to adopt the new key and change the mark.")
+    elif result["masking"]:
         print()
         print(f"{OVERRIDE_FILENAME} pins this repository to "
               f"{result['key']}, but its remote now says "
@@ -1123,7 +1197,7 @@ def cmd_apply(args):
         print("The override wins, which is what it is for. If the move was "
               "meant to change the identity, delete the file and re-run; if "
               "it was not, nothing needs doing.")
-    elif result["source"] not in ("remote", "override"):
+    elif result["source"] not in ("remote", "override", "seed"):
         print()
         print(f"This repository has no usable git remote, so the key is a path "
               f"and will not survive being cloned elsewhere. Commit a "
@@ -1451,6 +1525,9 @@ def build_parser():
     apply_cmd.add_argument("--check", action="store_true",
                            help="report what would change, write nothing, and "
                                 "exit 1 if not current")
+    apply_cmd.add_argument("--reseed", action="store_true",
+                           help="re-derive the key and change the mark; the "
+                                "only thing that does")
     apply_cmd.add_argument("--json", action="store_true",
                            help="machine-readable result, for a dependent tool")
     apply_cmd.set_defaults(func=cmd_apply)
