@@ -238,7 +238,7 @@ def identicon_grid(key):
 
     So characters 0-4 fill the centre column top to bottom, 5-9 fill column 1
     and mirror it to 3, and 10-14 fill column 0 and mirror it to 4. Even is
-    foreground. Pinned in identicon/vectors.json.
+    foreground. Pinned in vectors.json.
     """
     digest = _digest(key)
     grid = [[False] * GRID for _ in range(GRID)]
@@ -277,7 +277,7 @@ def _hsl_to_rgb(hue, saturation, lightness):
     for the six-sector rotation. Standard library conversion agrees on most
     inputs but this is a conformance target, so the arithmetic is reproduced
     rather than approximated. Verified against the library's own output for
-    every key in identicon/vectors.json.
+    every key in vectors.json.
     """
     hue *= 6.0
     fraction = hue % 1
