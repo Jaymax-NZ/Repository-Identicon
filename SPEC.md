@@ -232,9 +232,9 @@ default.
 
 ### Terminal
 
-**Send the real image where the terminal can take one.** Text blocks are an
-approximation of a 5×5 grid; an inline image is the grid. An implementation
-SHOULD prefer, in order:
+**Send the real image where the terminal can take one.** The text rendering is
+an approximation of a 5×5 grid and a colour; an inline image is both, exactly.
+An implementation SHOULD prefer, in order:
 
 1. **iTerm2 inline image protocol**, `OSC 1337`. The raster PNG, base64, in
    `ESC ] 1337 ; File = <args> : <base64> BEL`. Arguments SHOULD include
@@ -243,7 +243,10 @@ SHOULD prefer, in order:
    begins the payload.
 2. **kitty graphics protocol**, `APC _G`. `a=T,f=100`, base64 payload chunked at
    4096 characters, every chunk but the last carrying `m=1`.
-3. **Text blocks**, below.
+3. **Octants plus the emoji triple**, below. Two lines, always: the grid does
+   not fit in one. Where the medium affords only one line — a tab title, a
+   session name, a status field — send the triple alone or the badge label, and
+   accept that the pattern is lost.
 
 Konsole implements the iTerm2 protocol: `Vt102Emulation::osc_put` matches the
 literal `1337;File=` and then waits for the `:` terminator, so arguments between
@@ -262,12 +265,35 @@ mark is the message.
 
 ### Text, the fallback
 
-Two forms, for two different constraints. Both are implemented in
-`text-identicon.py`, which takes a colour and a grid and nothing else — no key,
-no digest — so it can be vendored on its own into a tool with no identicon
-machinery.
+**The text rendering is one thing, not a menu: two lines of octants carrying the
+pattern, with three emoji squares carrying the colour.** They are not
+alternatives to each other and there is no useful intermediate.
 
-#### Octants, where the medium can style text but not show an image
+Why it comes out that way, since each constraint rules something out:
+
+- **The grid cannot be one line.** Five rows over a 2×4 lattice is two text
+  lines, and there is no arrangement that makes it one. Any medium that affords
+  a single line — prefixing a session name, a tab title, a status field — cannot
+  take the grid at all. Its only option is the triple alone, or the badge label.
+- **The octants are monochrome, and that is where colour has to come from.** The
+  grid is one glyph per four cells, so a cell is not separately addressable and
+  a foreground colour would tint the whole mark rather than the pattern within
+  it. The colour therefore rides in the emoji squares, not in an escape
+  sequence.
+- **Per-cell true-colour octants are not worth pursuing.** It would mean one
+  character per cell to make cells individually colourable, which is a 5×5 block
+  of double-width glyphs — larger than the image it is standing in for, in a
+  medium chosen because it could not show the image.
+
+So an implementation SHOULD prefer, in order: **inline image**; **octants plus
+the emoji triple**; **the emoji triple alone** where only one line is available.
+Escape-sequence colour is not part of this rendering.
+
+Both parts are implemented in `text-identicon.py`, which takes a colour and a
+grid and nothing else — no key, no digest — so it can be vendored on its own
+into a tool with no identicon machinery.
+
+#### Octants, carrying the pattern
 
 Four grid cells per character, drawn with the **`BLOCK OCTANT-n`** set at
 U+1CD00–U+1CDE5: a character is a 2×4 lattice of subcells, so five grid rows
@@ -289,26 +315,18 @@ Two caveats an implementation must handle rather than discover:
   drawn in 2024, and the seam is visible within one mark. There is no alternative
   encoding for most of them, so do not substitute lookalikes.
 
-#### Emoji squares: a patch, and the last thing to reach for
+#### Emoji squares, carrying the colour
 
-**This is a fallback for when the identicon proper cannot be emitted, and
-nothing more.** The identicon is a pattern and a colour. Where an image can be
-sent, send the image; where it cannot but text can be styled, the octants carry
-the pattern and an escape sequence carries the colour. The emoji triple exists
-only for the case where *neither* is possible — a plain-text channel that will
-take no escape sequence and no image, and where the colour would otherwise be
-lost entirely.
+**The whole text rendering is a patch for when the identicon proper cannot be
+emitted.** Where an image can be sent, send the image: it is the grid, at full
+colour, in one glyph's worth of attention. Everything below is standing in for
+that, and the triple is the part standing in for 24 bits of colour with nine
+named squares — a lossy paraphrase that costs three double-width columns and
+carries semantic weight a coloured pattern does not.
 
-It is a poor substitute and should be described as one. Three squares are a
-lossy paraphrase of a 24-bit colour, they cost three double-width columns, and
-they carry semantic weight that a coloured pattern does not. An implementation
-SHOULD prefer, in order: inline image, octants with colour, octants without
-colour, octants plus the emoji triple. Reaching for the triple first because it
-looks striking inverts the whole ordering.
-
-The colour is carried by **three emoji squares** appended to the octant grid,
-from a palette of nine: red, orange, yellow, green, blue, purple, brown, black,
-white.
+It is nonetheless *the* colour channel here rather than a third-tier fallback,
+because the octants are monochrome and nothing else can carry it. Palette of
+nine: red, orange, yellow, green, blue, purple, brown, black, white.
 
 ```
 $ python3 text-identicon.py '#2692d9' '01010,01010,10001,10101,01010'
@@ -363,13 +381,14 @@ What is *not* claimed: that the triple names a colour reliably for a dichromat.
 It does not, and an implementation that needs colour to be legible for everyone
 should send the image or use the octants.
 
-#### Colour depth, where escape sequences are available
+#### NO_COLOR
 
-`NO_COLOR` set in the environment means no colour at all, per no-color.org, and
-also suppresses inline images; `COLORTERM` of `truecolor` or `24bit` means
-24-bit; otherwise the xterm 256-colour cube, `16 + 36r + 6g + b` with each
-component quantised as `floor(c * 5 / 255 + 0.5)`.
+`NO_COLOR` set in the environment, per no-color.org, suppresses inline images
+and the emoji triple. The octants remain and are emitted alone: the grid is the
+identity and is legible with no colour at all, which is the property that lets
+this degrade at all.
 
-Without colour the grid MUST still be legible, since colour is never allowed to
-be the only channel — which is what the octants and the emoji squares are both
-for.
+There is no colour-depth negotiation in this rendering. An earlier draft
+specified truecolour against the xterm 256-colour cube for a half-block grid
+that no longer exists; the octants are monochrome by construction and the colour
+lives in the squares.
