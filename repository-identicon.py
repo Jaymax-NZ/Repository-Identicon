@@ -722,6 +722,102 @@ def konsole_profile_dir():
     return pathlib.Path(data_home) / "konsole"
 
 
+# ---------------------------------------------------------------------------
+# Installing the identicon into a repository
+#
+# This is what the project is for. Everything above derives a mark; this puts
+# it in the repository it belongs to, in forms a consumer that knows nothing
+# about this tool can use without parsing anything.
+#
+# The mark is a constant for a repository -- derived from the remote, not
+# stored anywhere -- so these files are a cache, not a source. They exist
+# because a README, a shell prompt or a forge cannot run a derivation.
+# ---------------------------------------------------------------------------
+
+IDENTICON_DIR = ".identicon"
+ARTIFACT_STEM = "repository-identicon"
+
+# 256 is a compromise with a reason on each side: crisp on a HiDPI README at
+# any inline size, and still a couple of kilobytes because the image is five
+# by five cells of flat colour.
+ARTIFACT_SIZE = 256
+
+# **Each filename repeats the directory deliberately.** The directory is
+# context, and context is what does not travel: copied out, fetched from a raw
+# URL or dropped into `docs/`, a file called `icon.png` describes nothing. The
+# prefix also anticipates a repository carrying more than one mark, at which
+# point the unqualified name is the ambiguous one.
+
+
+def artifact_paths(root):
+    root = pathlib.Path(root)
+    directory = root / IDENTICON_DIR
+    return {
+        "png": directory / f"{ARTIFACT_STEM}.png",
+        "svg": directory / f"{ARTIFACT_STEM}.svg",
+        "colour": directory / f"{ARTIFACT_STEM}.colour",
+    }
+
+
+def artifact_bytes(key, size=ARTIFACT_SIZE, **render_kwargs):
+    """What each artifact should contain for this key.
+
+    Three files rather than one. A combined file would be readable by every
+    tool that knows the format, which is one tool; a README cannot address a
+    fragment inside a blob, and `$(cat …/*.colour)` is a whole parser.
+    """
+    colour = identicon_colour(key,
+                              render_kwargs.get("saturation", SATURATION),
+                              render_kwargs.get("lightness", LIGHTNESS))
+    return {
+        "png": render_png(key, size, **render_kwargs),
+        "svg": render_svg(key, size, **render_kwargs).encode("utf-8"),
+        "colour": (hex_colour(colour) + "\n").encode("utf-8"),
+    }
+
+
+def install_into_repo(path=None, key=None, size=ARTIFACT_SIZE, check=False,
+                      **render_kwargs):
+    """Create or update the identicon artifacts in one repository.
+
+    Idempotent by construction: the mark is a pure function of the key, so a
+    second run writes identical bytes and reports nothing changed. `check`
+    reports what *would* change and writes nothing, which is what a dependent
+    tool or a CI job should call.
+
+    Returns a dict describing what happened, suitable for --json.
+    """
+    resolved_key, source = resolve_key(path, key)
+    root = repo_toplevel(path) or (path or os.getcwd())
+    paths = artifact_paths(root)
+    wanted = artifact_bytes(resolved_key, size, **render_kwargs)
+
+    changes = {}
+    for name, target in paths.items():
+        current = target.read_bytes() if target.is_file() else None
+        if current == wanted[name]:
+            changes[name] = "unchanged"
+        else:
+            changes[name] = "created" if current is None else "updated"
+            if not check:
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(wanted[name])
+
+    colour = identicon_colour(resolved_key,
+                              render_kwargs.get("saturation", SATURATION),
+                              render_kwargs.get("lightness", LIGHTNESS))
+    return {
+        "key": resolved_key,
+        "source": source,
+        "root": str(root),
+        "colour": hex_colour(colour),
+        "files": {name: str(target) for name, target in paths.items()},
+        "changes": changes,
+        "current": all(state == "unchanged" for state in changes.values()),
+        "checked": bool(check),
+    }
+
+
 def install_icon(key, root=None, sizes=INSTALL_SIZES, **render_kwargs):
     """Write one PNG per size into the user's hicolor tree. Returns the paths.
 
@@ -967,6 +1063,33 @@ def cmd_render(args):
         pathlib.Path(args.out).write_bytes(data)
         print(f"wrote {args.out}")
     return 0
+
+
+def cmd_apply(args):
+    """Create or update the identicon in the repository at `path`.
+
+    The primary command. Exits 0 when the repository is current afterwards,
+    and 1 under --check when it is not, so a CI job or a dependent tool can
+    branch on it without parsing anything.
+    """
+    result = install_into_repo(args.path, args.key, args.size, args.check,
+                               **_render_kwargs(args))
+    if args.json:
+        print(json.dumps(result, indent=2))
+        return 0 if result["current"] or not args.check else 1
+
+    verb = "would be" if args.check else ""
+    print(f"key      {result['key']}  ({result['source']})")
+    print(f"colour   {result['colour']}")
+    for name, state in sorted(result["changes"].items()):
+        mark = " " if state == "unchanged" else "*"
+        print(f" {mark} {result['files'][name]}  {verb} {state}".rstrip())
+    if result["source"] != "remote":
+        print()
+        print(f"This repository has no usable git remote, so the key is a path "
+              f"and will not survive being cloned elsewhere. Commit a "
+              f"{OVERRIDE_FILENAME} file holding the key to pin it.")
+    return 0 if result["current"] or not args.check else 1
 
 
 def cmd_install(args):
@@ -1280,6 +1403,18 @@ def build_parser():
                                      "environment")
         else:
             target.set_defaults(session=None)
+
+    apply_cmd = sub.add_parser(
+        "apply", help="create or update the identicon files in a repository")
+    add_common(apply_cmd, render=True)
+    apply_cmd.add_argument("--size", type=int, default=ARTIFACT_SIZE,
+                           help=f"PNG and SVG size; default {ARTIFACT_SIZE}")
+    apply_cmd.add_argument("--check", action="store_true",
+                           help="report what would change, write nothing, and "
+                                "exit 1 if not current")
+    apply_cmd.add_argument("--json", action="store_true",
+                           help="machine-readable result, for a dependent tool")
+    apply_cmd.set_defaults(func=cmd_apply)
 
     show = sub.add_parser("show", help="print the derived names and a terminal preview")
     add_common(show, render=True)

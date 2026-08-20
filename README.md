@@ -9,6 +9,35 @@ This repository is the **standard**: the specification, the test vectors that
 hold implementations to it, and a reference implementation. It is deliberately
 dull, because a specification should be findable by someone typing what it is.
 
+## Give a repository its identicon
+
+Run this inside the repository you want marked:
+
+```bash
+python3 /path/to/repository-identicon.py apply
+```
+
+It derives the key from the git remote and writes three files:
+
+```
+.identicon/repository-identicon.png       raster, 256px
+.identicon/repository-identicon.svg       vector
+.identicon/repository-identicon.colour    "#rrggbb", and a newline
+```
+
+Commit them. Point a README at one with
+`![](.identicon/repository-identicon.svg)`, and read the colour anywhere with
+`$(cat .identicon/repository-identicon.colour)`.
+
+Running it again writes identical bytes, because the mark is a pure function of
+the key. `--check` reports drift and exits 1 without writing, for CI or for a
+tool asking whether a repository is current; `--json` gives a dependent tool
+the whole result without parsing prose.
+
+If the repository has no git remote the key falls back to its path, which will
+not survive being cloned. `apply` says so, and the fix is a
+`.repository-identicon` file committed at the top level.
+
 ## What is here
 
 | file | what it is |

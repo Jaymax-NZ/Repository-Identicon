@@ -214,6 +214,43 @@ project name on `-`, `_`, `.` and space. If two or more parts result, take the
 first character of each of the first two. Otherwise take the first two
 characters of the name. Upper-case the result.
 
+## What goes in the repository
+
+The mark is a pure function of the key, so a repository does not need to store
+it. It stores it anyway, because a README, a shell prompt and a forge cannot
+run a derivation. **These files are a cache with a canonical location, not a
+source of truth**; if they disagree with the key, the key wins and they are
+stale.
+
+```
+.identicon/repository-identicon.png       raster, 256px
+.identicon/repository-identicon.svg       vector, same geometry
+.identicon/repository-identicon.colour    "#rrggbb\n", nothing else
+```
+
+**Three files rather than one.** A combined file would be readable by every
+tool that knows the format, which is one tool. A README cannot address a
+fragment inside a blob, `![](.identicon/repository-identicon.svg)` is a whole
+integration, and `$(cat .identicon/repository-identicon.colour)` is a whole
+parser. Each is usable by a consumer that knows nothing about this
+specification.
+
+**Each filename repeats the directory deliberately.** The directory is context,
+and context is what does not travel: copied out, fetched from a raw URL or
+dropped into `docs/`, a file called `icon.png` describes nothing. The prefix
+also anticipates a repository carrying more than one mark — a user's alongside
+the repository's — at which point the unqualified name is the ambiguous one.
+
+An implementation MUST write these three at these paths, and SHOULD be
+idempotent: the mark is a pure function of the key, so a second run writes
+identical bytes. It SHOULD offer a check mode that reports drift without
+writing, since a repository whose committed mark no longer matches its remote
+is the failure worth catching — it means the project moved or was renamed.
+
+`SVG` carries a declared size so `![]()` renders it as an inline mark rather
+than at column width; a consumer that wants it larger supplies the size
+itself, which is the right way round.
+
 ## Renderings
 
 ### Raster

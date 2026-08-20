@@ -15,7 +15,9 @@ something is one that stops working the day the something moves.
 import importlib.util
 import json
 import pathlib
+import shutil
 import subprocess
+import tempfile
 import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -166,6 +168,79 @@ class TestTheVectorsCanBeRegenerated(unittest.TestCase):
             capture_output=True, text=True, cwd=str(ROOT / "reference"), timeout=60)
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual(vectors, json.loads(result.stdout))
+
+
+class TestInstallingIntoARepository(unittest.TestCase):
+    """The thing the project is for: putting the mark in the repository.
+
+    Everything else here checks a derivation. This checks the deliverable --
+    that running it in a repository leaves the right files, that running it
+    twice changes nothing, and that --check notices when something has drifted
+    without touching it.
+    """
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.tmp, ignore_errors=True)
+        subprocess.run(["git", "init", "-q", self.tmp], check=True, timeout=30)
+        subprocess.run(["git", "-C", self.tmp, "remote", "add", "origin",
+                        "git@github.com:someone/a-project.git"],
+                       check=True, timeout=30)
+
+    def test_it_writes_the_three_artifacts(self):
+        result = identicon.install_into_repo(self.tmp)
+        self.assertEqual("github.com/someone/a-project", result["key"])
+        self.assertEqual("remote", result["source"])
+        for name in ("png", "svg", "colour"):
+            with self.subTest(artifact=name):
+                path = pathlib.Path(result["files"][name])
+                self.assertTrue(path.is_file(), path)
+                self.assertEqual("created", result["changes"][name])
+
+    def test_the_colour_file_is_the_whole_parser(self):
+        """A consumer runs `cat`, and that is the entire integration."""
+        result = identicon.install_into_repo(self.tmp)
+        body = pathlib.Path(result["files"]["colour"]).read_text()
+        self.assertEqual(body, result["colour"] + "\n")
+        self.assertRegex(body, r"^#[0-9a-f]{6}\n$")
+
+    def test_running_it_twice_changes_nothing(self):
+        identicon.install_into_repo(self.tmp)
+        again = identicon.install_into_repo(self.tmp)
+        self.assertTrue(again["current"])
+        self.assertEqual({"unchanged"}, set(again["changes"].values()))
+
+    def test_check_reports_drift_without_writing(self):
+        first = identicon.install_into_repo(self.tmp)
+        target = pathlib.Path(first["files"]["colour"])
+        target.write_text("not a colour\n")
+
+        checked = identicon.install_into_repo(self.tmp, check=True)
+        self.assertFalse(checked["current"])
+        self.assertEqual("updated", checked["changes"]["colour"])
+        self.assertEqual("not a colour\n", target.read_text(),
+                         "--check must not write")
+
+        identicon.install_into_repo(self.tmp)
+        self.assertEqual(first["colour"] + "\n", target.read_text())
+
+    def test_a_repository_with_no_remote_falls_back_and_says_so(self):
+        bare = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, bare, ignore_errors=True)
+        subprocess.run(["git", "init", "-q", bare], check=True, timeout=30)
+        result = identicon.install_into_repo(bare)
+        self.assertNotEqual("remote", result["source"],
+                            "no remote, so the key cannot be portable")
+
+    def test_the_command_line_exits_1_on_drift_under_check(self):
+        identicon.install_into_repo(self.tmp)
+        pathlib.Path(identicon.artifact_paths(self.tmp)["colour"]).write_text("x")
+        completed = subprocess.run(
+            ["python3", str(ROOT / "repository-identicon.py"), "apply",
+             "--check", "--json", self.tmp],
+            capture_output=True, text=True, timeout=60)
+        self.assertEqual(1, completed.returncode, completed.stdout)
+        self.assertFalse(json.loads(completed.stdout)["current"])
 
 
 if __name__ == "__main__":
