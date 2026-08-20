@@ -1,143 +1,152 @@
-# The bench: triples not on the wheel, each with a number that is now permanent.
+# The roster: every triple the vocabulary knows, in use or not.
 #
-# Numbers are the ones from wheel 11, where they were first used in conversation.
-# They are NOT recomputed. An entry keeps its number for good, so "number 22"
-# means the same three squares in every wheel from here on. A number is never
-# reissued, even after the entry leaves the bench.
+# **Numbers are positional, and they move.** They used to be permanent --
+# assigned at wheel 11, never reissued, so "number 22" meant the same three
+# squares in every wheel from then on. That discipline was worth keeping while
+# the ring was being assembled from a shifting pool, because the numbers were
+# how a triple was referred to across renders. The ring is now full and
+# hand-placed, and the numbering had become a record of the order things were
+# tried in rather than of anything on the page. So:
+#
+#   1-50     in use, numbered clockwise from the top, in the order they sit
+#   101+     not in use, offered or rejected, in the order their blend reads
+#
+# A block's number is now its position on the wheel, which means removing or
+# reordering a block renumbers everything after it. That is intended, and it
+# is the cost of the numbers meaning something: the table beside the wheel
+# reads straight down, and a number tells you where to look.
 #
 # status:
-#   offered   part of the vocabulary, drawn inside the ring
+#   offered   part of the vocabulary
 #   rejected  looked at and turned down; never draw or offer it again
-#
-# **One class.** Being in use on the wheel is not a property of a triple, and
-# the spread-and-stretch route assigns them by hand anyway, so there is no
-# longer a 'placed' state -- a triple already on the wheel sits on this list
-# beside one that is not. Everything offered here is drawn in the interior,
-# and everything in the interior is on this list. The two cannot diverge.
 #
 # `wheel.py --refill` appends every triple that passes the harness and blends
 # within GOOD of the hue it claims, taking the next free number. Nothing here
 # is rewritten by a plain render.
 #
-# `at` is where the entry is drawn inside the ring, in degrees. It is set by
-# hand and obeys no grid -- the interior is a layout, not a measurement.
-# Leave it blank and the entry falls back to the hue its blend reads as.
+# `at` is where the entry is drawn on the wheel, in degrees. It is set by hand
+# and obeys no grid -- the ring is a layout, not a measurement. Leave it blank
+# and the entry is not on the wheel at all.
 #
-# n	one	two	three	status	at
-1	red	orange	brown	offered
-2	red	orange	black	rejected
-3	orange	orange	purple	offered
-4	red	yellow	black	offered
-5	orange	yellow	black	offered
-6	orange	orange	green	offered	53
-7	yellow	green	brown	offered	81.2
-8	yellow	green	purple	offered	89.2
-9	orange	green	green	offered	97.2
-10	green	green	brown	offered	113.2
-11	green	green	black	offered	121.2
-12	green	black	white	offered	129.2
-13	green	blue	black	offered	177.2
-14	green	blue	brown	offered	185.2
-15	green	blue	purple	offered	193.2
-16	blue	blue	brown	offered	253
-17	blue	brown	black	offered	269
-18	blue	purple	brown	offered	277
-19	red	blue	blue	offered	285
-20	red	blue	purple	offered	301
-21	red	blue	brown	offered	309
-22	red	red	blue	offered	317
-23	red	purple	brown	offered	333
-24	orange	purple	purple	offered	349
-25	red	brown	brown	offered	357
-26	orange	orange	black	offered
-27	orange	yellow	green	offered	65.2
-28	green	white	white	offered
-29	blue	purple	white	rejected
-30	blue	purple	purple	offered	261
-31	red	blue	black	offered	293
-32	red	red	black	offered	13
-33	yellow	yellow	purple	offered
-34	red	brown	black	offered
-35	red	red	brown	offered	5
-36	red	red	red	offered
-37	red	orange	purple	offered	21
-38	orange	purple	brown	offered
-39	orange	purple	black	rejected
-40	red	red	orange	offered	29
-41	orange	brown	brown	offered
-42	red	orange	orange	offered
-43	orange	brown	black	rejected
-44	orange	black	white	rejected
-45	orange	orange	brown	rejected
-46	red	red	yellow	offered
-47	red	yellow	purple	offered	37
-48	orange	orange	orange	offered
-49	red	yellow	brown	offered
-50	red	orange	yellow	offered
-51	yellow	purple	purple	rejected
-52	yellow	purple	brown	rejected
-53	orange	yellow	purple	offered	45
-54	yellow	brown	brown	offered
-55	orange	yellow	brown	offered
-56	orange	orange	yellow	offered
-57	yellow	brown	white	offered
-58	yellow	purple	white	rejected
-59	yellow	yellow	brown	offered	57.2
-60	orange	green	white	offered	73.2
-61	green	brown	white	offered	105.2
-62	green	green	blue	offered	161.2
-63	green	blue	white	offered	169.2
-64	green	blue	blue	offered	201.2
-65	blue	blue	purple	offered	245
-66	red	purple	purple	offered	325
-67	red	red	purple	offered	341
-68	orange	purple	white	offered
-69	red	orange	white	offered
-70	orange	brown	white	offered
-71	orange	orange	white	offered
-72	red	yellow	white	offered
-73	black	white	white	offered
-74	white	white	white	offered
-75	orange	yellow	white	offered
-76	red	yellow	yellow	offered
-77	yellow	brown	black	offered
-78	yellow	purple	black	offered
-79	orange	yellow	yellow	offered
-80	yellow	white	white	offered
-81	yellow	yellow	white	offered
-82	yellow	yellow	yellow	offered
-83	orange	green	brown	offered
-84	orange	green	purple	offered
-85	green	brown	brown	offered
-86	yellow	yellow	green	offered
-87	yellow	green	white	offered
-88	green	purple	brown	offered
-89	green	brown	black	offered
-90	yellow	green	green	offered
-91	green	green	green	offered
-92	green	green	white	offered
-93	blue	blue	blue	offered
-94	blue	blue	black	offered
-95	blue	purple	black	offered
-96	blue	brown	white	offered
-97	blue	brown	brown	offered
-98	purple	black	white	offered
-99	purple	purple	white	offered
-100	red	blue	white	offered
-101	purple	purple	purple	offered
-102	purple	purple	black	offered
-103	purple	purple	brown	offered
-104	purple	brown	white	offered
-105	purple	brown	black	offered
-106	black	black	black	offered
-107	purple	brown	brown	offered
-108	red	purple	white	offered
-109	red	purple	black	offered
-110	brown	black	white	offered
-111	brown	brown	white	offered
-112	red	black	white	offered
-113	red	brown	white	offered
-114	red	red	white	offered
-115	brown	brown	brown	offered
-116	brown	brown	black	offered
-117	brown	black	black	offered
+# `mult` widens a block beyond what its class prices it at. The 8/4/1 degrees
+# buy comparability, not legibility, and a stretch of the wheel that has to
+# carry a lot of decision needs the room to show it. Blank means 1.
+#
+# n	one	two	three	status	at	mult
+1	red	brown	black	offered	1
+2	red	red	brown	offered	7
+3	orange	purple	brown	offered	13
+4	red	orange	brown	offered	21
+5	red	orange	orange	offered	27
+6	red	red	yellow	offered	31
+7	red	yellow	purple	offered	37
+8	orange	yellow	purple	offered	45
+9	red	yellow	yellow	offered	51
+10	yellow	yellow	brown	offered	55
+11	orange	orange	green	offered	59
+12	yellow	yellow	white	offered	63
+13	orange	yellow	green	offered	69
+14	yellow	yellow	green	offered	75
+15	orange	green	white	offered	81
+16	yellow	green	brown	offered	89
+17	yellow	green	purple	offered	97
+18	orange	green	green	offered	103
+19	green	brown	white	offered	109
+20	green	green	brown	offered	115
+21	green	green	green	offered	118	2
+22	green	green	black	offered	123	2
+23	green	green	white	offered	132	2.5
+24	green	black	white	offered	145	2
+25	green	green	blue	offered	157	2
+26	green	blue	black	offered	167	1.5
+27	green	blue	white	offered	181	2
+28	green	blue	brown	offered	195	1.5
+29	green	blue	purple	offered	205
+30	green	blue	blue	offered	212	1.5
+31	blue	blue	black	offered	219	2
+32	blue	blue	blue	offered	224	2
+33	blue	blue	purple	offered	229	2
+34	blue	blue	brown	offered	237	2
+35	blue	purple	black	offered	247	1.5
+36	blue	purple	purple	offered	255
+37	blue	brown	black	offered	261
+38	blue	purple	brown	offered	273	2
+39	red	blue	blue	offered	283
+40	blue	brown	brown	offered	287
+41	red	blue	black	offered	293
+42	red	blue	purple	offered	301
+43	red	blue	brown	offered	309
+44	red	red	blue	offered	317	2
+45	red	purple	purple	offered	325	2
+46	red	purple	black	offered	333
+47	red	purple	brown	offered	341
+48	red	red	purple	offered	347
+49	orange	purple	purple	offered	351
+50	red	brown	brown	offered	355
+101	red	red	black	offered
+102	red	red	red	offered
+103	red	orange	purple	offered
+104	orange	purple	white	offered
+105	orange	purple	black	rejected
+106	red	orange	white	offered
+107	red	red	orange	offered
+108	red	orange	black	rejected
+109	orange	brown	white	offered
+110	orange	brown	brown	offered
+111	orange	orange	purple	offered
+112	orange	brown	black	rejected
+113	orange	black	white	rejected
+114	orange	orange	white	offered
+115	orange	orange	brown	rejected
+116	orange	orange	black	offered
+117	orange	orange	orange	offered
+118	red	yellow	brown	offered
+119	red	yellow	white	offered
+120	red	orange	yellow	offered
+121	yellow	purple	purple	rejected
+122	red	yellow	black	offered
+123	yellow	purple	brown	rejected
+124	yellow	brown	brown	offered
+125	orange	yellow	brown	offered
+126	orange	orange	yellow	offered
+127	black	white	white	offered
+128	white	white	white	offered
+129	orange	yellow	white	offered
+130	orange	yellow	black	offered
+131	yellow	brown	white	offered
+132	yellow	purple	white	rejected
+133	yellow	brown	black	offered
+134	yellow	purple	black	offered
+135	orange	yellow	yellow	offered
+136	yellow	yellow	purple	offered
+137	yellow	white	white	offered
+138	yellow	yellow	yellow	offered
+139	orange	green	brown	offered
+140	orange	green	purple	offered
+141	green	brown	brown	offered
+142	yellow	green	white	offered
+143	green	purple	brown	offered
+144	green	brown	black	offered
+145	yellow	green	green	offered
+146	green	white	white	offered
+147	blue	purple	white	rejected
+148	blue	brown	white	offered
+149	purple	black	white	offered
+150	purple	purple	white	offered
+151	red	blue	white	offered
+152	purple	purple	purple	offered
+153	purple	purple	black	offered
+154	purple	purple	brown	offered
+155	purple	brown	white	offered
+156	purple	brown	black	offered
+157	black	black	black	offered
+158	purple	brown	brown	offered
+159	red	purple	white	offered
+160	brown	black	white	offered
+161	brown	brown	white	offered
+162	red	black	white	offered
+163	red	brown	white	offered
+164	red	red	white	offered
+165	brown	brown	brown	offered
+166	brown	brown	black	offered
+167	brown	black	black	offered

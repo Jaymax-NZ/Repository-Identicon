@@ -60,12 +60,24 @@ ORDER = {name: k for k, (_e, name, _cp, _rgb) in enumerate(text.PALETTE)}
 # and the spike starts close enough to it that the comparison is immediate.
 # ---------------------------------------------------------------------------
 
-SIZE = 1400
+# 1400 was sized for the spikes, which reached far outside the gamut ring.
+# With them off the drawing stops at RING_OUT, and the canvas was mostly the
+# white space they used to occupy. The corner lists set the floor now, not the
+# wheel: 27 rows at 15px, twice over, plus margins.
+SIZE = 720
 CENTRE = SIZE / 2
 BASE_IN, BASE_OUT = 112, 163   # the base-colour band, off by default
+TECH_IN, TECH_OUT = 152, 160   # the workings: stretch rules and drift ticks
+NUM_R = 165                    # the numbers, in the gap before the gamut
 RING_IN, RING_OUT = 170, 212   # the gamut itself
-BLEND_IN, BLEND_OUT = 216, 238  # in use: what each division mixes to
-OFFER_OUT = 164                 # on offer: the unused candidates from the corners
+BLEND_IN, BLEND_OUT = 216, 238  # in use: what each division mixes to; off
+OUTER_IN, OUTER_OUT = 218, 268  # the ring to look at: the blocks, wide
+# The second gamut ring, and the trefoils that sit on it. Deep enough for the
+# cluster (about 2.9 disc radii) with a little air at each edge.
+TREF_IN, TREF_OUT = 272, 296
+TREF_BG = "#ececec"
+TABLE_W = 232                  # the roster, beside the wheel
+OFFER_OUT = TECH_OUT            # where the lane stack starts, with --tables
 OFFER_LANES, LANE_H, LANE_GAP = 3, 14, 2.5
 OFFER_IN = OFFER_OUT - OFFER_LANES * (LANE_H + LANE_GAP)
 SPIKE_START = 246
@@ -124,7 +136,8 @@ def read_bench():
             continue
         f = line.split("\t")
         at = float(f[5]) if len(f) > 5 and f[5].strip() else None
-        out.append((int(f[0]), multiset(f[1:4]), f[4].strip(), at))
+        mult = float(f[6]) if len(f) > 6 and f[6].strip() else 1.0
+        out.append((int(f[0]), multiset(f[1:4]), f[4].strip(), at, mult))
     return out
 
 
@@ -136,7 +149,7 @@ def pool(target, roster):
     # hand anyway -- so being in use no longer disqualifies anything. The
     # roster is the vocabulary, not a list of leftovers. Only what is already
     # numbered, and what has been rejected outright, is excluded.
-    known = {multiset(names) for _n, names, _s, _at in roster}
+    known = {multiset(names) for _n, names, _s, _at, _m in roster}
     palette = [name for _e, name, _cp, _rgb in text.PALETTE]
 
     rows, seen = [], set()
@@ -155,7 +168,7 @@ def pool(target, roster):
     return sorted(rows)
 
 
-def candidates(target, limit):
+def candidates(target, limit, placed_only=True):
     """What the bench currently offers, with its own numbers.
 
     **The numbers used to be positional and moved under the reader.** Placing
@@ -177,12 +190,20 @@ def candidates(target, limit):
     # `at` falls back to the hue its blend reads as, which is a measurement
     # rather than a placement, and is only a starting point.
     rows = []
-    for n, names, status, at in read_bench():
+    for n, names, status, at, mult in read_bench():
         if status != "offered":
+            continue
+        # The ring is full and hand-placed, so an entry with no position is no
+        # longer a candidate waiting its turn -- it is a colour that did not
+        # make it. Drawing those behind the ring, and listing them in the
+        # corners, was the apparatus of choosing. `--tables` brings both back
+        # when there is choosing to do again.
+        if placed_only and at is None:
             continue
         mixed = mix_rgb(names)
         reads, _colour, delta = nearest_gamut(mixed)
-        rows.append((delta, reads if at is None else at, names, mixed, n, at is not None))
+        rows.append((delta, reads if at is None else at, names, mixed, n,
+                     at is not None, reads, mult))
     rows.sort(key=lambda r: r[1])
     return rows[:limit]
 
@@ -205,7 +226,7 @@ def refill(target, limit):
         print("nothing new under the good line")
         return 0
 
-    nxt = max((n for n, _m, _s, _at in roster), default=0) + 1
+    nxt = max((n for n, _k, _s, _at, _m in roster), default=0) + 1
     lines = BENCH.read_text().rstrip("\n").split("\n")
     for delta, hue, names, _mixed in sorted(chosen, key=lambda r: r[1]):
         lines.append("\t".join([str(nxt), *names, "offered"]))
@@ -389,21 +410,29 @@ def read_target():
 # Rendering
 # ---------------------------------------------------------------------------
 
-def ring(out):
+def ring(out, inner=None, outer=None):
     """The gamut itself, one thin segment at a time.
 
     Drawn as rotated rectangles rather than annular sectors: at this radius a
     quarter-degree of arc is under a pixel, so the difference is invisible and
     the arithmetic is one line instead of four.
+
+    Drawn twice now. The inner copy is what the block ring is judged against.
+    The outer copy is the ground the trefoils sit on, so each cluster of
+    constituent squares is read against the gamut colour at its own position
+    rather than against white -- which is the comparison actually being made
+    when a triple is placed, and the one thing white paper cannot show.
     """
-    width = 2 * math.pi * RING_OUT * RING_STEP / 360 + 0.4
+    inner = RING_IN if inner is None else inner
+    outer = RING_OUT if outer is None else outer
+    width = 2 * math.pi * outer * RING_STEP / 360 + 0.4
     steps = int(round(360 / RING_STEP))
     for k in range(steps):
         hue = k * RING_STEP
         colour = text.hex_colour(gamut_at(hue))
         out.append(
-            f'<rect x="{CENTRE - width / 2:.3f}" y="{CENTRE - RING_OUT:.1f}" '
-            f'width="{width:.3f}" height="{RING_OUT - RING_IN}" fill="{colour}" '
+            f'<rect x="{CENTRE - width / 2:.3f}" y="{CENTRE - outer:.1f}" '
+            f'width="{width:.3f}" height="{outer - inner}" fill="{colour}" '
             f'transform="rotate({hue:.4f} {CENTRE} {CENTRE})"/>')
 
 
@@ -510,13 +539,23 @@ WEDGE = {3: 8.0, 2: 4.0, 1: 1.0}
 WEDGE_TOL = 1e-6
 OFFER_SEP = 0.5        # clear air between two blocks sharing a lane
 OFFER_FLOOR = 62       # nearest the middle a lane may reach
-DISC_R = 2.6           # a constituent disc under a placed block
-DISC_GAP = 2.5         # clear air between the block and its discs
-DISC_BAND = 12         # room reserved for the trefoils, before lane 1
+DISC_R = 6.0           # a constituent disc; what a 4 degree block can carry
+DISC_GAP = 6.0         # clear air between the block and its discs, and room
+                       # for the stacked stretch rules that now sit in it
+DISC_BAND = 13         # room reserved for the trefoils, before lane 1
 
 
-def offer_band(out, rows):
-    """The vocabulary, inside the ring, at the hue each entry sits at.
+def offer_band(out, rows, tables=False):
+    """The vocabulary, at the hue each entry sits at.
+
+    **Two rings, with different jobs.** The blocks are drawn twice. Outside the
+    gamut, wide, is the ring to look at: the mixture each triple makes, at the
+    hue it has been placed, with its trefoil beyond it. Inside the gamut is a
+    narrow technical band carrying the machinery -- the entry number, the
+    stretch rules, and the drift ticks and their leaders. Reading a colour and
+    auditing a placement are different acts and were fighting for the same
+    forty pixels; separating them lets the outer ring be as large as the
+    comparison needs while the workings stay legible and out of the way.
 
     **Nothing may be hidden.** The previous version bucketed by four degrees
     and stacked three deep, which buried anything that shared a bucket and,
@@ -539,7 +578,7 @@ def offer_band(out, rows):
     assigned = []
 
     def half(row):
-        return WEDGE[len(set(row[2]))] / 2
+        return width_of(row) / 2
 
     def drop(row, floor):
         start = row[1] - half(row)
@@ -559,44 +598,342 @@ def offer_band(out, rows):
 
     depth = max(len(lanes), 1)
     height = min(LANE_H,
-                 (OFFER_OUT - OFFER_FLOOR - DISC_BAND) / depth - LANE_GAP)
+                 (TECH_OUT - OFFER_FLOOR) / depth - LANE_GAP) if tables \
+        else TECH_OUT - TECH_IN
 
-    for lane, (delta, hue, names, mixed, n, _p) in assigned:
-        # Lane 0 is the placed ring and keeps DISC_BAND to itself for the
-        # trefoils; everything behind starts below that reserved strip.
-        outer = OFFER_OUT - lane * (height + LANE_GAP)
-        if lane:
-            outer -= DISC_BAND
-        wide = WEDGE[len(set(names))] / 2
+    ticks = []
+    for idx, (lane, row) in enumerate(assigned):
+        delta, hue, names, mixed, n, _p, reads, _mult = row
+        colour = text.hex_colour(mixed)
+        wide = width_of(row) / 2
+        outer = TECH_OUT - lane * (height + LANE_GAP)
+
+        # The technical band: thin, inside the gamut, carrying the workings.
         out.append(
             f'<path d="{sector(outer - height, outer, hue - wide, hue + wide)}" '
-            f'fill="{text.hex_colour(mixed)}" stroke="#888" stroke-width="0.5"/>')
-        if WEDGE[len(set(names))] >= 4.0:
-            x, y = polar(outer - height / 2, hue)
-            out.append(
-                f'<text x="{x:.1f}" y="{y + 3:.1f}" text-anchor="middle" '
-                f'font-family="monospace" font-size="8" '
-                f'fill="{contrast(mixed)}">{n}</text>')
-
-        # The three squares being averaged, as touching discs just inside the
-        # block. A placed entry has been moved away from the hue its blend
-        # makes, so the blend alone no longer says what it is made of, and the
-        # corner list is a long way from the block. This puts the composition
-        # where the decision is being taken.
-        if not _p or WEDGE[len(set(names))] < 8.0:
+            f'fill="{colour}" stroke="#888" stroke-width="0.5"/>')
+        if width_of(row) >= 4.0 and not lane:
+            number(out, hue, n)
+        if lane:
             continue
-        # A trefoil, not a row: two abreast with the third tucked beneath, so
-        # the cluster is two discs wide instead of three and reads as one mark
-        # rather than a miniature of the spike.
-        top = outer - height - DISC_GAP - DISC_R
-        half = math.degrees(DISC_R / top)
-        places = [(top, hue - half), (top, hue + half),
-                  (top - DISC_R * math.sqrt(3), hue)]
-        for name, (r, a) in zip(names, places):
-            dx, dy = polar(r, a)
+        ticks.append((reads, hue, mixed))
+        stretch(out, row, outer - height)
+
+        # The ring to look at: same block, outside the gamut, wide enough to
+        # judge the colour against the gamut it sits beside.
+        out.append(
+            f'<path d="{sector(OUTER_IN, OUTER_OUT, hue - wide, hue + wide)}" '
+            f'fill="{colour}" stroke="#888" stroke-width="0.5"/>')
+        if width_of(row) >= 4.0:
+            venn(out, idx, names, TREF_OUT - 3.0, hue, trefoil_r(row))
+
+    drift(out, ticks)
+
+
+def number(out, hue, n):
+    """The block's number, in the white gap between the workings and the gamut.
+
+    **On the band it was type laid over the colour it was meant to let you
+    read**, and taking it off entirely left the wheel unnameable -- the roster
+    could say what a block was but you could not point at one. The gap does
+    both jobs: nothing is covered, and the number sits on the same radius as
+    its block.
+
+    Set tangentially, and flipped through the lower half so none of them stand
+    on their heads. Rotating with the wheel rather than staying upright is what
+    keeps a two-digit number inside the four degrees the narrowest block gets;
+    upright text would need the width of its diagonal at every angle.
+    """
+    lower = 90 < hue < 270
+    turn = hue - 180 if lower else hue
+    y = CENTRE + NUM_R if lower else CENTRE - NUM_R
+    out.append(
+        f'<text x="{CENTRE}" y="{y + 3:.1f}" text-anchor="middle" '
+        f'font-family="monospace" font-size="6.5" fill="#666" '
+        f'transform="rotate({turn:.3f} {CENTRE} {CENTRE})">{n}</text>')
+
+
+def trefoil_r(_row):
+    """One size for every trefoil.
+
+    **Sizing each cluster to its own block was wrong.** It looked efficient --
+    a wide block has more arc, so it can carry a bigger mark -- but disc area
+    then reads as a quantity, and it is not one: a trefoil says what three
+    squares average to, and that claim is identical whether the block beneath
+    it is four degrees or sixteen. Varying the size made narrow blocks look
+    like lesser statements of the same fact. The size is set by the narrowest
+    block that gets a trefoil at all, which is four degrees.
+    """
+    return DISC_R
+
+
+def width_of(row):
+    """How wide this block is drawn: its class price, times any hand stretch."""
+    return WEDGE[len(set(row[2]))] * row[7]
+
+
+STRETCH_IN = 1.6       # how far inward of the block the first rule sits
+STRETCH_STEP = 1.7     # spacing between stacked rules
+STRETCH_W = 1.0
+STRETCH_CAP = 1.4      # length of the radial cap at each end
+
+
+def stretch(out, row, inner):
+    """Rules under a widened block, as long as the block ought to have been.
+
+    The 8/4/1 degrees price a block by the identity it affords, and that is the
+    one thing a stretched block stops saying: at 2x a pair is as wide as an
+    unstretched three-distinct and reads as worth the same. This puts the class
+    price back on the page. Each rule spans the natural width, centred, with a
+    cap at each end, so the block overhangs it by exactly what was added.
+
+    **How far it was stretched is a count, not a length.** One rule alone said
+    only that a block had been widened -- telling 1.5x from 2x meant eyeing the
+    overhang against a width that is itself variable, which is no way to read a
+    chart. There is now one rule per half-step of stretch: one for 1.5x, two
+    for 2x. Counting two marks is immediate in a way that judging a proportion
+    never is.
+    """
+    steps = int(round((row[7] - 1) / 0.5))
+    if steps < 1:
+        return
+    natural = WEDGE[len(set(row[2]))] / 2
+    for k in range(steps):
+        r = inner - STRETCH_IN - k * STRETCH_STEP
+        sx, sy = polar(r, row[1] - natural)
+        ex, ey = polar(r, row[1] + natural)
+        out.append(
+            f'<path d="M {sx:.2f} {sy:.2f} A {r:.1f} {r:.1f} 0 0 1 {ex:.2f} '
+            f'{ey:.2f}" fill="none" stroke="#555" stroke-width="{STRETCH_W}"/>')
+    deep = inner - STRETCH_IN - (steps - 1) * STRETCH_STEP
+    for side in (-natural, natural):
+        cx, cy = polar(inner - STRETCH_IN + STRETCH_CAP / 2, row[1] + side)
+        dx, dy = polar(deep - STRETCH_CAP / 2, row[1] + side)
+        out.append(
+            f'<line x1="{cx:.2f}" y1="{cy:.2f}" x2="{dx:.2f}" y2="{dy:.2f}" '
+            f'stroke="#555" stroke-width="{STRETCH_W}"/>')
+
+
+# Where a block sits is a decision, and the block itself cannot show that a
+# decision was taken -- a placed entry and one left at the hue its blend reads
+# looks identical. This is the only marker on the wheel that records a
+# judgement rather than a measurement, so it is drawn as faintly as it can be
+# and still be found when looked for: a hairline arc from the block's nominal
+# hue to where it was actually put, with a tick at nominal. Lanes behind the
+# first are all at nominal by definition and get nothing.
+# Inside the technical band, not between it and the gamut. The ticks used to
+# sit in the six pixels separating the two, where the leaders had to cross the
+# band's own edge to reach their blocks and the whole apparatus pressed up
+# against the gamut it was not about. Below the band there is open space, the
+# leaders run inward and unobstructed, and the ring reads outward from the
+# gamut without this crossing it.
+DRIFT_R = 143
+# **Every lane 0 block gets a tick, including the ones that never moved.**
+# Ticks were suppressed below a quarter of a degree on the grounds that such a
+# move is rounding rather than a decision, which is true and beside the point:
+# a block sitting exactly on nominal is a fact worth showing, and suppressing
+# it made the mono-colours -- which are all at nominal, by construction --
+# look as though they had been left out. A block at nominal now reads as a
+# tick with a leader running straight down it.
+
+
+DRIFT_W = 1.1          # tick stroke, in pixels
+# One tick's worth of arc, so a split pair reads as two marks with a gap the
+# same size as the marks themselves.
+DRIFT_GAP = math.degrees(2 * DRIFT_W / DRIFT_R)
+
+
+def drift(out, ticks):
+    """Ticks at the hue each lane 0 block would sit at if nobody had moved it.
+
+    **The connecting arc is gone.** Joining tick to block along a circle put
+    every one of them on the same line, and at this density the lines ran into
+    each other and read as one continuous rule rather than as forty separate
+    displacements. The tick alone says where nominal was; the block's own
+    colour says which block it belongs to, which is why it is painted in that
+    colour rather than in grey.
+
+    **Coincidences are split, not stacked.** Two triples can blend to the same
+    hue -- #16 and #95 both read 261.8 -- and drawing one over the other lost
+    a tick with nothing to show it had happened, so the marks could never be
+    counted. Any run closer together than a tick's width is spread evenly
+    about its own mean with exactly that width between neighbours: the pair
+    still reads as one event at one hue, and both are there to be counted.
+    """
+    placed = []
+    for angle, hue, mixed in sorted(ticks):
+        if placed and angle - placed[-1][-1][0] <= DRIFT_GAP:
+            placed[-1].append((angle, hue, mixed))
+        else:
+            placed.append([(angle, hue, mixed)])
+    for group in placed:
+        mid = sum(a for a, _h, _m in group) / len(group)
+        for i, (_a, hue, mixed) in enumerate(group):
+            at = mid + (i - (len(group) - 1) / 2) * DRIFT_GAP
+            colour = text.hex_colour(mixed)
+            x0, y0 = polar(DRIFT_R - 2.5, at)
+            x1, y1 = polar(DRIFT_R + 2.5, at)
             out.append(
-                f'<circle cx="{dx:.1f}" cy="{dy:.1f}" r="{DISC_R}" '
-                f'fill="{NOMINAL[name]}" stroke="#777" stroke-width="0.4"/>')
+                f'<line x1="{x0:.2f}" y1="{y0:.2f}" x2="{x1:.2f}" '
+                f'y2="{y1:.2f}" stroke="{colour}" '
+                f'stroke-width="{DRIFT_W}"/>')
+            # The leader closes the loop the tick alone could not: it runs
+            # from the tick's outer end to the middle of the block's outer
+            # edge, so every tick names its block unambiguously. Because each
+            # one leans by however far its block was moved, they fan rather
+            # than stack, and the extreme cases are the ones lying nearly
+            # flat against the ring -- visible as slope, without a number.
+            bx, by = polar(TECH_IN, hue)
+            out.append(
+                f'<line x1="{x1:.2f}" y1="{y1:.2f}" x2="{bx:.2f}" '
+                f'y2="{by:.2f}" stroke="{colour}" stroke-width="0.45" '
+                f'stroke-opacity="0.85"/>')
+
+
+# The trefoil is a Venn diagram, not three separate discs. Separate discs said
+# only which squares go in; overlapping them puts the two-way mixes and the
+# three-way mix on the page as well, in the one place where the question "what
+# does this actually average to" is being asked. Inner borders are dropped: a
+# stroke on each lens would out-draw the fills at this size, and the whole
+# point is to read the colours.
+#
+# The discs stay DISC_R across; pulling their centres together is what makes
+# the cluster smaller. How far together is the whole balance of the mark. At a
+# centre-to-centre separation of DISC_R the middle swallowed almost everything
+# and the two-way lenses came out as slivers too thin to carry a colour -- the
+# mixes were being drawn and could not be seen. DISC_SEP is that separation as
+# a multiple of the radius: below sqrt(3) there is a middle region at all, and
+# 1.45 leaves all seven regions wide enough to read.
+#
+# Back to 1.0 -- centres one radius apart, the tightest arrangement here. The
+# wider setting was a fix for the wrong fault: the mixes were missing because
+# the clip-paths did not resolve, not because the lenses were thin. With the
+# regions drawn as explicit polygons they show at any separation, so the
+# cluster can be as compact as it was to begin with.
+DISC_SEP = 1.0
+DISC_C = DISC_SEP * DISC_R / math.sqrt(3)
+
+
+def venn(out, idx, names, top, hue, radius=None):
+    """Three overlapping discs, with every intersection filled by its mix.
+
+    Drawn without any subtraction: the three discs go down whole, the three
+    lenses are each a disc clipped to its partner, and the middle is a disc
+    clipped to both of the others. Later paint covers earlier, so exclusive
+    regions survive as the bare disc underneath.
+    """
+    rad = DISC_R if radius is None else radius
+    cee = DISC_SEP * rad / math.sqrt(3)
+    # Two abreast, one tucked beneath, matching the old cluster's footprint.
+    # y runs inward; the outermost point of the cluster sits at `top`.
+    local = [(-0.8660 * cee, -0.5 * cee),
+             (0.8660 * cee, -0.5 * cee),
+             (0.0, cee)]
+    centres = []
+    for x, y in local:
+        r = top - rad - (y + 0.5 * cee)
+        centres.append(polar(r, hue + math.degrees(x / r)))
+
+    def disc(k, extra=""):
+        cx, cy = centres[k]
+        return f'<circle cx="{cx:.2f}" cy="{cy:.2f}" r="{rad:.2f}"{extra}/>'
+
+    # Strokes go down first and the fills paint over them, so every arc that
+    # runs through the inside of another disc is covered and only the union's
+    # outer boundary survives: an outline round the cluster, no inner borders.
+    for k in range(3):
+        out.append(disc(k, ' fill="none" stroke="#777" stroke-width="0.9"'))
+    for k in range(3):
+        out.append(disc(k, f' fill="{NOMINAL[names[k]]}"'))
+    for a, b in ((0, 1), (1, 2), (0, 2)):
+        out.append(overlap([centres[a], centres[b]],
+                           mix_rgb((names[a], names[b])), rad))
+    out.append(overlap(centres, mix_rgb(names), rad))
+
+
+def overlap(centres, mixed, rad):
+    """The region common to these discs, as one explicit polygon.
+
+    **This used to be done with clip-paths, and that is why the mixes were
+    missing.** The lens was a disc carrying `clip-path="url(#...)"`, which
+    every browser honours and at least one SVG renderer does not -- an
+    unresolved reference clips the shape away entirely, so the three plain
+    discs survived and every overlap silently vanished. Nothing in the file
+    looked wrong, which is the worst kind of wrong. There are no references
+    here now: the region is computed and written out as coordinates, so what
+    the file says is what any renderer draws.
+
+    The intersection of discs is convex, hence star-shaped about any interior
+    point, so casting a ray from the centroid and taking the nearest exit of
+    the several circles traces the boundary exactly. Sixty-four steps is well
+    past the resolution of a disc this size.
+    """
+    cx = sum(p[0] for p in centres) / len(centres)
+    cy = sum(p[1] for p in centres) / len(centres)
+    points = []
+    for i in range(64):
+        th = 2 * math.pi * i / 64
+        ux, uy = math.cos(th), math.sin(th)
+        best = None
+        for px, py in centres:
+            dx, dy = px - cx, py - cy
+            along = ux * dx + uy * dy
+            root = rad * rad - (dx * dx + dy * dy) + along * along
+            if root <= 0:            # the ray misses: no common region at all
+                return ""
+            t = along + math.sqrt(root)
+            best = t if best is None else min(best, t)
+        if best <= 0:
+            return ""
+        points.append(f"{cx + ux * best:.2f},{cy + uy * best:.2f}")
+    return (f'<polygon points="{" ".join(points)}" '
+            f'fill="{text.hex_colour(mixed)}"/>')
+
+
+def table(out, rows):
+    """What is in use, in hue order, beside the wheel.
+
+    The wheel says where each block sits and what it looks like; it cannot say
+    what it is made of and where it ought to have been without covering itself
+    in type. This is the other half: mixture, constituents, the hue the mixture
+    reads as, and how far the block was moved from it. Sorted by position, so
+    reading down the column walks round the ring.
+
+    Offset carries its sign. A block pulled back against the direction of
+    increasing hue reads negative, and a column of like signs is a run that was
+    dragged bodily rather than seated one at a time -- which is worth being
+    able to see at a glance, since it is exactly what the cascades did.
+    """
+    SW, GAP, ROW = 10, 2, 12.4
+    x0 = SIZE + 14
+    top = 26
+    out.append('<g font-family="monospace" font-size="8.5" fill="#444">')
+    out.append(f'<text x="{x0}" y="{top - 12}" font-size="9.5" fill="#222">'
+               f'in use, {len(rows)} blocks, by position</text>')
+    out.append(f'<text x="{x0 + 150}" y="{top - 2}" text-anchor="end" '
+               f'fill="#888">nominal</text>')
+    out.append(f'<text x="{x0 + 196}" y="{top - 2}" text-anchor="end" '
+               f'fill="#888">offset</text>')
+    for i, row in enumerate(sorted(rows, key=lambda r: r[1])):
+        _d, hue, names, mixed, n, _p, reads, _m = row
+        y = top + i * ROW
+        drop = y + SW - 2
+        out.append(f'<text x="{x0 + 18}" y="{drop}" text-anchor="end" '
+                   f'fill="#999">{n}</text>')
+        out.append(f'<rect x="{x0 + 24}" y="{y}" width="{SW}" height="{SW}" '
+                   f'fill="{text.hex_colour(mixed)}" stroke="#666" '
+                   f'stroke-width="0.7"/>')
+        for s, name in enumerate(names):
+            out.append(f'<rect x="{x0 + 44 + s * (SW + GAP)}" y="{y}" '
+                       f'width="{SW}" height="{SW}" fill="{NOMINAL[name]}" '
+                       f'stroke="#aaa" stroke-width="0.5"/>')
+        off = ((hue - reads + 180) % 360) - 180
+        out.append(f'<text x="{x0 + 150}" y="{drop}" text-anchor="end">'
+                   f'{reads:.1f}&#176;</text>')
+        out.append(f'<text x="{x0 + 196}" y="{drop}" text-anchor="end" '
+                   f'fill="{"#b00" if abs(off) >= 10 else "#444"}">'
+                   f'{off:+.1f}&#176;</text>')
+    out.append('</g>')
 
 
 def contrast(rgb):
@@ -671,36 +1008,52 @@ def label(out, hue, origin):
                    f'transform="rotate({turn:.4f} {CENTRE} {CENTRE})"/>')
 
 
-def render(target, show_base_band=False):
+def render(target, show_base_band=False, show_spikes=False, show_blend=False,
+           show_tables=False):
     """The wheel.
 
-    The base band is off by default. It did its job -- it turned twenty-three
-    ragged runs into eight clean blocks by making the boundaries visible -- and
-    once the blocks are settled it competes with the spikes for attention.
-    `--base-band` brings it back when a territory needs looking at again.
+    **Three of the four bands are now off by default, each having finished its
+    job.** The base band turned twenty-three ragged runs into eight clean
+    blocks by making the boundaries visible. The spikes showed what the
+    algorithm produced at every division, which is what the whole target file
+    was built to replace -- the block ring inside the gamut is now the answer,
+    hand-placed and complete, and the spikes only compete with it. The blend
+    band showed each division's mixture beside the ring, a check the blocks
+    make continuously through their own fill and their trefoils.
+
+    They are switched off rather than deleted: `--base-band`, `--spokes` and
+    `--blend-band` each bring one back when a question needs it.
     """
-    out = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{SIZE}" '
-           f'height="{SIZE}" viewBox="0 0 {SIZE} {SIZE}">',
-           f'<rect width="{SIZE}" height="{SIZE}" fill="#ffffff"/>']
+    wide = SIZE + TABLE_W
+    out = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{wide}" '
+           f'height="{SIZE}" viewBox="0 0 {wide} {SIZE}">',
+           f'<rect width="{wide}" height="{SIZE}" fill="#ffffff"/>']
     if show_base_band:
         base_band(out, target)
     ring(out)
-    offers = candidates(target, 4 * BENCH_PER_CORNER)
-    blend_band(out, target)
-    offer_band(out, offers)
-    bench(out, offers)
-    for hue, names, _o in target:
-        spike(out, hue, names)
-    for hue, _n, origin in target:
-        label(out, hue, origin)
+    # Neutral, not a second gamut. Putting the gamut back there sounded right
+    # -- read each trio against the colour it stands in for -- but it gave
+    # every trefoil a different ground, so no two clusters could be compared
+    # with each other, only each with the hue behind it. A flat mid grey is
+    # the same everywhere and biases nothing.
+    out.append(f'<path d="{sector(TREF_IN, TREF_OUT, 0, 180)}" fill="{TREF_BG}"/>')
+    out.append(f'<path d="{sector(TREF_IN, TREF_OUT, 180, 360)}" fill="{TREF_BG}"/>')
+    offers = candidates(target, 4 * BENCH_PER_CORNER, not show_tables)
+    if show_blend:
+        blend_band(out, target)
+    offer_band(out, offers, show_tables)
+    table(out, [r for r in offers if r[5]])
+    if show_tables:
+        bench(out, offers)
+    if show_spikes:
+        for hue, names, _o in target:
+            spike(out, hue, names)
+        for hue, _n, origin in target:
+            label(out, hue, origin)
 
-    judged = sum(1 for _h, _n, o in target if o == "eye")
-    out.append(f'<text x="{CENTRE}" y="{CENTRE - 6}" text-anchor="middle" '
-               f'font-family="monospace" font-size="13" fill="#444">'
-               f'{len(target)} divisions</text>')
-    out.append(f'<text x="{CENTRE}" y="{CENTRE + 12}" text-anchor="middle" '
-               f'font-family="monospace" font-size="10" fill="#888">'
-               f'{judged} judged, {len(target) - judged} seeded</text>')
+    # Nothing in the middle. The count of divisions and how many had been
+    # judged belonged to the spikes, which are gone: it described target.tsv,
+    # not the ring, and had been counting something the wheel no longer draws.
     out.append('</svg>')
     return "\n".join(out)
 
@@ -708,6 +1061,72 @@ def render(target, show_base_band=False):
 # ---------------------------------------------------------------------------
 # Scoring a candidate against the target
 # ---------------------------------------------------------------------------
+
+IN_USE = S / "in-use.tsv"
+
+EMOJI = {name: emoji for emoji, name, _cp, _rgb in text.PALETTE}
+
+
+def reference():
+    """The in-use set alone, as arcs of hue, for an implementation to consume.
+
+    `bench.tsv` is a working document: it carries what was rejected, what is
+    on the bench unused, how far each block was stretched and by whose hand.
+    None of that is wanted by something deciding which three squares a project
+    gets. This is the other artifact -- the mapping and nothing else, derived
+    from the same file so the two cannot disagree.
+
+    Rows tile [0, 360) with no gap and no overlap, so a lookup is `from <= hue
+    < to` and always hits exactly once. The block that straddles zero is split
+    into two rows sharing its number rather than left to wrap, because a
+    consumer that has to special-case one row will eventually not.
+    """
+    rows = sorted((r for r in read_bench() if r[3] is not None),
+                  key=lambda r: r[3])
+    arcs = []
+    for n, names, _status, at, mult in rows:
+        half = WEDGE[len(set(names))] * mult / 2
+        lo, hi = at - half, at + half
+        if lo < 0:
+            arcs.append((0.0, hi, n, names))
+            arcs.append((lo + 360, 360.0, n, names))
+        elif hi > 360:
+            arcs.append((lo, 360.0, n, names))
+            arcs.append((0.0, hi - 360, n, names))
+        else:
+            arcs.append((lo, hi, n, names))
+    arcs.sort()
+
+    edge = 0.0
+    for lo, hi, n, _names in arcs:
+        assert abs(lo - edge) < 1e-6, f"gap or overlap at {lo} (#{n})"
+        edge = hi
+    assert abs(edge - 360) < 1e-6, f"ends at {edge}, not 360"
+
+    out = [
+        "# The mapping, and nothing else: which three squares stand for a hue.",
+        "#",
+        "# Generated by `wheel.py --reference` from bench.tsv. Do not edit by",
+        "# hand -- edit bench.tsv and regenerate, or the wheel and the table",
+        "# will disagree and only one of them is being looked at.",
+        "#",
+        "# Hue is the HSL hue identicon.js derives from the digest, in degrees,",
+        "# at its fixed saturation 0.7 and lightness 0.5. Rows tile 0 to 360",
+        "# with no gap and no overlap: the row to use is the one where",
+        "# `from <= hue < to`, and there is always exactly one.",
+        "#",
+        "# The squares are given inner to outer, already in the order they are",
+        "# to be shown. Arrangement and square-versus-circle are a separate",
+        f"# channel and are not in this file. {len(rows)} blocks.",
+        "#",
+        "# from\tto\tn\tone\ttwo\tthree\tmark",
+    ]
+    for lo, hi, n, names in arcs:
+        out.append("\t".join([f"{lo:.1f}", f"{hi:.1f}", str(n), *names,
+                              "".join(EMOJI[x] for x in names)]))
+    IN_USE.write_text("\n".join(out) + "\n")
+    return len(arcs), len(rows)
+
 
 def next_path():
     """The next unused wheelN.svg. The wheel is a series, like the sheets."""
@@ -750,6 +1169,11 @@ def main(argv):
         print(f"{added} added to {BENCH.name}")
         return 0
 
+    if "--reference" in argv:
+        arcs, blocks = reference()
+        print(f"{IN_USE} {arcs} arcs from {blocks} blocks, tiling 0-360")
+        return 0
+
     if "--score" in argv:
         target = read_target()
         score(target, current, "anchored3")
@@ -763,7 +1187,8 @@ def main(argv):
             path = S / path
     else:
         path = next_path()
-    svg = render(target, "--base-band" in argv)
+    svg = render(target, "--base-band" in argv, "--spokes" in argv,
+                 "--blend-band" in argv, "--tables" in argv)
     path.write_text(svg)
     judged = sum(1 for _h, _n, o in target if o == "eye")
     print(f"{path} {len(svg)} bytes, {len(target)} divisions, "
