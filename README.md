@@ -55,6 +55,9 @@ python3 /path/to/repository-identicon.py apply --reseed
 is the only thing that adopts a new key and changes the mark, and it has to be
 asked for.
 
+Anything it replaces is kept beside it as `repository-identicon.prior.<ext>`,
+so rolling back is a `mv`. One level, overwritten each run — git has the rest.
+
 `--check` reports what would change and exits 1 without writing, for CI or for
 a tool asking whether a repository is current; `--json` gives a dependent tool
 the whole result without parsing prose.

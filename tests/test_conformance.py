@@ -233,6 +233,40 @@ class TestInstallingIntoARepository(unittest.TestCase):
         subprocess.run(["git", "-C", self.tmp, "remote", "set-url", "origin",
                         to], check=True, timeout=30)
 
+    def test_replaced_files_are_kept_so_a_rollback_is_a_move(self):
+        """These are developers. A file beside the new one is the whole
+        recovery procedure, and it beats any amount of asking first."""
+        before = identicon.install_into_repo(self.tmp, readme=False)
+        self._rename_remote()
+        after = identicon.install_into_repo(self.tmp, reseed=True,
+                                            readme=False)
+        self.assertNotEqual(before["colour"], after["colour"])
+
+        for name in ("png", "svg", "colour", "key"):
+            with self.subTest(artifact=name):
+                kept = identicon.prior_path(after["files"][name])
+                self.assertTrue(kept.is_file(), kept)
+        colour = identicon.prior_path(after["files"]["colour"])
+        self.assertEqual(before["colour"], colour.read_text().strip())
+        self.assertEqual(before["key"],
+                         identicon.prior_path(after["files"]["key"])
+                         .read_text().splitlines()[-1])
+
+    def test_nothing_is_kept_when_nothing_is_replaced(self):
+        result = identicon.install_into_repo(self.tmp, readme=False)
+        for name in ("png", "svg", "colour", "key"):
+            with self.subTest(artifact=name):
+                self.assertFalse(
+                    identicon.prior_path(result["files"][name]).exists())
+
+    def test_check_keeps_nothing_because_it_replaces_nothing(self):
+        identicon.install_into_repo(self.tmp, readme=False)
+        self._rename_remote()
+        result = identicon.install_into_repo(self.tmp, reseed=True,
+                                             readme=False, check=True)
+        self.assertFalse(
+            identicon.prior_path(result["files"]["colour"]).exists())
+
     def test_the_seed_is_recorded_on_the_first_run(self):
         result = identicon.install_into_repo(self.tmp)
         self.assertEqual("remote", result["source"])

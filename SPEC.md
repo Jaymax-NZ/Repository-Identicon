@@ -262,6 +262,13 @@ being cloned to a path that would resolve differently. Where the key would now
 derive differently, an implementation SHOULD report it — call it seed drift —
 and MUST NOT act on it.
 
+**Whatever is replaced SHOULD be kept beside its replacement**, as
+`repository-identicon.prior.<ext>` — one level, overwritten each time. Anyone
+who wants history has git; this is for the moment before a commit, when a run
+has replaced a mark and the previous one is not recorded anywhere yet. The
+audience is developers, so a file next to the new one is the whole recovery
+procedure, and it is worth more than any amount of asking first.
+
 For a fixed seed the write is idempotent: the mark is a pure function of the
 key, so a later run produces identical bytes and need not touch the files.
 

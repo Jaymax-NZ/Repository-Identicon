@@ -790,6 +790,28 @@ def seed_path(root):
     return pathlib.Path(root) / IDENTICON_DIR / SEED_NAME
 
 
+def prior_path(target):
+    """Where the version being replaced is kept: stem.prior.suffix."""
+    target = pathlib.Path(target)
+    return target.with_name(f"{target.stem}.prior{target.suffix}")
+
+
+def keep_prior(target, current):
+    """Set the outgoing bytes aside so a rollback is a `mv`.
+
+    One level, overwritten each time. Anyone who wants history has git; what
+    this is for is the moment *before* a commit, when a run has replaced a
+    mark and the previous one is not anywhere yet. These are developers -- a
+    file beside the new one is the whole recovery procedure, and it beats any
+    amount of asking first.
+    """
+    if current is None:
+        return None
+    keep = prior_path(target)
+    keep.write_bytes(current)
+    return keep
+
+
 def recorded_seed(root):
     """The key these artifacts were built from, or None if never seeded."""
     path = seed_path(root)
@@ -941,6 +963,7 @@ def install_into_repo(path=None, key=None, size=ARTIFACT_SIZE, check=False,
     else:
         resolved_key, source = recorded, "seed"
 
+
     # What the key would be if this were seeded today. Reported, never acted
     # on: an identity that changes itself is not one.
     seed_drift = derived_key if derived_key != resolved_key else None
@@ -967,6 +990,7 @@ def install_into_repo(path=None, key=None, size=ARTIFACT_SIZE, check=False,
             changes[name] = "created" if current is None else "updated"
             if not check:
                 target.parent.mkdir(parents=True, exist_ok=True)
+                keep_prior(target, current)
                 target.write_bytes(wanted[name])
 
     # The seed is written last and only when the artifacts it describes are
@@ -984,6 +1008,8 @@ def install_into_repo(path=None, key=None, size=ARTIFACT_SIZE, check=False,
         seed_state = "created"
     if seed_state != "unchanged" and not check:
         seed_file.parent.mkdir(parents=True, exist_ok=True)
+        keep_prior(seed_file,
+                   seed_file.read_bytes() if seed_file.is_file() else None)
         seed_file.write_bytes(seed_wanted)
     changes["key"] = seed_state
     paths["key"] = seed_file
