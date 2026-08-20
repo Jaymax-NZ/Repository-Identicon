@@ -113,6 +113,15 @@ def hue_of(rgb):
 
 
 def separation(a, b):
+    """Shortest angle between two hues, in degrees.
+
+    Kept although nothing here calls it. The first rule tried was a limit on
+    this -- how far apart two squares may sit on the hue circle -- and it is
+    wrong: red-green is 120 degrees and must be refused, blue-green is also 120
+    and must be allowed. `OPPONENTS` replaced it. This stays as the measurement
+    that argument is made in, and because the next person to reach for a span
+    rule should find it already written and already explained.
+    """
     d = abs(a - b) % 360
     return min(d, 360 - d)
 

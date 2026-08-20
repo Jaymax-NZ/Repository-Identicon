@@ -1,0 +1,56 @@
+Third-party code vendored into this repository
+==============================================
+
+Everything under `reference/vendor/` was written by someone else and is
+committed unmodified. It is here so that `vectors.json` can be re-derived
+offline for as long as this repository exists: a reference that has to be
+downloaded is a reference that can disappear, and one did during the week this
+was written.
+
+Nothing in `vendor/` is executed at import time, and nothing in this repository
+depends on it at runtime. It is run only by `reference/js-vectors.js`, and only
+when regenerating or checking the pinned vectors.
+
+
+identicon.js
+------------
+
+    Identicon.js 2.3.3
+    https://github.com/stewartlord/identicon.js
+    Copyright (c) 2018, Stewart Lord
+    BSD 2-Clause "Simplified" License -- see vendor/LICENSE
+
+    Upstream commit: 7063ae16142fd39d3563699b9af2dc321326ff52
+    Vendored at:     reference/vendor/identicon.js
+    Modified:        no
+
+**Normative for this specification's grid and colour.** Every constant in
+`SPEC.md` that is not about the key -- the centre-out hex-character walk, the
+seven-character hue draw, saturation 0.7 and lightness 0.5 -- is taken from
+this file rather than chosen. See "Where these constants come from" in
+`SPEC.md`.
+
+
+pnglib.js
+---------
+
+    PNGlib 1.0
+    http://www.xarg.org/download/pnglib.js
+    Copyright (c) 2010, Robert Eisele <robert@xarg.org>
+    BSD License
+
+    Vendored at: reference/vendor/pnglib.js
+    Modified:    no
+
+A dependency of identicon.js for its PNG output path. The vector harness reads
+identicon.js's **SVG** output rather than its PNG, so this file is present for
+completeness rather than because the vectors depend on it.
+
+
+Refreshing the vendored library
+-------------------------------
+
+If `vendor/` is ever updated, change the commit hash above and in
+`reference/README.md`, regenerate `vectors.json`, and expect **every identicon
+to change**. The vectors are the specification, so a reference bump is a visual
+change to every project's mark rather than a maintenance detail.

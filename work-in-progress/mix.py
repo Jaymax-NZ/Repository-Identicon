@@ -49,7 +49,6 @@ wheel = load(str(S / "wheel.py"), "wheel")
 INDEX = {name: k for k, (_e, name, _cp, _rgb) in enumerate(text.PALETTE)}
 NOMINAL = {name: "#{:02x}{:02x}{:02x}".format(*rgb)
            for _e, name, _cp, rgb in text.PALETTE}
-STEP = 0.25
 
 
 # Deferred to wheel.py so the two never disagree -- it also carries the

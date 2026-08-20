@@ -355,7 +355,11 @@ def emoji_triple(rgb):
 
 
 def triple_names(rgb):
-    """The three colour names for `rgb`, in laid-out order."""
+    """The three colour names for `rgb`, in laid-out order.
+
+    Public surface. Nothing in this repository calls it; the consumers that
+    vendor this module do, to log or explain a mark without re-deriving it.
+    """
     return tuple(PALETTE[i][1] for i in triple(rgb))
 
 

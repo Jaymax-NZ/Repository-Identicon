@@ -18,7 +18,6 @@ Standard library only. Every subprocess is invoked with an argument list.
 
 import argparse
 import base64
-import colorsys
 import hashlib
 import json
 import os
@@ -339,7 +338,10 @@ def badge_label(key, limit=2):
     characters. Upper-cased, because the badge is small.
     """
     name = project_name(key)
-    words = [part for part in name.replace("_", "-").replace(".", "-").replace(" ", "-").split("-") if part]
+    flat = name
+    for separator in ("_", ".", " "):
+        flat = flat.replace(separator, "-")
+    words = [part for part in flat.split("-") if part]
     if len(words) >= 2:
         return "".join(word[0] for word in words[:limit]).upper()
     return name[:limit].upper()
@@ -451,7 +453,8 @@ def render_svg(key, size=256, saturation=SATURATION, lightness=LIGHTNESS, backgr
         f'viewBox="0 0 {size} {size}">'
     ]
     if background is not None:
-        parts.append(f'<rect width="{size}" height="{size}" fill="{hex_colour(background)}"/>')
+        parts.append(f'<rect width="{size}" height="{size}" '
+                     f'fill="{hex_colour(background)}"/>')
     for row in range(GRID):
         for column in range(GRID):
             if grid[row][column]:
@@ -519,8 +522,6 @@ def _bg(rgb, depth):
     return f"\033[48;5;{_xterm256(rgb)}m"
 
 
-DEFAULT_FG = "\033[39m"
-DEFAULT_BG = "\033[49m"
 RESET = "\033[0m"
 
 CHIP = "█"
@@ -801,7 +802,8 @@ def dbus_call(service, path, method, args=(), qdbus=None):
     """Call a method on a Konsole session. Argument list, never a shell string."""
     qdbus = qdbus or find_qdbus()
     if qdbus:
-        return _run([qdbus, service, path, f"{SESSION_IFACE}.{method}", *[str(a) for a in args]])
+        return _run([qdbus, service, path, f"{SESSION_IFACE}.{method}",
+                     *[str(a) for a in args]])
     gdbus = find_gdbus()
     if not gdbus:
         raise DBusError("neither qdbus nor gdbus is on PATH")
@@ -1108,7 +1110,8 @@ def cmd_demo(args):
     print(f"=== {key} ===")
     print(render_ansi(key))
     print()
-    for step, handler in (("probe", cmd_probe), ("badge", cmd_badge), ("profile", cmd_profile)):
+    for step, handler in (("probe", cmd_probe), ("badge", cmd_badge),
+                          ("profile", cmd_profile)):
         print(f"--- {step} ---")
         try:
             handler(args)
@@ -1236,7 +1239,8 @@ def cmd_doctor(args):
 def build_parser():
     parser = argparse.ArgumentParser(
         prog="repository-identicon",
-        description="Per-project identicons for Konsole tabs, over the session D-Bus interface.",
+        description="Per-project identicons for Konsole tabs, over the session "
+                    "D-Bus interface.",
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -1253,7 +1257,9 @@ def build_parser():
         else:
             target.set_defaults(saturation=SATURATION, lightness=LIGHTNESS, background=None)
         if session:
-            target.add_argument("--session", help="service:/Sessions/N; default from the environment")
+            target.add_argument("--session",
+                                help="service:/Sessions/N; default from the "
+                                     "environment")
         else:
             target.set_defaults(session=None)
 
@@ -1295,7 +1301,8 @@ def build_parser():
     badge.add_argument("--clear", action="store_true", help="disable the badge instead")
     badge.set_defaults(func=cmd_badge)
 
-    profile = sub.add_parser("profile", help="route two: generate a profile carrying the icon")
+    profile = sub.add_parser(
+        "profile", help="route two: generate a profile carrying the icon")
     add_common(profile, render=True, session=True)
     profile.add_argument("--parent", default="FALLBACK/", help="profile to inherit from")
     profile.add_argument("--apply", action="store_true", help="switch the session to it")

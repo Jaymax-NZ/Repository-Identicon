@@ -59,7 +59,10 @@ agreeing with itself.
 
 ## Updating the vendored library
 
-`vendor/` is upstream, unmodified. If it is ever refreshed, update the commit
-hash in `NOTICE` and here, regenerate `vectors.json`, and expect every
-identicon to change — the vectors are the specification, so a reference bump is
-a visual change to every project's icon, not a maintenance detail.
+`vendor/` is upstream, unmodified. Provenance, copyright and the pinned commit
+are recorded in [`NOTICE`](NOTICE).
+
+If it is ever refreshed, update the commit hash in `NOTICE` and here,
+regenerate `vectors.json`, and expect every identicon to change — the vectors
+are the specification, so a reference bump is a visual change to every
+project's icon, not a maintenance detail.

@@ -14,6 +14,7 @@ dull, because a specification should be findable by someone typing what it is.
 | file | what it is |
 |---|---|
 | `SPEC.md` | the specification: how to derive the key, and how a key becomes a pattern and a colour |
+| `CONTRIBUTING.md` | how to write a conforming port, and what "a repository identicon" means |
 | `vectors.json` | pinned test vectors — the part that makes the spec unambiguous |
 | `repository-identicon.py` | the reference implementation, standard library only |
 | `text-identicon.py` | the text rendering, for media that display no image |

@@ -99,11 +99,6 @@ def sector(r0, r1, a0, a1):
 BENCH_PER_CORNER = 27
 BENCH = S / "bench.tsv"
 
-# Where the line falls between a triple that names a colour and one that
-# only gestures at it. Everything under it goes on the roster, in use or
-# not, and everything on the roster is drawn inside the ring.
-GOOD = 0.10
-
 
 def read_bench():
     """The roster, verbatim. Numbers are the file's, never recomputed."""
@@ -186,12 +181,13 @@ def candidates(limit, placed_only=True):
 
 
 def refill(limit):
-    """Append every triple good enough to belong in the vocabulary.
+    """Append every triple the harness allows to the roster.
 
-    No slot count and no sector quota any more. The roster is meant to hold all
-    of them, so the only question is whether a triple blends within `GOOD` of
-    the hue it claims. Sector balancing existed to ration twenty-four places;
-    with no rationing it would only distort the picture.
+    No slot count, no sector quota and no quality bar. The roster is meant to
+    hold every admissible triple, and the wedge widths already price each one
+    by the identity it affords -- so a weak triple shows as a thin sliver
+    rather than being kept off the list. Rationing existed when there were
+    twenty-four places to give out; there are none now.
     """
     roster = read_bench()
     # No quality bar any more. The wedge widths now price each entry by the
