@@ -162,7 +162,7 @@ unportable.
 
 Every number above — the centre-out hex-character walk, the seven-character hue
 draw, `0.7` and `0.5` — is taken from **`stewartlord/identicon.js`**, vendored at
-`identicon/reference/vendor/identicon.js` and pinned by `identicon/vectors.json`.
+`reference/vendor/identicon.js` and pinned by `vectors.json`.
 None of them is ours.
 
 That is deliberate, and it is the reason to state it here rather than to justify
@@ -179,10 +179,18 @@ The corollary is that these values are not defended, only recorded. If the
 vendored library is ever replaced, they change with it, and this section is
 where to look.
 
-Note that fixed-lightness HSL clusters perceptually: the hue draw is uniform, but
-equal hue steps are not equally visible, so the green band reads as one colour
-across roughly 50 degrees. A perceptually uniform space would fix it, and this
-is a known cost of taking the colour from the reference rather than choosing it.
+**The hue draw is uniform; the colours are not evenly spaced.** Both halves of
+that are measured. Over 200,000 plausible remotes the hue parameter is uniform
+on `[0, 1)` — mean 0.500061, thirty-six bins all within 3.4% of expectation,
+chi-square 30.6 on 35 degrees of freedom. But equal steps of HSL hue are not
+equal steps of anything the eye uses: ten degrees of HSL buys between 1.7 and
+21.2 degrees of Oklab hue, a ratio of 12.5 to 1. Green is the slowest, near HSL
+110, and cyan the fastest, near 190.
+
+So roughly a fifth of all projects land in the 100–130 band that occupies about
+six degrees of perceptual space. A perceptually uniform draw would fix it, and
+this is a known cost of taking the colour from the reference rather than
+choosing it.
 
 ## Derived names
 
@@ -252,19 +260,65 @@ this runs in a hook, and a reply that never comes hangs the turn.
 **Nothing but the identicon is printed.** No project name, no key, no label. The
 mark is the message.
 
-### Text blocks, the fallback
+### Text, the fallback
 
-Two grid rows per text row, drawn with `U+2580 UPPER HALF BLOCK`: foreground is
-the identicon colour where the upper grid row is filled, background where the
-lower one is. The fifth grid row pairs with a blank row. This gives **five
-characters wide by three tall**, which comes out roughly square given typical
-cell aspect. All 25 cells are represented; only the resolution is lost.
+Two forms, for two different constraints. Both are implemented in
+`text-identicon.py`, which takes a colour and a grid and nothing else — no key,
+no digest — so it can be vendored on its own into a tool with no identicon
+machinery.
 
-Colour depth SHOULD be chosen as: `NO_COLOR` set in the environment means no
-colour at all, per no-color.org, and also suppresses inline images; `COLORTERM`
-of `truecolor` or `24bit` means 24-bit; otherwise the xterm 256-colour cube,
-`16 + 36r + 6g + b` with each component quantised as `floor(c * 5 / 255 + 0.5)`.
+#### Octants, where the medium can style text but not show an image
 
-Without colour, the grid MUST still be legible, since colour is never allowed to
-be the only channel: use `█` for both rows filled, `▀` for the upper only, `▄`
-for the lower only, and a space for neither.
+Four grid cells per character, drawn with the **`BLOCK OCTANT-n`** set at
+U+1CD00–U+1CDE5: a character is a 2×4 lattice of subcells, so five grid rows
+fit in two text lines. Bit `i` of a pattern is subcell (`row i // 2`,
+`col i % 2`), top to bottom, which is the order Unicode numbers the octants in.
+Eight subcell rows hold a five-row grid with three to spare; all three go
+**above**, which fills the lower line completely and lets anything appended sit
+flush against it.
+
+Two caveats an implementation must handle rather than discover:
+
+- The all-blank pattern is `U+0020 SPACE`, which is genuinely correct and
+  single-width where every other octant is double. Emit **two** spaces at the
+  point of rendering, so a blank in the middle of a line does not skew the mark
+  against the line below. The table stays canonical; the compensation does not.
+- Twenty-six of the 256 patterns are quadrants and block elements that already
+  existed and were not re-encoded when Unicode 16 specified the set. They are
+  the right characters, but fonts commonly do not harmonise them with the 230
+  drawn in 2024, and the seam is visible within one mark. There is no alternative
+  encoding for most of them, so do not substitute lookalikes.
+
+#### Emoji squares, where the medium styles nothing at all
+
+Where even colour is unavailable — a plain-text channel that will not take an
+escape sequence — the colour is carried by **three emoji squares** appended to
+the octant grid, from a palette of nine: red, orange, yellow, green, blue,
+purple, brown, black, white.
+
+```
+$ python3 text-identicon.py '#2692d9' '01010,01010,10001,10101,01010'
+𜺠𜺠
+𜶆𜶂🯦 🟩🟦🟦
+```
+
+The triple is a **pure function of the colour** — not of the key, the digest or
+the grid — so a consumer holding only `#rrggbb` can compute the whole mark.
+
+**Which three squares stand for a colour is not yet normative.** The shipped
+chooser searches the palette for the mix nearest the target, which produces
+combinations that are numerically close and perceptually wrong. A replacement is
+settled but not adopted: `work-in-progress/in-use.tsv` is a hand-placed table of
+fifty arcs tiling 0–360, each naming its three squares, with `work-in-progress/`
+carrying how it was arrived at. It will land here, with vectors, once it ships.
+
+#### Colour depth, where escape sequences are available
+
+`NO_COLOR` set in the environment means no colour at all, per no-color.org, and
+also suppresses inline images; `COLORTERM` of `truecolor` or `24bit` means
+24-bit; otherwise the xterm 256-colour cube, `16 + 36r + 6g + b` with each
+component quantised as `floor(c * 5 / 255 + 0.5)`.
+
+Without colour the grid MUST still be legible, since colour is never allowed to
+be the only channel — which is what the octants and the emoji squares are both
+for.
