@@ -523,56 +523,66 @@ DEFAULT_FG = "\033[39m"
 DEFAULT_BG = "\033[49m"
 RESET = "\033[0m"
 
-# Cell aspect is roughly one to two, so packing two grid rows into one text row
-# with an upper half block makes the identicon come out square.
-HALF_BLOCK = "▀"
-FILLED_BLOCK = "█"
+CHIP = "█"
+
+# The text rendering lives in text-identicon.py, which takes a grid and a colour
+# and nothing else. Loaded by path because the file name carries a hyphen; it is
+# a sibling of this one and reaches nothing outside the repository.
+_TEXT = None
 
 
-def render_half_blocks(key, depth=TRUECOLOR, saturation=SATURATION, lightness=LIGHTNESS):
-    """The identicon as three text rows of five characters.
+def _text_module():
+    global _TEXT
+    if _TEXT is None:
+        import importlib.util
+        path = pathlib.Path(__file__).with_name("text-identicon.py")
+        spec = importlib.util.spec_from_file_location("text_identicon", path)
+        _TEXT = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(_TEXT)
+    return _TEXT
 
-    Compact enough to print on every return of control without taking the
-    terminal over: two grid rows per text row, the fifth row paired with blank.
+
+def render_text(key, saturation=SATURATION, lightness=LIGHTNESS):
+    """The identicon as two lines: the octant grid, then the emoji triple.
+
+    **The half-block grid this replaced is gone.** It packed two grid rows into
+    one text row with an upper half block, three rows of five characters, and
+    coloured them with escape sequences -- which made it five columns wide and
+    three tall for a five-by-five grid, and unusable at that size. The octants
+    carry four cells per character instead: the same twenty-five cells in two
+    lines of three, with the colour in the squares rather than in an escape
+    sequence, because one glyph covering four cells cannot be coloured per cell.
     """
     grid = identicon_grid(key)
     colour = identicon_colour(key, saturation, lightness)
-    lines = []
-    for text_row in range(3):
-        line = ""
-        for column in range(GRID):
-            top = grid[text_row * 2][column]
-            bottom_row = text_row * 2 + 1
-            bottom = grid[bottom_row][column] if bottom_row < GRID else False
-            if depth == NONE:
-                line += FILLED_BLOCK if top and bottom else HALF_BLOCK if top else "▄" if bottom else " "
-                continue
-            line += (_fg(colour, depth) if top else DEFAULT_FG)
-            line += (_bg(colour, depth) if bottom else DEFAULT_BG)
-            line += HALF_BLOCK
-        lines.append(line + (RESET if depth != NONE else ""))
-    return lines
+    return _text_module().text(grid, colour).split("\n")
 
 
 def render_banner(key, source=None, depth=TRUECOLOR, **kwargs):
-    """The compact identicon with the project name beside it."""
-    rows = render_half_blocks(key, depth, **kwargs)
+    """The identicon with the project name beside it."""
+    rows = render_text(key, kwargs.get("saturation", SATURATION),
+                       kwargs.get("lightness", LIGHTNESS))
     colour = identicon_colour(key, kwargs.get("saturation", SATURATION),
                               kwargs.get("lightness", LIGHTNESS))
     name = project_name(key)
     if depth != NONE:
         name = f"{_fg(colour, depth)}{name}{RESET}"
-    labels = [name, key if source != "path" else "", ""]
+    labels = [name, key if source != "path" else ""]
     return [f"{row}  {label}".rstrip() for row, label in zip(rows, labels)]
 
 
 def render_line(key, depth=TRUECOLOR, **kwargs):
-    """One line: the colour, then the project name. For the tightest prompts."""
+    """One line: the colour, then the project name. For the tightest prompts.
+
+    The grid cannot be one line -- five rows over a two-by-four lattice is two
+    text lines and no arrangement makes it one -- so anything that affords a
+    single line loses the pattern and keeps only the colour. A coloured chip
+    where escape sequences work, the emoji triple where they do not.
+    """
     colour = identicon_colour(key, kwargs.get("saturation", SATURATION),
                               kwargs.get("lightness", LIGHTNESS))
-    mark = FILLED_BLOCK
-    if depth != NONE:
-        mark = f"{_fg(colour, depth)}{FILLED_BLOCK}{RESET}"
+    mark = (f"{_fg(colour, depth)}{CHIP}{RESET}" if depth != NONE
+            else _text_module().emoji_triple(colour))
     return [f"{mark} {project_name(key)}"]
 
 
@@ -588,8 +598,8 @@ def render_line(key, depth=TRUECOLOR, **kwargs):
 
 ITERM2 = "iterm2"
 KITTY = "kitty"
-BLOCKS = "blocks"
-PROTOCOLS = (ITERM2, KITTY, BLOCKS)
+TEXT = "text"
+PROTOCOLS = (ITERM2, KITTY, TEXT)
 
 # Native pixel size for the inline image. Konsole ignores the protocol's own
 # width and height arguments, so the PNG's own size is what decides how big it
@@ -608,14 +618,14 @@ def resolve_protocol(requested=None, environ=None):
     if requested and requested != "auto":
         return requested
     if environ.get("NO_COLOR") is not None:
-        return BLOCKS
+        return TEXT
     if environ.get("KITTY_WINDOW_ID") or "kitty" in environ.get("TERM", "").lower():
         return KITTY
     if environ.get("KONSOLE_VERSION") or environ.get("KONSOLE_DBUS_SESSION"):
         return ITERM2
     if environ.get("TERM_PROGRAM", "") in ("iTerm.app", "WezTerm", "ghostty", "vscode"):
         return ITERM2
-    return BLOCKS
+    return TEXT
 
 
 def iterm2_image(png):
@@ -649,7 +659,7 @@ def render_inline(key, protocol, size=INLINE_SIZE, **kwargs):
     return iterm2_image(png) if protocol == ITERM2 else kitty_image(png)
 
 
-def render(key, style="icon", source=None, depth=TRUECOLOR, protocol=BLOCKS,
+def render(key, style="icon", source=None, depth=TRUECOLOR, protocol=TEXT,
            size=INLINE_SIZE, **kwargs):
     """Return everything to write for one identicon, trailing newline included.
 
@@ -660,25 +670,26 @@ def render(key, style="icon", source=None, depth=TRUECOLOR, protocol=BLOCKS,
         inline = render_inline(key, protocol, size, **kwargs)
         if inline is not None:
             return inline + "\n"
-        style = BLOCKS
+        style = TEXT
 
     if style == "image":
-        inline = render_inline(key, protocol if protocol != BLOCKS else ITERM2,
+        inline = render_inline(key, protocol if protocol != TEXT else ITERM2,
                                size, **kwargs)
         return (inline or "") + "\n"
 
-    lines = _BLOCK_STYLES[style](key, source=source, depth=depth, **kwargs)
+    lines = _TEXT_STYLES[style](key, source=source, depth=depth, **kwargs)
     return "".join(line + "\n" for line in lines)
 
 
-_BLOCK_STYLES = {
-    BLOCKS: lambda key, source=None, depth=TRUECOLOR, **kw: render_half_blocks(key, depth, **kw),
+_TEXT_STYLES = {
+    TEXT: lambda key, source=None, depth=TRUECOLOR, **kw: render_text(
+        key, kw.get("saturation", SATURATION), kw.get("lightness", LIGHTNESS)),
     "full": lambda key, source=None, depth=TRUECOLOR, **kw: render_ansi(key).splitlines(),
     "banner": render_banner,
     "line": lambda key, source=None, depth=TRUECOLOR, **kw: render_line(key, depth, **kw),
 }
 
-STYLES = ("icon", "image", BLOCKS, "full", "banner", "line")
+STYLES = ("icon", "image", TEXT, "full", "banner", "line")
 
 
 # ---------------------------------------------------------------------------

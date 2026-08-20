@@ -388,7 +388,5 @@ and the emoji triple. The octants remain and are emitted alone: the grid is the
 identity and is legible with no colour at all, which is the property that lets
 this degrade at all.
 
-There is no colour-depth negotiation in this rendering. An earlier draft
-specified truecolour against the xterm 256-colour cube for a half-block grid
-that no longer exists; the octants are monochrome by construction and the colour
-lives in the squares.
+There is no colour-depth negotiation in this rendering: the octants are
+monochrome by construction and the colour lives in the squares.
