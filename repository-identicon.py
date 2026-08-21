@@ -70,15 +70,15 @@ OVERRIDE_FILENAME = ".repository-identicon"
 LEGACY_OVERRIDE_FILENAMES = (".claude-state-identicon",)
 
 
-def normalise_key(path):
+def normalise_seed(path):
     """Reduce a filesystem path to a stable string.
 
     Expanded, made absolute, and stripped of any trailing separator, so that
     `~/src/foo`, `~/src/foo/` and a relative path to the same place all agree.
 
-    This is the *fallback* key. Prefer resolve_key, which reaches the repository
-    identity first — a path is not stable across machines, containers, or the
-    per-session git worktrees the desktop app creates.
+    This is the *fallback* seed. Prefer resolve_seed, which reaches the
+    repository identity first — a path is not stable across machines,
+    containers, or the per-session git worktrees the desktop app creates.
     """
     expanded = os.path.expanduser(str(path))
     absolute = os.path.abspath(expanded)
@@ -138,7 +138,7 @@ def _git(args, cwd=None):
     straight into `git -C`, so a caller that passed None ran `git -C None`,
     which fails and comes back indistinguishable from "not a repository" --
     silent, and wrong in the direction that looks like a valid answer.
-    `resolve_key` never hit it because it normalises the path first; anything
+    `resolve_seed` never hit it because it normalises the path first; anything
     calling these helpers directly did.
     """
     try:
@@ -173,7 +173,7 @@ def repo_remote_url(path):
     return _git(["remote", "get-url", remotes.splitlines()[0].strip()], path)
 
 
-def override_key(directory):
+def override_seed(directory):
     """The committed seed at `directory`, if there is a usable one.
 
     The current name wins; a legacy name is honoured only when the current one
@@ -193,8 +193,12 @@ def override_key(directory):
     return None
 
 
-def resolve_key(path=None, explicit=None):
-    """Return (key, source) for a project directory.
+def resolve_seed(path=None, explicit=None):
+    """Return (seed, source) for a project directory.
+
+    The seed is the identity -- `github.com/owner/repo`. It is not the key:
+    `stamp_key` adds the mapping version to make one, and once a repository is
+    seeded the recorded key outranks anything derived here.
 
     Precedence, most specific first:
 
@@ -207,13 +211,13 @@ def resolve_key(path=None, explicit=None):
     Only `remote` and `override` survive being cloned somewhere else. The two
     path-shaped sources are honest fallbacks, not equivalents.
     """
-    directory = normalise_key(path if path else os.getcwd())
+    directory = normalise_seed(path if path else os.getcwd())
     if explicit:
         return explicit, "explicit"
 
     toplevel = repo_toplevel(directory)
 
-    committed = override_key(toplevel or directory)
+    committed = override_seed(toplevel or directory)
     if committed:
         return committed, "override"
 
@@ -221,53 +225,79 @@ def resolve_key(path=None, explicit=None):
         remote = normalise_remote_url(repo_remote_url(directory))
         if remote:
             return remote, "remote"
-        return normalise_key(toplevel), "toplevel"
+        return normalise_seed(toplevel), "toplevel"
 
     return directory, "path"
 
 
-# **The mapping version is part of what is hashed.**
+# **The mapping version lives in the key file, and the file wins.**
 #
 # A change to the derivation is a change to every project's identity, and
 # nothing stopped one happening quietly: edit a constant, regenerate the
 # vectors in the same commit, and CI goes green while every mark in the world
 # moves. Discipline was the only guard, and discipline is not a mechanism.
 #
-# So the version is inside the key. The mark is a function of the mapping and
-# the seed together, which makes "the marks changed" and "the version changed"
-# the same event by construction. Bumping this constant is the deliberate act
-# that rolls every identicon; nothing else can.
+# So the version is written *into* the key -- `1:github.com/owner/repo` -- and
+# the key is hashed verbatim, prefix and all. A repository's mark cannot
+# change unless that line changes, and that line is a tracked file, so the
+# change is a diff somebody reviews. The constant below does not reach
+# anybody: it only says what a *newly seeded* repository is stamped with.
+# `apply --remap` is the deliberate act that moves an existing one.
 #
-# It is *outside* the seed. `.identicon/repository-identicon.key` still records
-# the project -- `github.com/owner/repo` -- because that is the identity, and a
-# version bump must not read as a rename. The seed says which project; this
-# says which mapping; the mark comes from both.
+# The version is *outside* the seed. The seed -- `github.com/owner/repo` -- is
+# the identity, so drift is compared on seeds alone and a remap never reads as
+# a rename.
 #
-# The vendored library is untouched by this: it consumes a digest, and only the
-# string being digested has changed. Conformance to `stewartlord/identicon.js`
-# is exactly as it was.
+# A key file written before any of this has no prefix. That is version 0, it
+# hashes to itself, and it therefore still produces the mark it always did.
+# Backward compatibility is not a special case here; it is what "the file
+# wins" already means.
+#
+# The vendored library is untouched by any of it: it consumes a digest, and
+# only the string being digested has changed. Conformance to
+# `stewartlord/identicon.js` is exactly as it was.
 MAPPING_VERSION = 1
 
+# `<digits>:` and nothing else, anchored, so a seed that happens to contain a
+# colon -- a scheme, a Windows path -- is never mistaken for a stamped key.
+KEY_STAMP = re.compile(r"^([0-9]+):(.*)$", re.DOTALL)
 
-def identicon_key(seed):
-    """The string that is hashed: the mapping version, a colon, then the seed.
 
-    Specified exactly because a port in another language reproduces the bytes
-    or it reproduces nothing. `vectors.json` records this alongside each seed
-    so there is no reading of prose involved.
+def stamp_key(seed, version=None):
+    """The key a freshly seeded repository records: version, colon, seed.
+
+    The default is read at call time rather than bound to the signature, so
+    there is exactly one place the current version lives.
     """
-    return f"{MAPPING_VERSION}:{seed}"
+    if version is None:
+        version = MAPPING_VERSION
+    return f"{version}:{seed}"
 
 
-def _digest(seed):
+def parse_key(key):
+    """Split a key into (mapping_version, seed).
+
+    An unstamped key is version 0 -- the mapping that existed before the
+    version did -- and is its own seed.
+    """
+    match = KEY_STAMP.match(key)
+    if not match:
+        return 0, key
+    return int(match.group(1)), match.group(2)
+
+
+def _digest(key):
     """MD5 of the key as lowercase hex.
+
+    The key is hashed exactly as recorded. Nothing is prepended here, and that
+    is the whole mechanism: what the file says is what the mark is.
 
     Hex rather than bytes because the reference consumes the digest as *hex
     characters* -- one nibble per grid cell, and the last seven characters as
     the hue. Working in hex keeps this readable next to the reference instead
     of turning every rule into shifts and masks.
     """
-    return hashlib.md5(identicon_key(seed).encode("utf-8")).hexdigest()
+    return hashlib.md5(key.encode("utf-8")).hexdigest()
 
 
 def identicon_grid(key):
@@ -807,25 +837,37 @@ def artifact_paths(root):
     }
 
 
-# **The seed is recorded, and changing it is a positive act.**
+# **The key is recorded, and changing it is a positive act.**
 #
 # The key was re-derived from the remote on every run, which made a rename
 # silently change a repository's identity -- the one thing an identity is for
 # is not doing that. It also conflated two unrelated reasons to re-run:
 # wanting newer artifacts, and wanting a different mark. Those are now
-# separate. `apply` refreshes the artifacts from the recorded seed, so an
+# separate. `apply` refreshes the artifacts from the recorded key, so an
 # improved renderer or a different size reaches every repository without
-# touching anybody's identity; `--reseed` is the only thing that changes what
-# the mark is derived from.
+# touching anybody's identity; `--reseed` and `--remap` are the only things
+# that change what the mark is derived from.
 #
-# This file is a record, not a decision: it says what these artifacts were
-# built from. `.repository-identicon` is the decision, is hand-written, and
-# still outranks it.
-SEED_NAME = f"{ARTIFACT_STEM}.key"
+# The file holds the whole key, mapping version included, and it is hashed
+# verbatim. So this file is not merely a record of what the mark was built
+# from -- it *is* what the mark is built from, and no change anywhere else can
+# move it. `.repository-identicon` is hand-written and holds a seed, not a key:
+# it outranks the git remote when a seed has to be derived, and is outranked by
+# this file once one has been.
+KEY_NAME = f"{ARTIFACT_STEM}.key"
+
+# Written once, at seeding. The payload line is the key; everything above it is
+# for whoever opens the file wondering what they are looking at.
+KEY_FILE_TEMPLATE = (
+    "# This repository's identicon is derived from the line below, hashed\n"
+    "# exactly as it reads. `<version>:<seed>` -- the mapping version, then\n"
+    "# the identity. Nothing changes this mark except changing this line.\n"
+    "{key}\n"
+)
 
 
-def seed_path(root):
-    return pathlib.Path(root) / IDENTICON_DIR / SEED_NAME
+def key_path(root):
+    return pathlib.Path(root) / IDENTICON_DIR / KEY_NAME
 
 
 def prior_path(target):
@@ -850,9 +892,14 @@ def keep_prior(target, current):
     return keep
 
 
-def recorded_seed(root):
-    """The key these artifacts were built from, or None if never seeded."""
-    path = seed_path(root)
+def recorded_key(root):
+    """The recorded key, verbatim, or None if this repository is not seeded.
+
+    Verbatim matters: the first payload line is hashed exactly as it reads,
+    version stamp and all. An unstamped line is a version 0 key and still
+    derives the mark it always did.
+    """
+    path = key_path(root)
     if not path.is_file():
         return None
     for line in path.read_text(errors="replace").splitlines():
@@ -860,6 +907,21 @@ def recorded_seed(root):
         if line and not line.startswith("#"):
             return line
     return None
+
+
+def resolve_key_for(path=None, explicit=None):
+    """Return (key, source) for a directory: what it actually draws with.
+
+    A seeded repository's recorded key outranks any re-derivation, here as in
+    `apply`, so `show`, `render` and the hook cannot disagree with what is on
+    disk -- including about which mapping version drew it.
+    """
+    seed, source = resolve_seed(path, explicit)
+    if not explicit:
+        recorded = recorded_key(repo_toplevel(path) or (path or os.getcwd()))
+        if recorded is not None:
+            return recorded, "key"
+    return stamp_key(seed), source
 
 
 def artifact_bytes(key, size=ARTIFACT_SIZE, **render_kwargs):
@@ -969,23 +1031,29 @@ def readme_state(root, check=False):
     return "updated", readme
 
 
-def install_into_repo(path=None, key=None, size=ARTIFACT_SIZE, check=False,
-                      reseed=False, readme=True, **render_kwargs):
+def install_into_repo(path=None, seed=None, size=ARTIFACT_SIZE, check=False,
+                      reseed=False, remap=False, readme=True, **render_kwargs):
     """Create or update the identicon artifacts in one repository.
 
     **Two things you might want from a re-run, and they are separate.**
     Refreshing the artifacts -- a better renderer, a different size, a new
     file in the set -- must reach every repository without disturbing any
     identity. Changing what the mark is derived from must not happen by
-    accident. So the seed is recorded on the first run and reused on every
-    run after it, and `reseed` is the only thing that replaces it.
+    accident. So the key is recorded on the first run and reused verbatim on
+    every run after it; `reseed` and `remap` are the only things that replace
+    it.
 
     Once seeded, the mark is stable against anything: renaming the repository,
     moving it between forges, cloning it to a path that would resolve
-    differently. Those change what the key *would* be, which is reported as
-    `seed_drift`, and nothing more. Acting on it is somebody's decision.
+    differently, or a new mapping version shipping in this file. Those change
+    what the key *would* be, which is reported as `seed_drift` and
+    `mapping_drift`, and nothing more. Acting on it is somebody's decision.
 
-    For a fixed seed this writes identical bytes on every run and reports
+    `reseed` adopts today's seed at today's mapping version. `remap` keeps the
+    recorded seed and moves it to today's mapping version -- the same identity,
+    drawn by the new mapping.
+
+    For a fixed key this writes identical bytes on every run and reports
     nothing changed.
 
     `check` reports what *would* change and writes nothing, which is what a
@@ -994,18 +1062,28 @@ def install_into_repo(path=None, key=None, size=ARTIFACT_SIZE, check=False,
     Returns a dict describing what happened, suitable for --json.
     """
     root = repo_toplevel(path) or (path or os.getcwd())
-    derived_key, derived_source = resolve_key(path, key)
+    derived_seed, derived_source = resolve_seed(path, seed)
 
-    recorded = None if key else recorded_seed(root)
-    if key or reseed or recorded is None:
-        resolved_key, source = derived_key, derived_source
+    recorded = None if seed else recorded_key(root)
+    if seed or reseed or recorded is None:
+        # Nothing recorded, or something asked for today's seed: stamp it with
+        # the version this implementation seeds at.
+        key, source = stamp_key(derived_seed), derived_source
+    elif remap:
+        # The identity stands; only the mapping moves.
+        key, source = stamp_key(parse_key(recorded)[1]), "remap"
     else:
-        resolved_key, source = recorded, "seed"
+        # The file wins. Hashed exactly as it reads, prefix and all.
+        key, source = recorded, "key"
 
+    mapping_version, resolved_seed = parse_key(key)
 
-    # What the key would be if this were seeded today. Reported, never acted
-    # on: an identity that changes itself is not one.
-    seed_drift = derived_key if derived_key != resolved_key else None
+    # What this repository would derive today, reported and never acted on: an
+    # identity that changes itself is not one, and neither is a mark that
+    # redraws itself because a constant moved somewhere else.
+    seed_drift = derived_seed if derived_seed != resolved_seed else None
+    mapping_drift = (MAPPING_VERSION if mapping_version != MAPPING_VERSION
+                     else None)
 
     # An override outranks the remote, which is the point of it. Where one is
     # in force and the remote disagrees, say so rather than resolve it -- the
@@ -1013,12 +1091,12 @@ def install_into_repo(path=None, key=None, size=ARTIFACT_SIZE, check=False,
     masking = None
     if derived_source == "override":
         url = repo_remote_url(path)
-        remote_key = normalise_remote_url(url) if url else None
-        if remote_key and remote_key != derived_key:
-            masking = remote_key
+        remote_seed = normalise_remote_url(url) if url else None
+        if remote_seed and remote_seed != derived_seed:
+            masking = remote_seed
 
     paths = artifact_paths(root)
-    wanted = artifact_bytes(resolved_key, size, **render_kwargs)
+    wanted = artifact_bytes(key, size, **render_kwargs)
 
     changes = {}
     for name, target in paths.items():
@@ -1032,26 +1110,27 @@ def install_into_repo(path=None, key=None, size=ARTIFACT_SIZE, check=False,
                 keep_prior(target, current)
                 target.write_bytes(wanted[name])
 
-    # The seed is written last and only when the artifacts it describes are
+    # The key is written last and only when the artifacts it describes are
     # there, so a half-written directory never claims to be seeded.
-    seed_file = seed_path(root)
-    seed_wanted = (f"# What this repository's identicon is derived from.\n"
-                   f"# Recorded on the first run and reused thereafter; "
-                   f"`apply --reseed` is the only thing that changes it.\n"
-                   f"{resolved_key}\n").encode("utf-8")
-    seed_state = "unchanged"
-    if seed_file.read_bytes() if seed_file.is_file() else None:
-        seed_state = ("unchanged" if seed_file.read_bytes() == seed_wanted
-                      else "updated")
+    #
+    # An already-seeded repository is left byte-for-byte alone, comment lines
+    # included. Rewriting the preamble under somebody would make every run a
+    # diff, and this file's whole job is to be the thing that does not move.
+    key_file = key_path(root)
+    current_key_bytes = key_file.read_bytes() if key_file.is_file() else None
+    if current_key_bytes is not None and recorded == key:
+        key_state = "unchanged"
     else:
-        seed_state = "created"
-    if seed_state != "unchanged" and not check:
-        seed_file.parent.mkdir(parents=True, exist_ok=True)
-        keep_prior(seed_file,
-                   seed_file.read_bytes() if seed_file.is_file() else None)
-        seed_file.write_bytes(seed_wanted)
-    changes["key"] = seed_state
-    paths["key"] = seed_file
+        key_wanted = KEY_FILE_TEMPLATE.format(key=key).encode("utf-8")
+        key_state = ("created" if current_key_bytes is None
+                     else "unchanged" if current_key_bytes == key_wanted
+                     else "updated")
+        if key_state != "unchanged" and not check:
+            key_file.parent.mkdir(parents=True, exist_ok=True)
+            keep_prior(key_file, current_key_bytes)
+            key_file.write_bytes(key_wanted)
+    changes["key"] = key_state
+    paths["key"] = key_file
 
     if readme:
         state, readme_file = readme_state(root, check)
@@ -1059,12 +1138,13 @@ def install_into_repo(path=None, key=None, size=ARTIFACT_SIZE, check=False,
             changes["readme"] = state
             paths["readme"] = readme_file
 
-    colour = identicon_colour(resolved_key,
+    colour = identicon_colour(key,
                               render_kwargs.get("saturation", SATURATION),
                               render_kwargs.get("lightness", LIGHTNESS))
     return {
-        "key": resolved_key,
-        "mapping_version": MAPPING_VERSION,
+        "key": key,
+        "seed": resolved_seed,
+        "mapping_version": mapping_version,
         "source": source,
         "root": str(root),
         "colour": hex_colour(colour),
@@ -1074,7 +1154,9 @@ def install_into_repo(path=None, key=None, size=ARTIFACT_SIZE, check=False,
         "checked": bool(check),
         "masking": masking,
         "seed_drift": seed_drift,
+        "mapping_drift": mapping_drift,
         "reseeded": bool(reseed),
+        "remapped": bool(remap),
     }
 
 
@@ -1266,7 +1348,8 @@ def resolve_session(spec=None):
 
 
 def _resolve_from_args(args):
-    return resolve_key(getattr(args, "path", None), getattr(args, "key", None))
+    return resolve_key_for(getattr(args, "path", None),
+                           getattr(args, "seed", None))
 
 
 def _key_from_args(args):
@@ -1332,8 +1415,8 @@ def cmd_apply(args):
     and 1 under --check when it is not, so a CI job or a dependent tool can
     branch on it without parsing anything.
     """
-    result = install_into_repo(args.path, args.key, args.size, args.check,
-                               args.reseed, not args.no_readme,
+    result = install_into_repo(args.path, args.seed, args.size, args.check,
+                               args.reseed, args.remap, not args.no_readme,
                                **_render_kwargs(args))
     if args.json:
         print(json.dumps(result, indent=2))
@@ -1341,30 +1424,41 @@ def cmd_apply(args):
 
     verb = "would be" if args.check else ""
     print(f"key      {result['key']}  ({result['source']})")
+    print(f"seed     {result['seed']}")
+    print(f"mapping  {result['mapping_version']}")
     print(f"colour   {result['colour']}")
     for name, state in sorted(result["changes"].items()):
         mark = " " if state == "unchanged" else "*"
         print(f" {mark} {result['files'][name]}  {verb} {state}".rstrip())
     if result["seed_drift"]:
         print()
-        print(f"The recorded seed is {result['key']}, but this repository "
+        print(f"The recorded seed is {result['seed']}, but this repository "
               f"would seed as {result['seed_drift']} today.")
         print("The identicon is unchanged, which is the point: a mark that "
               "re-derived itself would not be an identity. Run "
-              "`apply --reseed` to adopt the new key and change the mark.")
+              "`apply --reseed` to adopt the new seed and change the mark.")
     elif result["masking"]:
         print()
         print(f"{OVERRIDE_FILENAME} pins this repository to "
-              f"{result['key']}, but its remote now says "
+              f"{result['seed']}, but its remote now says "
               f"{result['masking']}.")
         print("The override wins, which is what it is for. If the move was "
               "meant to change the identity, delete the file and re-run; if "
               "it was not, nothing needs doing.")
-    elif result["source"] not in ("remote", "override", "seed"):
+    elif result["source"] not in ("remote", "override", "key", "remap"):
         print()
-        print(f"This repository has no usable git remote, so the key is a path "
-              f"and will not survive being cloned elsewhere. Commit a "
-              f"{OVERRIDE_FILENAME} file holding the key to pin it.")
+        print(f"This repository has no usable git remote, so the seed is a "
+              f"path and will not survive being cloned elsewhere. Commit a "
+              f"{OVERRIDE_FILENAME} file holding the seed to pin it.")
+    if result["mapping_drift"]:
+        print()
+        print(f"This repository is drawn by mapping version "
+              f"{result['mapping_version']}; this implementation seeds new "
+              f"repositories at version {result['mapping_drift']}.")
+        print("Nothing is out of date. The recorded key is what the mark is, "
+              "so a newer mapping reaches this repository only when somebody "
+              "decides it should: run `apply --remap`, and the changed line "
+              "in the key file is the record of that decision.")
     return 0 if result["current"] or not args.check else 1
 
 
@@ -1580,7 +1674,7 @@ def cmd_emit(args):
         path = args.path
         if not path and not sys.stdin.isatty():
             path = payload_cwd(sys.stdin)
-        key, source = resolve_key(path, args.key)
+        key, source = resolve_key_for(path, args.seed)
 
         text = render(
             key,
@@ -1660,26 +1754,52 @@ def load_vectors(path=None):
             f"{path} not found; {VECTORS_NAME} is the contract and validate "
             f"cannot run without it")
     document = json.loads(path.read_text())
-    if document.get("version") != MAPPING_VERSION:
+    vectors = document.get("vectors")
+    if not isinstance(vectors, list) or not vectors:
+        raise ValueError(f"{path} has no vectors")
+
+    # The vectors span mapping versions, because the keys do: version 0 keys
+    # are still out there and must still draw what they always drew. What is
+    # not allowed is seeding at a version nothing pins, so bumping the constant
+    # without generating the vectors for it fails here rather than in the wild.
+    covered = sorted({parse_key(vector["key"])[0] for vector in vectors})
+    if MAPPING_VERSION not in covered:
         raise ValueError(
-            f"{path} is for mapping version {document.get('version')!r} and "
-            f"this implementation is version {MAPPING_VERSION}; they cannot "
-            f"agree and the disagreement is the point")
+            f"{path} pins mapping versions {covered} and this implementation "
+            f"seeds at version {MAPPING_VERSION}; a bump has to bring its "
+            f"vectors with it")
     return document
+
+
+def _cell(value):
+    """One cell as "0" or "1".
+
+    A string cell is read by value, not by truthiness. `"0"` is a true Python
+    string, so a port emitting `[["0", "1", ...], ...]` -- a perfectly
+    reasonable shape -- would otherwise be told its grid was solid, which is
+    a wrong answer dressed up as a real one.
+    """
+    if isinstance(value, str):
+        text = value.strip()
+        if text not in ("0", "1"):
+            raise TypeError(f"cell {value!r} is neither 0 nor 1")
+        return text
+    return "1" if value else "0"
 
 
 def _normalise_grid(value):
     """Accept the shapes a port might reasonably emit, reject the rest.
 
     A validator that fails a correct implementation over JSON shape is worse
-    than no validator, so a row may be "01101" or [0,1,1,0,1] or booleans.
+    than no validator, so a row may be "01101" or [0,1,1,0,1] or booleans or
+    ["0","1",...].
     """
     rows = []
     for row in value:
         if isinstance(row, str):
             rows.append(row.strip())
         else:
-            rows.append("".join("1" if cell else "0" for cell in row))
+            rows.append("".join(_cell(cell) for cell in row))
     return rows
 
 
@@ -1715,22 +1835,28 @@ def check_output(text, vector):
 
 
 def validate_command(argv, vectors, timeout=30):
-    """Run `argv + [key]` once per vector and collect the results."""
+    """Run `argv + [key]` once per vector and collect the results.
+
+    The key, not the seed. A port hashes what it is handed and has no business
+    knowing about mapping versions -- that is the point of putting the version
+    in the key rather than in everybody's code.
+    """
     results = []
     for vector in vectors:
+        key = vector["key"]
         try:
-            completed = subprocess.run([*argv, vector["seed"]],
+            completed = subprocess.run([*argv, key],
                                        capture_output=True, text=True,
                                        timeout=timeout)
         except (OSError, subprocess.SubprocessError) as error:
-            results.append({"seed": vector["seed"], "problems": [str(error)]})
+            results.append({"key": key, "problems": [str(error)]})
             continue
         if completed.returncode != 0:
             detail = (completed.stderr or completed.stdout).strip()
-            results.append({"seed": vector["seed"],
+            results.append({"key": key,
                             "problems": [f"exited {completed.returncode}: {detail}"]})
             continue
-        results.append({"seed": vector["seed"],
+        results.append({"key": key,
                         "problems": check_output(completed.stdout, vector)})
     return results
 
@@ -1754,11 +1880,11 @@ def cmd_validate(args):
     else:
         for result in results:
             if result["problems"]:
-                print(f"FAIL {result['seed'] or '(empty seed)'}")
+                print(f"FAIL {result['key']}")
                 for problem in result["problems"]:
                     print(f"       {problem}")
             else:
-                print(f"ok   {result['seed'] or '(empty seed)'}")
+                print(f"ok   {result['key']}")
         print()
         print(f"{len(results) - len(failed)}/{len(results)} vectors reproduced")
         if failed:
@@ -1799,9 +1925,13 @@ def build_parser():
     def add_common(target, *, path=True, render=False, session=False):
         if path:
             target.add_argument("path", nargs="?", help="project path (default: cwd)")
-            target.add_argument("--key", help="override the derived key outright")
+            # `--key` was the published name for this before the key and the
+            # seed became different things. It has always meant the identity,
+            # which is the seed, so it stays as an alias rather than breaking.
+            target.add_argument("--seed", "--key", dest="seed",
+                                help="override the derived seed outright")
         else:
-            target.set_defaults(key=None)
+            target.set_defaults(seed=None)
         if render:
             target.add_argument("--saturation", type=float, default=SATURATION)
             target.add_argument("--lightness", type=float, default=LIGHTNESS)
@@ -1824,8 +1954,10 @@ def build_parser():
                            help="report what would change, write nothing, and "
                                 "exit 1 if not current")
     apply_cmd.add_argument("--reseed", action="store_true",
-                           help="re-derive the key and change the mark; the "
-                                "only thing that does")
+                           help="re-derive the seed and change the mark")
+    apply_cmd.add_argument("--remap", action="store_true",
+                           help=f"keep the seed, move it to mapping version "
+                                f"{MAPPING_VERSION}, and change the mark")
     apply_cmd.add_argument("--no-readme", action="store_true",
                            help="do not add the mark to the README")
     apply_cmd.add_argument("--json", action="store_true",

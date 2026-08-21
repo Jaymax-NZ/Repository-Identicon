@@ -12,6 +12,7 @@ something is one that stops working the day the something moves.
     python3 -m unittest discover -s tests -t tests
 """
 
+import hashlib
 import importlib.util
 import json
 import os
@@ -20,6 +21,7 @@ import shutil
 import subprocess
 import tempfile
 import unittest
+from unittest import mock
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 VECTORS = ROOT / "vectors.json"
@@ -44,30 +46,41 @@ class TestTheVectorsThemselves(unittest.TestCase):
     def test_there_are_some(self):
         self.assertTrue(vectors, "vectors.json is empty")
 
-    def test_the_document_is_stamped_with_the_mapping_version(self):
-        """The version is inside the key, so vectors from one version cannot
-        describe another. Saying which is not decoration."""
-        self.assertEqual(identicon.MAPPING_VERSION, document["version"])
+    def test_the_version_this_implementation_seeds_at_is_pinned(self):
+        """A bump that brings no vectors is a bump nothing checks."""
+        covered = {identicon.parse_key(v["key"])[0] for v in vectors}
+        self.assertIn(identicon.MAPPING_VERSION, covered)
 
-    def test_each_vector_records_the_exact_string_that_was_hashed(self):
-        """A port reproduces the bytes or it reproduces nothing, so the key is
-        recorded beside the seed rather than left to be inferred from prose."""
-        for vector in vectors:
-            with self.subTest(seed=vector["seed"]):
-                self.assertEqual(identicon.identicon_key(vector["seed"]),
-                                 vector["key"])
+    def test_the_mapping_that_predates_the_version_is_still_pinned(self):
+        """Unstamped keys are out there and the file is what wins, so they must
+        keep drawing what they always drew. Dropping these vectors is how that
+        promise would be broken without anyone noticing."""
+        covered = {identicon.parse_key(v["key"])[0] for v in vectors}
+        self.assertIn(0, covered)
 
     def test_each_carries_everything_needed_to_check_an_implementation(self):
         for vector in vectors:
-            for field in ("seed", "key", "md5", "grid", "foreground"):
+            for field in ("key", "md5", "grid", "foreground"):
                 self.assertIn(field, vector)
             self.assertEqual(5, len(vector["grid"]))
             for row in vector["grid"]:
                 self.assertRegex(row, r"^[01]{5}$")
 
     def test_no_two_vectors_share_a_key(self):
-        keys = [vector["seed"] for vector in vectors]
+        keys = [vector["key"] for vector in vectors]
         self.assertEqual(len(keys), len(set(keys)))
+
+    def test_the_same_seed_at_two_versions_draws_two_marks(self):
+        """The whole mechanism in one assertion: change the version and the
+        mark moves; that is why the version has to be a reviewed line."""
+        by_seed = {}
+        for vector in vectors:
+            version, seed = identicon.parse_key(vector["key"])
+            by_seed.setdefault(seed, {})[version] = vector["md5"]
+        shared = [d for d in by_seed.values() if len(d) > 1]
+        self.assertTrue(shared, "no seed is pinned at more than one version")
+        for digests in shared:
+            self.assertEqual(len(digests), len(set(digests.values())))
 
 
 class TestTheImplementationConforms(unittest.TestCase):
@@ -80,25 +93,25 @@ class TestTheImplementationConforms(unittest.TestCase):
 
     def test_the_digest_matches(self):
         for vector in vectors:
-            with self.subTest(seed=vector["seed"]):
+            with self.subTest(key=vector["key"]):
                 self.assertEqual(vector["md5"],
-                                 identicon._digest(vector["seed"]))
+                                 identicon._digest(vector["key"]))
 
     def test_the_grid_matches(self):
         for vector in vectors:
-            with self.subTest(seed=vector["seed"]):
+            with self.subTest(key=vector["key"]):
                 rows = ["".join("1" if cell else "0" for cell in row)
-                        for row in identicon.identicon_grid(vector["seed"])]
+                        for row in identicon.identicon_grid(vector["key"])]
                 self.assertEqual(vector["grid"], rows)
 
     def test_the_colour_matches(self):
         """Including the rounding rule. Half up, not half to even -- the one
         place a reimplementation in another language silently diverges."""
         for vector in vectors:
-            with self.subTest(seed=vector["seed"]):
+            with self.subTest(key=vector["key"]):
                 self.assertEqual(
                     vector["foreground"],
-                    identicon.hex_colour(identicon.identicon_colour(vector["seed"])))
+                    identicon.hex_colour(identicon.identicon_colour(vector["key"])))
 
 
 class TestRemoteNormalisation(unittest.TestCase):
@@ -141,8 +154,8 @@ class TestTheTextRendering(unittest.TestCase):
 
     def test_it_renders_two_lines_for_every_vector(self):
         for vector in vectors:
-            with self.subTest(seed=vector["seed"]):
-                grid = identicon.identicon_grid(vector["seed"])
+            with self.subTest(key=vector["key"]):
+                grid = identicon.identicon_grid(vector["key"])
                 colour = identicon.identicon_colour(vector["key"])
                 lines = text_identicon.text(grid, colour).split("\n")
                 self.assertEqual(2, len(lines))
@@ -179,8 +192,7 @@ class TestTheVectorsCanBeRegenerated(unittest.TestCase):
             self.skipTest("node is not usable")
 
         result = subprocess.run(
-            ["node", str(REFERENCE), "--version", str(identicon.MAPPING_VERSION),
-             *[v["seed"] for v in vectors]],
+            ["node", str(REFERENCE), *[v["key"] for v in vectors]],
             capture_output=True, text=True, cwd=str(ROOT / "reference"), timeout=60)
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual(document, json.loads(result.stdout))
@@ -205,7 +217,8 @@ class TestInstallingIntoARepository(unittest.TestCase):
 
     def test_it_writes_the_three_artifacts(self):
         result = identicon.install_into_repo(self.tmp)
-        self.assertEqual("github.com/someone/a-project", result["key"])
+        self.assertEqual("github.com/someone/a-project", result["seed"])
+        self.assertEqual("1:github.com/someone/a-project", result["key"])
         self.assertEqual("remote", result["source"])
         for name in ("png", "png4x", "svg", "colour"):
             with self.subTest(artifact=name):
@@ -266,6 +279,7 @@ class TestInstallingIntoARepository(unittest.TestCase):
         self.assertEqual(before["key"],
                          identicon.prior_path(after["files"]["key"])
                          .read_text().splitlines()[-1])
+        self.assertEqual(before["seed"], "github.com/someone/a-project")
 
     def test_nothing_is_kept_when_nothing_is_replaced(self):
         result = identicon.install_into_repo(self.tmp, readme=False)
@@ -282,10 +296,13 @@ class TestInstallingIntoARepository(unittest.TestCase):
         self.assertFalse(
             identicon.prior_path(result["files"]["colour"]).exists())
 
-    def test_the_seed_is_recorded_on_the_first_run(self):
+    def test_the_key_is_recorded_on_the_first_run(self):
+        """The whole key, version stamp included, because the whole key is
+        what gets hashed."""
         result = identicon.install_into_repo(self.tmp)
         self.assertEqual("remote", result["source"])
-        self.assertEqual(result["key"], identicon.recorded_seed(self.tmp))
+        self.assertEqual(result["key"], identicon.recorded_key(self.tmp))
+        self.assertEqual(identicon.MAPPING_VERSION, result["mapping_version"])
 
     def test_a_rename_does_not_change_the_mark(self):
         """The whole point of an identity: it does not re-derive itself."""
@@ -294,7 +311,7 @@ class TestInstallingIntoARepository(unittest.TestCase):
         after = identicon.install_into_repo(self.tmp)
         self.assertEqual(before["key"], after["key"])
         self.assertEqual(before["colour"], after["colour"])
-        self.assertEqual("seed", after["source"])
+        self.assertEqual("key", after["source"])
         self.assertTrue(after["current"])
 
     def test_a_rename_is_reported_as_seed_drift(self):
@@ -317,10 +334,10 @@ class TestInstallingIntoARepository(unittest.TestCase):
         before = identicon.install_into_repo(self.tmp)
         self._rename_remote()
         after = identicon.install_into_repo(self.tmp, reseed=True)
-        self.assertEqual("github.com/someone/renamed", after["key"])
+        self.assertEqual("github.com/someone/renamed", after["seed"])
         self.assertNotEqual(before["colour"], after["colour"])
-        self.assertEqual("github.com/someone/renamed",
-                         identicon.recorded_seed(self.tmp))
+        self.assertEqual("1:github.com/someone/renamed",
+                         identicon.recorded_key(self.tmp))
         self.assertIsNone(after["seed_drift"])
 
     def test_an_override_masking_a_renamed_remote_is_reported(self):
@@ -335,7 +352,7 @@ class TestInstallingIntoARepository(unittest.TestCase):
 
         result = identicon.install_into_repo(self.tmp, check=True)
         self.assertEqual("override", result["source"])
-        self.assertEqual(pinned, result["key"])
+        self.assertEqual(pinned, result["seed"])
         self.assertEqual("github.com/someone/moved-on", result["masking"])
 
     def test_an_override_agreeing_with_the_remote_is_not_reported(self):
@@ -453,6 +470,116 @@ class TestInstallingIntoARepository(unittest.TestCase):
         self.assertFalse(json.loads(completed.stdout)["current"])
 
 
+class TestTheKeyFileWins(unittest.TestCase):
+    """The mapping version is in the key, and the key is a tracked file.
+
+    So a repository's mark cannot move because a constant moved in here. It
+    moves when that line moves, which is a diff somebody reviews -- which is
+    the entire point of putting the version there rather than in the code.
+    """
+
+    SEED = "github.com/someone/a-project"
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.tmp, ignore_errors=True)
+        subprocess.run(["git", "init", "-q", self.tmp], check=True, timeout=30)
+        subprocess.run(["git", "-C", self.tmp, "remote", "add", "origin",
+                        f"https://{self.SEED}.git"], check=True, timeout=30)
+
+    def write_key(self, key, preamble="# hand written\n"):
+        path = identicon.key_path(self.tmp)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(f"{preamble}{key}\n")
+        return path
+
+    def test_an_unstamped_key_is_version_zero_and_hashes_to_itself(self):
+        """Keys written before the version existed are still out there. They
+        must keep drawing what they always drew, and they do because nothing
+        is added at hash time."""
+        self.assertEqual((0, self.SEED), identicon.parse_key(self.SEED))
+        self.assertEqual(identicon._digest(self.SEED),
+                         hashlib.md5(self.SEED.encode()).hexdigest())
+
+    def test_a_seed_containing_a_colon_is_not_mistaken_for_a_stamp(self):
+        for seed in ("ssh://git@host/x", "C:/src/project", "host:1234/x"):
+            with self.subTest(seed=seed):
+                self.assertEqual((0, seed), identicon.parse_key(seed))
+
+    def test_stamping_and_parsing_are_inverses(self):
+        for version in (0, 1, 17):
+            key = identicon.stamp_key(self.SEED, version)
+            self.assertEqual((version, self.SEED), identicon.parse_key(key))
+
+    def test_an_unstamped_repository_keeps_its_old_mark(self):
+        """The end-to-end version of the promise: an existing repository that
+        predates all of this is not moved by running today's tool."""
+        self.write_key(self.SEED)
+        result = identicon.install_into_repo(self.tmp, readme=False)
+
+        self.assertEqual(self.SEED, result["key"])
+        self.assertEqual(0, result["mapping_version"])
+        self.assertEqual("key", result["source"])
+        self.assertEqual("unchanged", result["changes"]["key"])
+
+        pinned = [v for v in vectors if v["key"] == self.SEED]
+        if pinned:
+            self.assertEqual(pinned[0]["foreground"], result["colour"])
+
+    def test_the_key_file_is_left_byte_for_byte_alone(self):
+        """Including a preamble somebody edited. A run that rewrites this file
+        under you makes every run a diff, and this file's job is to be the
+        thing that does not move."""
+        path = self.write_key(self.SEED, preamble="# mine, do not touch\n")
+        before = path.read_bytes()
+        identicon.install_into_repo(self.tmp, readme=False)
+        self.assertEqual(before, path.read_bytes())
+
+    def test_a_newer_mapping_does_not_reach_a_seeded_repository(self):
+        """The mechanism, stated as a test: bumping the constant moves nobody.
+        It is reported as drift, and drift is never acted on."""
+        first = identicon.install_into_repo(self.tmp, readme=False)
+        self.assertEqual(identicon.MAPPING_VERSION, first["mapping_version"])
+        self.assertIsNone(first["mapping_drift"])
+
+        with mock.patch.object(identicon, "MAPPING_VERSION",
+                               identicon.MAPPING_VERSION + 1):
+            after = identicon.install_into_repo(self.tmp, readme=False)
+            self.assertEqual(first["key"], after["key"])
+            self.assertEqual(first["colour"], after["colour"])
+            self.assertTrue(after["current"])
+            self.assertEqual(identicon.MAPPING_VERSION, after["mapping_drift"])
+
+    def test_remap_is_what_moves_it_and_keeps_the_seed(self):
+        first = identicon.install_into_repo(self.tmp, readme=False)
+        with mock.patch.object(identicon, "MAPPING_VERSION",
+                               identicon.MAPPING_VERSION + 1):
+            after = identicon.install_into_repo(self.tmp, remap=True,
+                                                readme=False)
+        self.assertEqual(self.SEED, after["seed"])
+        self.assertNotEqual(first["key"], after["key"])
+        self.assertNotEqual(first["colour"], after["colour"])
+        self.assertEqual("updated", after["changes"]["key"])
+        self.assertIsNone(after["seed_drift"],
+                          "a remap is not a rename and must not read as one")
+
+    def test_remap_under_check_writes_nothing(self):
+        first = identicon.install_into_repo(self.tmp, readme=False)
+        with mock.patch.object(identicon, "MAPPING_VERSION",
+                               identicon.MAPPING_VERSION + 1):
+            identicon.install_into_repo(self.tmp, remap=True, readme=False,
+                                        check=True)
+        self.assertEqual(first["key"], identicon.recorded_key(self.tmp))
+
+    def test_show_draws_what_apply_wrote(self):
+        """A seeded repository has one mark. The read-only commands resolve
+        through the same file, so they cannot report a different one."""
+        self.write_key(self.SEED)
+        key, source = identicon.resolve_key_for(self.tmp)
+        self.assertEqual(self.SEED, key)
+        self.assertEqual("key", source)
+
+
 class TestTheValidatorOfferedToPorts(unittest.TestCase):
     """The check this repository offers outward, rather than reaching inward.
 
@@ -464,7 +591,7 @@ class TestTheValidatorOfferedToPorts(unittest.TestCase):
     GOOD = ('import json, sys\n'
             'v = json.load(open({vectors!r}))\n'
             'k = sys.argv[-1]\n'
-            'hit = [x for x in v["vectors"] if x["seed"] == k][0]\n'
+            'hit = [x for x in v["vectors"] if x["key"] == k][0]\n'
             'print(json.dumps({{"grid": hit["grid"], "colour": hit["foreground"]}}))\n')
 
     def port(self, body):
@@ -480,7 +607,7 @@ class TestTheValidatorOfferedToPorts(unittest.TestCase):
         results = self.run_validate(self.port(self.GOOD))
         self.assertEqual(len(vectors), len(results))
         for result in results:
-            with self.subTest(seed=result["seed"]):
+            with self.subTest(key=result["key"]):
                 self.assertEqual([], result["problems"])
 
     def test_a_wrong_colour_fails_and_says_which_key(self):
@@ -507,7 +634,8 @@ class TestTheValidatorOfferedToPorts(unittest.TestCase):
     def test_the_grid_may_be_numbers_or_booleans_rather_than_strings(self):
         """Failing a correct port over JSON shape is worse than no validator."""
         for shape in ("[[int(c) for c in r] for r in hit[\"grid\"]]",
-                      "[[c == \"1\" for c in r] for r in hit[\"grid\"]]"):
+                      "[[c == \"1\" for c in r] for r in hit[\"grid\"]]",
+                      "[[c for c in r] for r in hit[\"grid\"]]"):
             with self.subTest(shape=shape):
                 body = self.GOOD.replace('hit["grid"]', shape)
                 results = self.run_validate(self.port(body))

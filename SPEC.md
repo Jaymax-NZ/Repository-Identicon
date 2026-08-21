@@ -45,8 +45,19 @@ key = "1:" + seed          e.g. "1:github.com/owner/repo"
 ```
 
 The **seed** identifies the project and is resolved as below. The **mapping
-version** is the integer at the head of this specification's derivation, `1` at
-the time of writing. An implementation MUST hash the key, not the seed.
+version** says which derivation drew the mark.
+
+An implementation MUST hash the key **exactly as recorded**, prefix included,
+and MUST NOT add, strip or rewrite the prefix at hash time. Everything below
+follows from that one rule.
+
+A key with no `<digits>:` prefix is **mapping version 0** and is its own seed.
+Version 0 is the derivation that existed before the version did, so an
+unstamped key hashes to itself and still produces the mark it always produced.
+An implementation MUST recognise the prefix only when it is a run of decimal
+digits followed by a colon at the very start of the key, so that a seed
+containing a colon — `ssh://…`, `C:/src/x`, `host:1234/x` — is never mistaken
+for a stamped one.
 
 ### Why the version is in the key, and not in the seed
 
@@ -54,20 +65,45 @@ A change to the derivation is a change to every project's identity. Nothing
 prevented one happening quietly: edit a constant, regenerate the vectors in the
 same commit, and every mark in the world moves while the tests stay green.
 
-With the version inside the key, "the marks changed" and "the version changed"
-are the same event by construction. Bumping it is the deliberate act that rolls
-every identicon, and nothing else can.
+With the version inside the key, "the mark changed" and "the key changed" are
+the same event by construction. The recorded key is a tracked file, so that
+event is a line in a diff that somebody reviews.
 
-It stays out of the seed because the seed is the identity. A repository records
-its seed and MUST NOT have it rewritten by a version bump: a new mapping is not
-a rename, and must not be reported as seed drift or require re-seeding.
+It stays out of the seed because the seed is the identity. A repository's seed
+MUST NOT be rewritten by a version change: a new mapping is not a rename, and
+MUST NOT be reported as seed drift or require re-seeding.
+
+### The recorded key wins
+
+An implementation MUST derive the mark from the recorded key, verbatim,
+whenever a repository has one. It MUST NOT re-stamp that key with the version
+it happens to ship, and MUST NOT treat a version it does not recognise as an
+error: an unknown mapping version is somebody else's newer mapping, not a
+corrupt file.
+
+So the version an implementation carries decides one thing only — what a
+**newly seeded** repository is stamped with. It reaches no repository that is
+already seeded. An implementation SHOULD report the difference where one
+exists, and MUST NOT act on it.
+
+Moving an existing repository to a newer mapping is therefore a separate,
+deliberate operation — `apply --remap` in the reference implementation — which
+rewrites the recorded key, keeps the seed, and changes the mark. Its whole
+output is one changed line in a tracked file, which is the record of the
+decision.
 
 ### What justifies a bump
 
 A change to the grid rule, to the colour rule, or to either set of constants —
 anything that makes a conforming implementation produce a different mark for an
-unchanged seed. Such a change MUST increment the mapping version and MUST
-regenerate `vectors.json` in the same commit.
+unchanged key. Such a change MUST increment the mapping version an
+implementation seeds at, and MUST add vectors for the new version to
+`vectors.json` in the same commit.
+
+It MUST NOT remove the vectors for any earlier version. Those keys are still
+recorded in repositories, still hash to themselves, and must still draw what
+they always drew; the vectors are what stops that promise being broken by
+accident.
 
 A change that cannot alter any mark — prose, renderings, tooling, new seeds
 added to the vectors — MUST NOT increment it.
@@ -75,11 +111,15 @@ added to the vectors — MUST NOT increment it.
 Neither a rename nor a move is a bump. Those change the seed, which is the
 existing seed-drift path, and they change one repository rather than all of them.
 
-### Resolution order
+### Resolving a seed
+
+This is how a repository that has **not** been seeded gets its seed. Once it is
+seeded, the recorded key outranks every row of this table; what follows is
+reported as drift, never acted on.
 
 Resolve most specific first, and stop at the first that yields a value:
 
-| # | Source | Key | Portable |
+| # | Source | Seed | Portable |
 |---|---|---|---|
 | 1 | `explicit` | supplied by the caller | — |
 | 2 | `override` | first non-blank, non-`#` line of `.repository-identicon` at the repository top level, whitespace-stripped | yes, if committed |
@@ -89,7 +129,7 @@ Resolve most specific first, and stop at the first that yields a value:
 
 Sources 3 and 2 are the only ones that survive being cloned elsewhere. An
 implementation SHOULD report which source it used, because a project silently
-falling back to a path key will change identity when checked out on another
+falling back to a path seed will change identity when checked out on another
 machine, and that is worth seeing before it happens rather than after.
 
 The override file was formerly `.claude-state-identicon`, named for one
@@ -113,7 +153,7 @@ A session started in a subdirectory has the same failure and the same fix, since
 
 ### Remote normalisation
 
-Every spelling of one repository MUST collapse to one key. Given a remote URL:
+Every spelling of one repository MUST collapse to one seed. Given a remote URL:
 
 1. Trim whitespace; strip a trailing `/`.
 2. Reject if empty, if it begins with `/`, or if the scheme is `file`. A
@@ -127,7 +167,7 @@ Every spelling of one repository MUST collapse to one key. Given a remote URL:
 5. Strip `/` from both ends of the path, then strip a trailing `.git`,
    case-insensitively.
 6. Reject if either the host or the path is now empty.
-7. The key is the host and the path segments, joined by `/`, **lowercased**.
+7. The seed is the host and the path segments, joined by `/`, **lowercased**.
 
 Lowercasing is deliberate: forges treat owner and repository names
 case-insensitively, so `Owner/Repo` and `owner/repo` are one project.
@@ -255,16 +295,19 @@ characters of the name. Upper-case the result.
 
 The mark is a pure function of the key, so a repository does not need to store
 it. It stores it anyway, because a README, a shell prompt and a forge cannot
-run a derivation. **These files are a cache with a canonical location, not a
-source of truth**; if they disagree with the key, the key wins and they are
-stale.
+run a derivation. **The rendered files are a cache with a canonical location,
+not a source of truth**; if they disagree with the key, the key wins and they
+are stale.
+
+The key file is the exception, and is the source of truth. It is not a note of
+what the mark was made from; it is what the mark is made from.
 
 ```
 .identicon/repository-identicon.png       raster, 256px
 .identicon/repository-identicon@4x.png    the same raster at 4x, for native UIs
 .identicon/repository-identicon.svg       vector, same geometry
 .identicon/repository-identicon.colour    "#rrggbb\n", nothing else
-.identicon/repository-identicon.key       the seed these were derived from
+.identicon/repository-identicon.key       the key, hashed exactly as it reads
 ```
 
 **Three files rather than one.** A combined file would be readable by every
@@ -280,25 +323,37 @@ dropped into `docs/`, a file called `icon.png` describes nothing. The prefix
 also anticipates a repository carrying more than one mark — a user's alongside
 the repository's — at which point the unqualified name is the ambiguous one.
 
-### The seed is recorded, and replacing it MUST be deliberate
+### The key is recorded, and replacing it MUST be deliberate
 
-An implementation MUST record the key it derived from, and on every later run
-MUST reuse the recorded seed rather than re-deriving. Re-deriving each time
-means a rename silently changes a repository's identity, and not doing that is
-what an identity is for.
+An implementation MUST record the key, and on every later run MUST hash the
+recorded key rather than re-deriving one. Re-deriving each time means a rename
+silently changes a repository's identity, and not doing that is what an
+identity is for.
+
+The recorded key MUST be the whole key, mapping version included. The file
+format is one payload line — the first non-blank line that is not a comment —
+and an implementation MUST take that line verbatim, whitespace-stripped, with
+no further interpretation. It SHOULD leave an existing file byte-for-byte alone
+when the key is unchanged, comments included: a run that rewrites this file
+under its owner makes every run a diff, and not moving is this file's whole
+job.
 
 This separates two unrelated reasons to re-run, which otherwise collide:
 
 - **Refresh the artifacts.** A better renderer, a different size, a new file in
   the set. This must reach every repository without disturbing any identity, so
   it is the default.
-- **Change the mark.** Only on explicit instruction — a `--reseed` switch or
-  equivalent. An implementation MUST NOT do this because the remote changed.
+- **Change the mark.** Only on explicit instruction — a `--reseed` switch to
+  adopt today's seed, a `--remap` switch to keep the seed and move to a newer
+  mapping, or equivalents. An implementation MUST NOT do either because the
+  remote changed, or because it ships a newer mapping version.
 
-Once seeded, the mark is stable against renaming, moving between forges, and
-being cloned to a path that would resolve differently. Where the key would now
-derive differently, an implementation SHOULD report it — call it seed drift —
-and MUST NOT act on it.
+Once seeded, the mark is stable against renaming, moving between forges, being
+cloned to a path that would resolve differently, and a newer mapping version
+shipping in the tool. Where the seed would now derive differently an
+implementation SHOULD report it — call it seed drift; where the recorded
+mapping version differs from the one it seeds at, it SHOULD report that too.
+It MUST NOT act on either.
 
 **Whatever is replaced SHOULD be kept beside its replacement**, as
 `repository-identicon.prior.<ext>` — one level, overwritten each time. Anyone
@@ -307,7 +362,7 @@ has replaced a mark and the previous one is not recorded anywhere yet. The
 audience is developers, so a file next to the new one is the whole recovery
 procedure, and it is worth more than any amount of asking first.
 
-For a fixed seed the write is idempotent: the mark is a pure function of the
+For a fixed key the write is idempotent: the mark is a pure function of the
 key, so a later run produces identical bytes and need not touch the files.
 
 An implementation SHOULD offer a check mode that reports what would change and
@@ -340,10 +395,17 @@ name beside it does not already give, so it is decorative in the accessibility
 sense, and an empty `alt` is what tells a screen reader to skip it rather than
 announce a filename.
 
-**Precedence**, most specific first: an explicitly supplied key; a committed
-`.repository-identicon`, which is a decision somebody made; the recorded seed,
-which is a record of what was used; then the resolution order in *The key*
-above. The last of these applies on the first run, and after a reseed.
+**Precedence**, most specific first: a key or seed supplied explicitly by the
+caller; the **recorded key**, which is what the mark is; then the resolution
+order in *Resolving a seed* above, of which a committed `.repository-identicon`
+is the first row. The last of these applies on the first run, and after a
+reseed or a remap.
+
+The recorded key outranks a committed override, which reads backwards until you
+notice that they answer different questions: the override says how this
+repository *would* be seeded, and the recorded key says what it *is*. Editing
+the override on a seeded repository is therefore reported as seed drift and not
+acted on, exactly as a rename is. Re-seed to adopt it.
 
 `SVG` carries a declared size so `![]()` renders it as an inline mark rather
 than at column width; a consumer that wants it larger supplies the size

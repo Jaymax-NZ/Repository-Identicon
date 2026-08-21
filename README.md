@@ -26,7 +26,7 @@ It derives the key from the git remote and writes four files:
 .identicon/repository-identicon@4x.png    the same raster at 4x, for native UIs
 .identicon/repository-identicon.svg       vector
 .identicon/repository-identicon.colour    "#rrggbb", and a newline
-.identicon/repository-identicon.key       the seed the others came from
+.identicon/repository-identicon.key       the key the others came from
 ```
 
 It also adds the mark to the repository's README, after the first heading:
@@ -43,18 +43,24 @@ exactly as you left it — and a repository with no README is never given one.
 Commit the lot. To read the colour anywhere else,
 `$(cat .identicon/repository-identicon.colour)` is the whole integration.
 
-**The seed is recorded once and reused after that.** Re-running refreshes the
-artifacts from it — so a better renderer or a different size reaches every
-repository — and leaves the identity alone. Renaming the repository, moving it
-between forges, or cloning it somewhere else does not change the mark. That is
-reported as seed drift and nothing more:
+**The key is recorded once and hashed verbatim after that.** It reads
+`1:github.com/owner/repo` — a mapping version, then the seed — and it is the
+one thing the mark depends on. Re-running refreshes the artifacts from it, so a
+better renderer or a different size reaches every repository while leaving the
+identity alone.
+
+Nothing else moves the mark. Renaming the repository, moving it between forges,
+cloning it somewhere else, or upgrading to a tool that draws newly seeded
+repositories differently: all reported, none acted on. Two switches change it,
+and both have to be asked for:
 
 ```bash
-python3 /path/to/repository-identicon.py apply --reseed
+python3 /path/to/repository-identicon.py apply --reseed   # adopt today's seed
+python3 /path/to/repository-identicon.py apply --remap    # same seed, new mapping
 ```
 
-is the only thing that adopts a new key and changes the mark, and it has to be
-asked for.
+Each rewrites that one line, so the change to your mark arrives as a diff you
+review rather than as a surprise on somebody's next upgrade.
 
 Anything it replaces is kept beside it as `repository-identicon.prior.<ext>`,
 so rolling back is a `mv`. One level, overwritten each run — git has the rest.

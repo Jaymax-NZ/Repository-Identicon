@@ -28,14 +28,21 @@ time somebody has an opinion about the palette.
 
 A port needs three things and nothing else:
 
-1. Seed resolution and remote normalisation, per `SPEC.md`, and the key built
-   from it — the mapping version, a colon, then the seed. `vectors.json`
-   records both, so there is nothing to infer.
-2. Grid and colour derivation, checked against `vectors.json`.
-3. A test that fails loudly when they disagree.
+1. Grid and colour derivation from a key, hashing the key exactly as given.
+   `vectors.json` records the keys verbatim, so there is nothing to infer and
+   no version arithmetic to get wrong.
+2. Seed resolution and remote normalisation, per `SPEC.md`, for repositories
+   that are not seeded yet — and reading a recorded key in preference to
+   deriving one, for those that are.
+3. A test that fails loudly when your output and the vectors disagree.
 
 Renderings — image, terminal protocol, text — are optional. A port that only
 derives the key, the grid and the colour is a complete and useful port.
+
+The vectors span mapping versions, because keys do: an unprefixed key is
+version 0 and hashes to itself. A port that hashes what it is handed passes all
+of them without knowing any of that, which is the point of putting the version
+in the key rather than in everybody's code.
 
 ### Checking it
 
