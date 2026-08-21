@@ -224,12 +224,22 @@ stale.
 
 ```
 .identicon/repository-identicon.png       raster, 256px
+.identicon/repository-identicon@4x.png    the same raster at 1024px
 .identicon/repository-identicon.svg       vector, same geometry
 .identicon/repository-identicon.colour    "#rrggbb\n", nothing else
 .identicon/repository-identicon.key       the seed these were derived from
 ```
 
-**Three files rather than one.** A combined file would be readable by every
+**The `@4x` raster is for consumers that cannot resample.** A browser is given
+one file and scales it to the display's density, so CSS needs no second asset.
+A native toolkit does: Qt, GTK and desktop panels select an asset per scale
+factor, and a 256px source stretched into a 4x slot is visibly soft beside
+everything drawn with it. An implementation SHOULD write it, MUST derive it
+from the same key and geometry as the 1x, and MUST NOT let the two disagree
+about anything but resolution. `@4x` is named for the convention native asset
+pipelines already recognise.
+
+**Separate files rather than one.** A combined file would be readable by every
 tool that knows the format, which is one tool. A README cannot address a
 fragment inside a blob, `![](.identicon/repository-identicon.svg)` is a whole
 integration, and `$(cat .identicon/repository-identicon.colour)` is a whole

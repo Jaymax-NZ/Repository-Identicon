@@ -17,6 +17,7 @@ import json
 import os
 import pathlib
 import shutil
+import struct
 import subprocess
 import tempfile
 import unittest
@@ -188,15 +189,45 @@ class TestInstallingIntoARepository(unittest.TestCase):
                         "git@github.com:someone/a-project.git"],
                        check=True, timeout=30)
 
-    def test_it_writes_the_three_artifacts(self):
+    def test_it_writes_every_artifact(self):
         result = identicon.install_into_repo(self.tmp)
         self.assertEqual("github.com/someone/a-project", result["key"])
         self.assertEqual("remote", result["source"])
-        for name in ("png", "svg", "colour"):
+        for name in ("png", "png4x", "svg", "colour"):
             with self.subTest(artifact=name):
                 path = pathlib.Path(result["files"][name])
                 self.assertTrue(path.is_file(), path)
                 self.assertEqual("created", result["changes"][name])
+
+    def test_the_four_times_raster_is_four_times_the_size(self):
+        """Native toolkits pick an asset per scale factor and cannot resample
+        the way a browser does, so this one has to be real pixels."""
+        identicon.install_into_repo(self.tmp)
+        paths = identicon.artifact_paths(self.tmp)
+        sizes = {}
+        for name in ("png", "png4x"):
+            raw = pathlib.Path(paths[name]).read_bytes()
+            self.assertEqual(b"\x89PNG\r\n\x1a\n", raw[:8], name)
+            width, height = struct.unpack(">II", raw[16:24])
+            self.assertEqual(width, height, name)
+            sizes[name] = width
+        self.assertEqual(identicon.ARTIFACT_SCALE * sizes["png"], sizes["png4x"])
+
+    def test_the_four_times_raster_is_the_same_mark_not_a_different_one(self):
+        """Same key, same geometry, same colour -- only more pixels. A 4x asset
+        that drifted from the 1x would be worse than not having one."""
+        identicon.install_into_repo(self.tmp)
+        key = identicon.recorded_seed(self.tmp)
+        paths = identicon.artifact_paths(self.tmp)
+        for name, size in (("png", identicon.ARTIFACT_SIZE),
+                           ("png4x", identicon.ARTIFACT_SIZE * identicon.ARTIFACT_SCALE)):
+            with self.subTest(artifact=name):
+                self.assertEqual(identicon.render_png(key, size),
+                                 pathlib.Path(paths[name]).read_bytes())
+        self.assertEqual(
+            identicon.hex_colour(identicon.identicon_colour(key)),
+            pathlib.Path(paths["colour"]).read_text().strip(),
+            "the 4x raster, the 1x and the colour file must agree")
 
     def test_the_colour_file_is_the_whole_parser(self):
         """A consumer runs `cat`, and that is the entire integration."""
