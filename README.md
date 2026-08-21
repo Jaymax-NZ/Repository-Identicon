@@ -84,6 +84,13 @@ not survive being cloned. `apply` says so, and the fix is a
 python3 -m unittest discover -s tests -t tests
 ```
 
+Writing an implementation elsewhere? `validate` runs it against the pinned
+vectors, so you do not have to build a harness to find out whether you agree:
+
+```bash
+python3 repository-identicon.py validate -- ./my-identicon --json
+```
+
 Nothing here reaches the network, and nothing needs installing.
 
 ## Why the vectors matter more than the prose

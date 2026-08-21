@@ -438,6 +438,75 @@ class TestInstallingIntoARepository(unittest.TestCase):
         self.assertFalse(json.loads(completed.stdout)["current"])
 
 
+class TestTheValidatorOfferedToPorts(unittest.TestCase):
+    """The check this repository offers outward, rather than reaching inward.
+
+    A port in another language cannot run this suite, so `validate` runs the
+    port instead and compares it to the vectors. These tests stand in for a
+    port with a fake one, because the thing under test is the validator.
+    """
+
+    GOOD = ('import json, sys\n'
+            'v = json.load(open({vectors!r}))\n'
+            'k = sys.argv[-1]\n'
+            'hit = [x for x in v if x["key"] == k][0]\n'
+            'print(json.dumps({{"grid": hit["grid"], "colour": hit["foreground"]}}))\n')
+
+    def port(self, body):
+        path = pathlib.Path(tempfile.mkdtemp()) / "port.py"
+        self.addCleanup(shutil.rmtree, path.parent, ignore_errors=True)
+        path.write_text(body.format(vectors=str(VECTORS)))
+        return ["python3", str(path)]
+
+    def run_validate(self, argv):
+        return identicon.validate_command(argv, vectors)
+
+    def test_a_port_that_reproduces_the_vectors_passes_every_one(self):
+        results = self.run_validate(self.port(self.GOOD))
+        self.assertEqual(len(vectors), len(results))
+        for result in results:
+            with self.subTest(key=result["key"]):
+                self.assertEqual([], result["problems"])
+
+    def test_a_wrong_colour_fails_and_says_which_key(self):
+        body = self.GOOD.replace('hit["foreground"]', '"#010203"')
+        failed = [r for r in self.run_validate(self.port(body)) if r["problems"]]
+        self.assertEqual(len(vectors), len(failed))
+        self.assertIn("#010203", failed[0]["problems"][0])
+
+    def test_a_wrong_grid_fails(self):
+        body = self.GOOD.replace('hit["grid"]', '["00000"] * 5')
+        failed = [r for r in self.run_validate(self.port(body)) if r["problems"]]
+        self.assertTrue(failed)
+        self.assertIn("grid", failed[0]["problems"][0])
+
+    def test_output_that_is_not_json_is_reported_rather_than_raised(self):
+        results = self.run_validate(self.port('print("not json")\n'))
+        self.assertTrue(all(r["problems"] for r in results))
+        self.assertIn("not JSON", results[0]["problems"][0])
+
+    def test_a_port_that_crashes_is_reported_with_its_exit_code(self):
+        results = self.run_validate(self.port('import sys\nsys.exit(3)\n'))
+        self.assertIn("exited 3", results[0]["problems"][0])
+
+    def test_the_grid_may_be_numbers_or_booleans_rather_than_strings(self):
+        """Failing a correct port over JSON shape is worse than no validator."""
+        for shape in ("[[int(c) for c in r] for r in hit[\"grid\"]]",
+                      "[[c == \"1\" for c in r] for r in hit[\"grid\"]]"):
+            with self.subTest(shape=shape):
+                body = self.GOOD.replace('hit["grid"]', shape)
+                results = self.run_validate(self.port(body))
+                self.assertEqual([], results[0]["problems"])
+
+    def test_the_command_line_exits_1_when_a_port_disagrees(self):
+        body = self.GOOD.replace('hit["foreground"]', '"#010203"')
+        completed = subprocess.run(
+            ["python3", str(ROOT / "repository-identicon.py"), "validate",
+             "--", *self.port(body)],
+            capture_output=True, text=True, timeout=120)
+        self.assertEqual(1, completed.returncode, completed.stdout)
+
+
 class TestTheTwoFilesAreAPair(unittest.TestCase):
     """repository-identicon.py needs text-identicon.py for every text style.
 

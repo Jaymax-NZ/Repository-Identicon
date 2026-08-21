@@ -35,6 +35,24 @@ A port needs three things and nothing else:
 Renderings — image, terminal protocol, text — are optional. A port that only
 derives the key, the grid and the colour is a complete and useful port.
 
+### Checking it
+
+You cannot run this repository's Python suite against a port in another
+language, so the check is offered as a command instead:
+
+```bash
+python3 repository-identicon.py validate -- ./my-identicon --json
+```
+
+It runs your implementation once per pinned vector, with the key as the last
+argument, and expects `{"grid": [...], "colour": "#rrggbb"}` on stdout. The
+grid rows may be `"01101"`, `[0,1,1,0,1]` or booleans — being fussy about JSON
+shape would only fail correct ports. It exits 1 if any vector disagrees.
+
+That is the same check this repository applies to itself, offered outward.
+Nothing about your project has to change to use it, and it reads nothing but
+what your command prints.
+
 ## What "a repository identicon" means
 
 Anyone may implement this. Please call the result a repository identicon

@@ -1597,6 +1597,135 @@ def cmd_hooks(args):
     return 0
 
 
+# --- Conformance validator --------------------------------------------------
+#
+# CONTRIBUTING.md asks a port for three things and says the vectors are the
+# whole conformance test. But a port in Rust cannot run this repository's
+# unittest suite, so "check yourself against the vectors" has meant "write your
+# own harness" -- which is work this project can do once instead of every
+# implementer doing it differently.
+#
+# So the check is offered outward: point `validate` at your implementation and
+# it reports which vectors you reproduce. It reaches into nothing, runs what it
+# is given, and compares stdout to `vectors.json`.
+#
+# Grid and colour only. Those are what the vectors pin and what CONTRIBUTING.md
+# calls a complete port; renderings are explicitly optional and are not checked.
+
+VECTORS_NAME = "vectors.json"
+
+
+def vectors_path():
+    return pathlib.Path(__file__).with_name(VECTORS_NAME)
+
+
+def load_vectors(path=None):
+    path = pathlib.Path(path) if path else vectors_path()
+    if not path.is_file():
+        raise FileNotFoundError(
+            f"{path} not found; {VECTORS_NAME} is the contract and validate "
+            f"cannot run without it")
+    return json.loads(path.read_text())
+
+
+def _normalise_grid(value):
+    """Accept the shapes a port might reasonably emit, reject the rest.
+
+    A validator that fails a correct implementation over JSON shape is worse
+    than no validator, so a row may be "01101" or [0,1,1,0,1] or booleans.
+    """
+    rows = []
+    for row in value:
+        if isinstance(row, str):
+            rows.append(row.strip())
+        else:
+            rows.append("".join("1" if cell else "0" for cell in row))
+    return rows
+
+
+def check_output(text, vector):
+    """Compare one implementation's output for one key. Returns a problem list."""
+    try:
+        got = json.loads(text)
+    except ValueError as error:
+        return [f"output is not JSON: {error}"]
+    if not isinstance(got, dict):
+        return ["output is not a JSON object"]
+
+    problems = []
+    if "grid" not in got:
+        problems.append("no 'grid' in output")
+    else:
+        try:
+            rows = _normalise_grid(got["grid"])
+        except TypeError:
+            problems.append("'grid' is not five rows of five cells")
+            rows = None
+        if rows is not None and rows != vector["grid"]:
+            problems.append(f"grid {rows} != {vector['grid']}")
+
+    colour = got.get("colour", got.get("color"))
+    if colour is None:
+        problems.append("no 'colour' in output")
+    else:
+        wanted = vector["foreground"].lower()
+        if str(colour).lower().lstrip("#") != wanted.lstrip("#"):
+            problems.append(f"colour {colour} != {vector['foreground']}")
+    return problems
+
+
+def validate_command(argv, vectors, timeout=30):
+    """Run `argv + [key]` once per vector and collect the results."""
+    results = []
+    for vector in vectors:
+        try:
+            completed = subprocess.run([*argv, vector["key"]],
+                                       capture_output=True, text=True,
+                                       timeout=timeout)
+        except (OSError, subprocess.SubprocessError) as error:
+            results.append({"key": vector["key"], "problems": [str(error)]})
+            continue
+        if completed.returncode != 0:
+            detail = (completed.stderr or completed.stdout).strip()
+            results.append({"key": vector["key"],
+                            "problems": [f"exited {completed.returncode}: {detail}"]})
+            continue
+        results.append({"key": vector["key"],
+                        "problems": check_output(completed.stdout, vector)})
+    return results
+
+
+def cmd_validate(args):
+    vectors = load_vectors(args.vectors)
+    if not args.command:
+        print("give the command that runs your implementation, for example:\n"
+              "  repository-identicon validate -- ./my-identicon --json\n"
+              "It is run once per vector with the key as its last argument, and\n"
+              "must print {\"grid\": [...], \"colour\": \"#rrggbb\"} on stdout.",
+              file=sys.stderr)
+        return 2
+
+    results = validate_command(args.command, vectors)
+    failed = [r for r in results if r["problems"]]
+    if args.json:
+        print(json.dumps({"vectors": len(results),
+                          "passed": len(results) - len(failed),
+                          "results": results}, indent=2))
+    else:
+        for result in results:
+            if result["problems"]:
+                print(f"FAIL {result['key'] or '(empty key)'}")
+                for problem in result["problems"]:
+                    print(f"       {problem}")
+            else:
+                print(f"ok   {result['key'] or '(empty key)'}")
+        print()
+        print(f"{len(results) - len(failed)}/{len(results)} vectors reproduced")
+        if failed:
+            print("This is not a repository identicon until they all pass.")
+    return 1 if failed else 0
+
+
 def cmd_doctor(args):
     sibling = text_module_path()
     found = (str(sibling) if sibling.is_file()
@@ -1733,6 +1862,18 @@ def build_parser():
     add_common(hooks, path=False)
     hooks.add_argument("--style", choices=STYLES, default="icon")
     hooks.set_defaults(func=cmd_hooks)
+
+    validate = sub.add_parser(
+        "validate",
+        help="check another implementation against the pinned vectors",
+        description="Runs your implementation once per vector with the key as "
+                    "its last argument. It must print "
+                    '{"grid": [...], "colour": "#rrggbb"} on stdout.')
+    add_common(validate, path=False)
+    validate.add_argument("--vectors", help=f"default: {VECTORS_NAME} beside this script")
+    validate.add_argument("--json", action="store_true")
+    validate.add_argument("command", nargs="*", help="the command to run")
+    validate.set_defaults(func=cmd_validate)
 
     doctor = sub.add_parser("doctor", help="environment report")
     add_common(doctor, path=False)
