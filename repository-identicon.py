@@ -226,15 +226,48 @@ def resolve_key(path=None, explicit=None):
     return directory, "path"
 
 
-def _digest(key):
-    """MD5 as lowercase hex.
+# **The mapping version is part of what is hashed.**
+#
+# A change to the derivation is a change to every project's identity, and
+# nothing stopped one happening quietly: edit a constant, regenerate the
+# vectors in the same commit, and CI goes green while every mark in the world
+# moves. Discipline was the only guard, and discipline is not a mechanism.
+#
+# So the version is inside the key. The mark is a function of the mapping and
+# the seed together, which makes "the marks changed" and "the version changed"
+# the same event by construction. Bumping this constant is the deliberate act
+# that rolls every identicon; nothing else can.
+#
+# It is *outside* the seed. `.identicon/repository-identicon.key` still records
+# the project -- `github.com/owner/repo` -- because that is the identity, and a
+# version bump must not read as a rename. The seed says which project; this
+# says which mapping; the mark comes from both.
+#
+# The vendored library is untouched by this: it consumes a digest, and only the
+# string being digested has changed. Conformance to `stewartlord/identicon.js`
+# is exactly as it was.
+MAPPING_VERSION = 1
+
+
+def identicon_key(seed):
+    """The string that is hashed: the mapping version, a colon, then the seed.
+
+    Specified exactly because a port in another language reproduces the bytes
+    or it reproduces nothing. `vectors.json` records this alongside each seed
+    so there is no reading of prose involved.
+    """
+    return f"{MAPPING_VERSION}:{seed}"
+
+
+def _digest(seed):
+    """MD5 of the key as lowercase hex.
 
     Hex rather than bytes because the reference consumes the digest as *hex
     characters* -- one nibble per grid cell, and the last seven characters as
     the hue. Working in hex keeps this readable next to the reference instead
     of turning every rule into shifts and masks.
     """
-    return hashlib.md5(key.encode("utf-8")).hexdigest()
+    return hashlib.md5(identicon_key(seed).encode("utf-8")).hexdigest()
 
 
 def identicon_grid(key):
@@ -1031,6 +1064,7 @@ def install_into_repo(path=None, key=None, size=ARTIFACT_SIZE, check=False,
                               render_kwargs.get("lightness", LIGHTNESS))
     return {
         "key": resolved_key,
+        "mapping_version": MAPPING_VERSION,
         "source": source,
         "root": str(root),
         "colour": hex_colour(colour),
@@ -1625,7 +1659,13 @@ def load_vectors(path=None):
         raise FileNotFoundError(
             f"{path} not found; {VECTORS_NAME} is the contract and validate "
             f"cannot run without it")
-    return json.loads(path.read_text())
+    document = json.loads(path.read_text())
+    if document.get("version") != MAPPING_VERSION:
+        raise ValueError(
+            f"{path} is for mapping version {document.get('version')!r} and "
+            f"this implementation is version {MAPPING_VERSION}; they cannot "
+            f"agree and the disagreement is the point")
+    return document
 
 
 def _normalise_grid(value):
@@ -1679,24 +1719,24 @@ def validate_command(argv, vectors, timeout=30):
     results = []
     for vector in vectors:
         try:
-            completed = subprocess.run([*argv, vector["key"]],
+            completed = subprocess.run([*argv, vector["seed"]],
                                        capture_output=True, text=True,
                                        timeout=timeout)
         except (OSError, subprocess.SubprocessError) as error:
-            results.append({"key": vector["key"], "problems": [str(error)]})
+            results.append({"seed": vector["seed"], "problems": [str(error)]})
             continue
         if completed.returncode != 0:
             detail = (completed.stderr or completed.stdout).strip()
-            results.append({"key": vector["key"],
+            results.append({"seed": vector["seed"],
                             "problems": [f"exited {completed.returncode}: {detail}"]})
             continue
-        results.append({"key": vector["key"],
+        results.append({"seed": vector["seed"],
                         "problems": check_output(completed.stdout, vector)})
     return results
 
 
 def cmd_validate(args):
-    vectors = load_vectors(args.vectors)
+    vectors = load_vectors(args.vectors)["vectors"]
     if not args.command:
         print("give the command that runs your implementation, for example:\n"
               "  repository-identicon validate -- ./my-identicon --json\n"
@@ -1714,11 +1754,11 @@ def cmd_validate(args):
     else:
         for result in results:
             if result["problems"]:
-                print(f"FAIL {result['key'] or '(empty key)'}")
+                print(f"FAIL {result['seed'] or '(empty seed)'}")
                 for problem in result["problems"]:
                     print(f"       {problem}")
             else:
-                print(f"ok   {result['key'] or '(empty key)'}")
+                print(f"ok   {result['seed'] or '(empty seed)'}")
         print()
         print(f"{len(results) - len(failed)}/{len(results)} vectors reproduced")
         if failed:

@@ -28,7 +28,9 @@ time somebody has an opinion about the palette.
 
 A port needs three things and nothing else:
 
-1. Key resolution and remote normalisation, per `SPEC.md`.
+1. Seed resolution and remote normalisation, per `SPEC.md`, and the key built
+   from it — the mapping version, a colon, then the seed. `vectors.json`
+   records both, so there is nothing to infer.
 2. Grid and colour derivation, checked against `vectors.json`.
 3. A test that fails loudly when they disagree.
 

@@ -11,7 +11,11 @@
 // fill, and puts the background on the root element's style. The rects alone
 // are the pattern, with no pixel decoding and no resampling to argue about.
 //
-//   node js-vectors.js <key> [key...]
+// The mapping version is part of the string that is hashed, so it is passed in
+// rather than hardcoded here: the reference implementation owns the number, and
+// a second copy of it in this file would be a second thing to forget.
+//
+//   node js-vectors.js --version <n> <seed> [seed...]
 
 const crypto = require('crypto');
 const Identicon = require('./vendor/identicon.js');
@@ -23,7 +27,8 @@ function rgb(rgba) {
   return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
 }
 
-function vector(key) {
+function vector(version, seed) {
+  const key = `${version}:${seed}`;
   const md5 = crypto.createHash('md5').update(key).digest('hex');
   const svg = new Identicon(md5, { size: 50, margin: 0, format: 'svg' }).toString(true);
 
@@ -33,6 +38,7 @@ function vector(key) {
   }
 
   return {
+    seed,
     key,
     md5,
     grid: grid.map(r => r.join('')),
@@ -41,4 +47,17 @@ function vector(key) {
   };
 }
 
-console.log(JSON.stringify(process.argv.slice(2).map(vector), null, 1));
+const argv = process.argv.slice(2);
+if (argv[0] !== '--version' || argv.length < 2) {
+  console.error('usage: node js-vectors.js --version <n> <seed> [seed...]');
+  process.exit(2);
+}
+const version = Number(argv[1]);
+if (!Number.isInteger(version)) {
+  console.error(`--version must be an integer, not '${argv[1]}'`);
+  process.exit(2);
+}
+console.log(JSON.stringify({
+  version,
+  vectors: argv.slice(2).map(seed => vector(version, seed)),
+}, null, 1));

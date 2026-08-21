@@ -38,6 +38,43 @@ Everything derives from one string. Getting the key right matters more than
 anything else here, because two tools that disagree about the key agree about
 nothing else.
 
+The key is the **mapping version, a colon, and the seed**:
+
+```
+key = "1:" + seed          e.g. "1:github.com/owner/repo"
+```
+
+The **seed** identifies the project and is resolved as below. The **mapping
+version** is the integer at the head of this specification's derivation, `1` at
+the time of writing. An implementation MUST hash the key, not the seed.
+
+### Why the version is in the key, and not in the seed
+
+A change to the derivation is a change to every project's identity. Nothing
+prevented one happening quietly: edit a constant, regenerate the vectors in the
+same commit, and every mark in the world moves while the tests stay green.
+
+With the version inside the key, "the marks changed" and "the version changed"
+are the same event by construction. Bumping it is the deliberate act that rolls
+every identicon, and nothing else can.
+
+It stays out of the seed because the seed is the identity. A repository records
+its seed and MUST NOT have it rewritten by a version bump: a new mapping is not
+a rename, and must not be reported as seed drift or require re-seeding.
+
+### What justifies a bump
+
+A change to the grid rule, to the colour rule, or to either set of constants —
+anything that makes a conforming implementation produce a different mark for an
+unchanged seed. Such a change MUST increment the mapping version and MUST
+regenerate `vectors.json` in the same commit.
+
+A change that cannot alter any mark — prose, renderings, tooling, new seeds
+added to the vectors — MUST NOT increment it.
+
+Neither a rename nor a move is a bump. Those change the seed, which is the
+existing seed-drift path, and they change one repository rather than all of them.
+
 ### Resolution order
 
 Resolve most specific first, and stop at the first that yields a value:
@@ -113,7 +150,7 @@ GitHub-style: a 5×5 grid, mirrored, so every identicon is vertically symmetric
 and reads as a deliberate mark rather than as noise.
 
 Let `h` be the **MD5 digest of the key encoded as UTF-8, as lowercase hex**,
-thirty-two characters.
+thirty-two characters. The key, not the seed: `"1:github.com/owner/repo"`.
 
 ```
 grid[row][col] = false for all row, col in 0..4

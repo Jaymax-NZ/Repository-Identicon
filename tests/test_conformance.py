@@ -35,7 +35,8 @@ def load(name, module):
 
 identicon = load("repository-identicon.py", "repository_identicon")
 text_identicon = load("text-identicon.py", "text_identicon")
-vectors = json.loads(VECTORS.read_text())
+document = json.loads(VECTORS.read_text())
+vectors = document["vectors"]
 
 
 class TestTheVectorsThemselves(unittest.TestCase):
@@ -43,16 +44,29 @@ class TestTheVectorsThemselves(unittest.TestCase):
     def test_there_are_some(self):
         self.assertTrue(vectors, "vectors.json is empty")
 
+    def test_the_document_is_stamped_with_the_mapping_version(self):
+        """The version is inside the key, so vectors from one version cannot
+        describe another. Saying which is not decoration."""
+        self.assertEqual(identicon.MAPPING_VERSION, document["version"])
+
+    def test_each_vector_records_the_exact_string_that_was_hashed(self):
+        """A port reproduces the bytes or it reproduces nothing, so the key is
+        recorded beside the seed rather than left to be inferred from prose."""
+        for vector in vectors:
+            with self.subTest(seed=vector["seed"]):
+                self.assertEqual(identicon.identicon_key(vector["seed"]),
+                                 vector["key"])
+
     def test_each_carries_everything_needed_to_check_an_implementation(self):
         for vector in vectors:
-            for field in ("key", "md5", "grid", "foreground"):
+            for field in ("seed", "key", "md5", "grid", "foreground"):
                 self.assertIn(field, vector)
             self.assertEqual(5, len(vector["grid"]))
             for row in vector["grid"]:
                 self.assertRegex(row, r"^[01]{5}$")
 
     def test_no_two_vectors_share_a_key(self):
-        keys = [vector["key"] for vector in vectors]
+        keys = [vector["seed"] for vector in vectors]
         self.assertEqual(len(keys), len(set(keys)))
 
 
@@ -66,25 +80,25 @@ class TestTheImplementationConforms(unittest.TestCase):
 
     def test_the_digest_matches(self):
         for vector in vectors:
-            with self.subTest(key=vector["key"]):
+            with self.subTest(seed=vector["seed"]):
                 self.assertEqual(vector["md5"],
-                                 identicon._digest(vector["key"]))
+                                 identicon._digest(vector["seed"]))
 
     def test_the_grid_matches(self):
         for vector in vectors:
-            with self.subTest(key=vector["key"]):
+            with self.subTest(seed=vector["seed"]):
                 rows = ["".join("1" if cell else "0" for cell in row)
-                        for row in identicon.identicon_grid(vector["key"])]
+                        for row in identicon.identicon_grid(vector["seed"])]
                 self.assertEqual(vector["grid"], rows)
 
     def test_the_colour_matches(self):
         """Including the rounding rule. Half up, not half to even -- the one
         place a reimplementation in another language silently diverges."""
         for vector in vectors:
-            with self.subTest(key=vector["key"]):
+            with self.subTest(seed=vector["seed"]):
                 self.assertEqual(
                     vector["foreground"],
-                    identicon.hex_colour(identicon.identicon_colour(vector["key"])))
+                    identicon.hex_colour(identicon.identicon_colour(vector["seed"])))
 
 
 class TestRemoteNormalisation(unittest.TestCase):
@@ -127,8 +141,8 @@ class TestTheTextRendering(unittest.TestCase):
 
     def test_it_renders_two_lines_for_every_vector(self):
         for vector in vectors:
-            with self.subTest(key=vector["key"]):
-                grid = identicon.identicon_grid(vector["key"])
+            with self.subTest(seed=vector["seed"]):
+                grid = identicon.identicon_grid(vector["seed"])
                 colour = identicon.identicon_colour(vector["key"])
                 lines = text_identicon.text(grid, colour).split("\n")
                 self.assertEqual(2, len(lines))
@@ -165,10 +179,11 @@ class TestTheVectorsCanBeRegenerated(unittest.TestCase):
             self.skipTest("node is not usable")
 
         result = subprocess.run(
-            ["node", str(REFERENCE), *[v["key"] for v in vectors]],
+            ["node", str(REFERENCE), "--version", str(identicon.MAPPING_VERSION),
+             *[v["seed"] for v in vectors]],
             capture_output=True, text=True, cwd=str(ROOT / "reference"), timeout=60)
         self.assertEqual(0, result.returncode, result.stderr)
-        self.assertEqual(vectors, json.loads(result.stdout))
+        self.assertEqual(document, json.loads(result.stdout))
 
 
 class TestInstallingIntoARepository(unittest.TestCase):
@@ -449,7 +464,7 @@ class TestTheValidatorOfferedToPorts(unittest.TestCase):
     GOOD = ('import json, sys\n'
             'v = json.load(open({vectors!r}))\n'
             'k = sys.argv[-1]\n'
-            'hit = [x for x in v if x["key"] == k][0]\n'
+            'hit = [x for x in v["vectors"] if x["seed"] == k][0]\n'
             'print(json.dumps({{"grid": hit["grid"], "colour": hit["foreground"]}}))\n')
 
     def port(self, body):
@@ -465,7 +480,7 @@ class TestTheValidatorOfferedToPorts(unittest.TestCase):
         results = self.run_validate(self.port(self.GOOD))
         self.assertEqual(len(vectors), len(results))
         for result in results:
-            with self.subTest(key=result["key"]):
+            with self.subTest(seed=result["seed"]):
                 self.assertEqual([], result["problems"])
 
     def test_a_wrong_colour_fails_and_says_which_key(self):
