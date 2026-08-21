@@ -462,11 +462,22 @@ def _geometry(size):
     return cell, margin
 
 
-def render_rgba(key, size, saturation=SATURATION, lightness=LIGHTNESS, background=None):
-    """Return raw RGBA bytes for a square identicon of the given size."""
+def render_rgba(key, size, saturation=SATURATION, lightness=LIGHTNESS,
+                background=None, scale=1):
+    """Return raw RGBA bytes for a square identicon of the given size.
+
+    `scale` multiplies the *blocks*, not the canvas: the geometry is worked out
+    once at `size` and then multiplied, so the result is the `size` image with
+    every pixel repeated `scale` times in each direction. Re-deriving the
+    geometry from the larger canvas instead would land on a different cell and
+    margin -- 256 gives cell 47 margin 10, 1024 gives cell 186 margin 47 -- and
+    the two files would be different renderings rather than one at two
+    resolutions.
+    """
     grid = identicon_grid(key)
     red, green, blue = identicon_colour(key, saturation, lightness)
     cell, margin = _geometry(size)
+    cell, margin, size = cell * scale, margin * scale, size * scale
 
     if background is None:
         back = bytes((0, 0, 0, 0))
@@ -513,7 +524,8 @@ def encode_png(rgba, width, height):
 
 
 def render_png(key, size, **kwargs):
-    return encode_png(render_rgba(key, size, **kwargs), size, size)
+    edge = size * kwargs.get("scale", 1)
+    return encode_png(render_rgba(key, size, **kwargs), edge, edge)
 
 
 def render_svg(key, size=256, saturation=SATURATION, lightness=LIGHTNESS, background=None):
@@ -936,7 +948,7 @@ def artifact_bytes(key, size=ARTIFACT_SIZE, **render_kwargs):
                               render_kwargs.get("lightness", LIGHTNESS))
     return {
         "png": render_png(key, size, **render_kwargs),
-        "png4x": render_png(key, size * ARTIFACT_SCALE, **render_kwargs),
+        "png4x": render_png(key, size, scale=ARTIFACT_SCALE, **render_kwargs),
         "svg": render_svg(key, size, **render_kwargs).encode("utf-8"),
         "colour": (hex_colour(colour) + "\n").encode("utf-8"),
     }

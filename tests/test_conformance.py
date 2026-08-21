@@ -18,6 +18,7 @@ import json
 import os
 import pathlib
 import shutil
+import struct
 import subprocess
 import tempfile
 import unittest
@@ -196,6 +197,55 @@ class TestTheVectorsCanBeRegenerated(unittest.TestCase):
             capture_output=True, text=True, cwd=str(ROOT / "reference"), timeout=60)
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual(document, json.loads(result.stdout))
+
+
+class TestTheScaledRaster(unittest.TestCase):
+    """`@4x` must be the PNG with four times the pixels, not a second drawing.
+
+    The geometry is a heuristic -- round(size / 5.5) -- so it does not scale
+    linearly. Re-deriving it from the larger canvas gives 1024 a cell of 186
+    and a margin of 47 where four times the 256px render is 188 and 40: two
+    renderings of one mark, at visibly different border ratios, which is what
+    a native UI would flip between on a HiDPI screen.
+    """
+
+    KEY = "1:github.com/someone/a-project"
+
+    def magnify(self, rgba, size, scale):
+        """The 1x pixels, each repeated `scale` times in both directions."""
+        rows = []
+        for y in range(size):
+            row = rgba[y * size * 4:(y + 1) * size * 4]
+            wide = b"".join(row[x * 4:(x + 1) * 4] * scale for x in range(size))
+            rows.extend([wide] * scale)
+        return b"".join(rows)
+
+    def test_the_scaled_raster_is_exactly_the_magnified_one(self):
+        for size in (16, 32, 64):
+            with self.subTest(size=size):
+                one = identicon.render_rgba(self.KEY, size)
+                many = identicon.render_rgba(self.KEY, size,
+                                             scale=identicon.ARTIFACT_SCALE)
+                self.assertEqual(
+                    self.magnify(one, size, identicon.ARTIFACT_SCALE), many)
+
+    def test_scaling_multiplies_the_geometry_rather_than_re_deriving_it(self):
+        size, scale = identicon.ARTIFACT_SIZE, identicon.ARTIFACT_SCALE
+        cell, margin = identicon._geometry(size)
+        redrawn = identicon._geometry(size * scale)
+        self.assertNotEqual((cell * scale, margin * scale), redrawn,
+                            "the heuristic now scales linearly, so this test "
+                            "no longer proves anything -- check why")
+
+    def test_scale_one_changes_nothing(self):
+        self.assertEqual(identicon.render_rgba(self.KEY, 32),
+                         identicon.render_rgba(self.KEY, 32, scale=1))
+
+    def test_the_scaled_png_declares_the_scaled_edge(self):
+        size, scale = 32, identicon.ARTIFACT_SCALE
+        png = identicon.render_png(self.KEY, size, scale=scale)
+        width, height = struct.unpack(">II", png[16:24])
+        self.assertEqual((size * scale, size * scale), (width, height))
 
 
 class TestInstallingIntoARepository(unittest.TestCase):

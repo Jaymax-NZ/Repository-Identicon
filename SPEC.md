@@ -304,7 +304,7 @@ what the mark was made from; it is what the mark is made from.
 
 ```
 .identicon/repository-identicon.png       raster, 256px
-.identicon/repository-identicon@4x.png    the same raster at 4x, for native UIs
+.identicon/repository-identicon@4x.png    the same pixels magnified 4x, for native UIs
 .identicon/repository-identicon.svg       vector, same geometry
 .identicon/repository-identicon.colour    "#rrggbb\n", nothing else
 .identicon/repository-identicon.key       the key, hashed exactly as it reads
@@ -426,6 +426,15 @@ margin = floor((size - cell * 5) / 2)
 Cells are generous relative to the canvas so that a 16-pixel icon still reads as
 a pattern. Filled cells take the colour; everything else is transparent by
 default.
+
+**A scaled raster MUST multiply this geometry, not re-derive it.** `@4x` is the
+`size` image with every pixel repeated four times in each direction, and an
+implementation MUST produce it by computing `cell` and `margin` at `size` and
+multiplying both by the scale. The rounding above does not scale linearly:
+re-deriving at `size * 4` gives a 1024-pixel canvas `cell = 186, margin = 47`
+where four times the 256-pixel render is `188` and `40`. That is two drawings
+of one mark at different border ratios, which is exactly what a native UI would
+flip between when it swapped assets on a HiDPI screen.
 
 ### Terminal
 
