@@ -77,7 +77,7 @@ not survive being cloned. `apply` says so, and the fix is a
 | `text-identicon.py` | the text rendering, for media that display no image |
 | `reference/` | the library the derivation conforms to, committed rather than fetched, and the harness that regenerates the vectors from it |
 | `tests/` | the implementation against the vectors, and the vectors against the library |
-| `work-in-progress/` | the emoji-square mapping, settled but not yet adopted — a fallback for media that can show neither an image nor styled text; nothing here is imported by anything |
+| `work-in-progress/` | what is settled but not yet adopted: the emoji-square mapping, a fallback for media that can show neither an image nor styled text, and `scope-split.md`, which says where each half of `repository-identicon.py` belongs; nothing here is imported by anything |
 
 ```bash
 python3 -m unittest discover -s tests -t tests
