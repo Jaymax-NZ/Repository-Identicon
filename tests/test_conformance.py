@@ -192,7 +192,7 @@ class TestInstallingIntoARepository(unittest.TestCase):
         result = identicon.install_into_repo(self.tmp)
         self.assertEqual("github.com/someone/a-project", result["key"])
         self.assertEqual("remote", result["source"])
-        for name in ("png", "svg", "colour"):
+        for name in ("png", "png4x", "svg", "colour"):
             with self.subTest(artifact=name):
                 path = pathlib.Path(result["files"][name])
                 self.assertTrue(path.is_file(), path)

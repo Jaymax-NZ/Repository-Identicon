@@ -224,6 +224,7 @@ stale.
 
 ```
 .identicon/repository-identicon.png       raster, 256px
+.identicon/repository-identicon@4x.png    the same raster at 4x, for native UIs
 .identicon/repository-identicon.svg       vector, same geometry
 .identicon/repository-identicon.colour    "#rrggbb\n", nothing else
 .identicon/repository-identicon.key       the seed these were derived from

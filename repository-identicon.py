@@ -752,6 +752,10 @@ ARTIFACT_STEM = "repository-identicon"
 # by five cells of flat colour.
 ARTIFACT_SIZE = 256
 
+# The same raster again at four times the size. A browser scales the 1x for
+# itself; a native UI wants the pixels.
+ARTIFACT_SCALE = 4
+
 # **Each filename repeats the directory deliberately.** The directory is
 # context, and context is what does not travel: copied out, fetched from a raw
 # URL or dropped into `docs/`, a file called `icon.png` describes nothing. The
@@ -764,6 +768,7 @@ def artifact_paths(root):
     directory = root / IDENTICON_DIR
     return {
         "png": directory / f"{ARTIFACT_STEM}.png",
+        "png4x": directory / f"{ARTIFACT_STEM}@{ARTIFACT_SCALE}x.png",
         "svg": directory / f"{ARTIFACT_STEM}.svg",
         "colour": directory / f"{ARTIFACT_STEM}.colour",
     }
@@ -836,6 +841,7 @@ def artifact_bytes(key, size=ARTIFACT_SIZE, **render_kwargs):
                               render_kwargs.get("lightness", LIGHTNESS))
     return {
         "png": render_png(key, size, **render_kwargs),
+        "png4x": render_png(key, size * ARTIFACT_SCALE, **render_kwargs),
         "svg": render_svg(key, size, **render_kwargs).encode("utf-8"),
         "colour": (hex_colour(colour) + "\n").encode("utf-8"),
     }

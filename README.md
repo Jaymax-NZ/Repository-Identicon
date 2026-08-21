@@ -23,6 +23,7 @@ It derives the key from the git remote and writes four files:
 
 ```
 .identicon/repository-identicon.png       raster, 256px
+.identicon/repository-identicon@4x.png    the same raster at 4x, for native UIs
 .identicon/repository-identicon.svg       vector
 .identicon/repository-identicon.colour    "#rrggbb", and a newline
 .identicon/repository-identicon.key       the seed the others came from
