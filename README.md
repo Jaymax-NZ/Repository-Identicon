@@ -22,8 +22,8 @@ python3 /path/to/repository-identicon.py apply
 It derives the key from the git remote and writes four files:
 
 ```
-.identicon/repository-identicon.png       raster, 256px
-.identicon/repository-identicon@4x.png    the same pixels magnified 4x, for native UIs
+.identicon/repository-identicon.png       raster, block 5 (27px canvas)
+.identicon/repository-identicon@4x.png    the mark magnified 4x, for native UIs
 .identicon/repository-identicon.svg       vector
 .identicon/repository-identicon.colour    "#rrggbb", and a newline
 .identicon/repository-identicon.key       the key the others came from

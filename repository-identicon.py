@@ -40,6 +40,20 @@ import zlib
 
 GRID = 5
 
+# **The block is specified and the canvas is derived, never the other way
+# round.** A canvas-first tool has to guess the block back out, the guess does
+# not scale linearly, and a mark that lands on a different block at a different
+# scale is two drawings of one thing.
+BLOCKS = (1, 2, 3, 4, 5)
+BORDER = 1
+ARTIFACT_BLOCK = 5
+
+# The 4x artifact multiplies the block by four and the border by two. The
+# border is chrome rather than content, so quadrupling it would spend the new
+# pixels on empty edge instead of on the mark.
+ARTIFACT_SCALE = 4
+SCALED_BORDER = 2
+
 # The reference fixes both rather than deriving them from the digest. Named
 # once because they were previously written out at nine call sites, which is
 # how a default drifts from the specification without anyone editing the rule.
@@ -449,35 +463,48 @@ def profile_body(key, parent="FALLBACK/"):
 # ---------------------------------------------------------------------------
 
 
-def _geometry(size):
-    """Cell size and margin for a square canvas.
+def canvas_edge(block, border):
+    """The square canvas a block and a border imply: GRID blocks plus a border.
 
-    Cells are deliberately generous relative to the canvas so a 16px icon still
-    reads as a pattern rather than a smudge.
+    The block is the specified thing and the canvas is derived, never the other
+    way round. Deriving the block from a canvas needs a heuristic, a heuristic
+    does not scale linearly, and a mark that lands on a different block at a
+    different scale is two drawings rather than one.
     """
-    cell = max(1, round(size / 5.5))
-    if cell * GRID > size:
-        cell = max(1, size // GRID)
-    margin = (size - cell * GRID) // 2
-    return cell, margin
+    return GRID * block + 2 * border
 
 
-def render_rgba(key, size, saturation=SATURATION, lightness=LIGHTNESS,
-                background=None, scale=1):
-    """Return raw RGBA bytes for a square identicon of the given size.
+def fit_block(edge, border=1):
+    """The largest block that fits a canvas somebody else fixed.
 
-    `scale` multiplies the *blocks*, not the canvas: the geometry is worked out
-    once at `size` and then multiplied, so the result is the `size` image with
-    every pixel repeated `scale` times in each direction. Re-deriving the
-    geometry from the larger canvas instead would land on a different cell and
-    margin -- 256 gives cell 47 margin 10, 1024 gives cell 186 margin 47 -- and
-    the two files would be different renderings rather than one at two
-    resolutions.
+    For the XDG icon theme, where the file at `48x48/apps/` has to be 48 pixels
+    whatever that divides into, and for a terminal handed a pixel budget. Both
+    are canvases we do not choose. Everything we do choose is specified as a
+    block.
+    """
+    block = (edge - 2 * border) // GRID
+    if block < 1:
+        block = max(1, edge // GRID)
+    return block
+
+
+def render_rgba(key, block, border=BORDER, saturation=SATURATION,
+                lightness=LIGHTNESS, background=None, edge=None):
+    """Return raw RGBA bytes for a square identicon of `block`-pixel blocks.
+
+    `edge` is for the callers who do not get to choose their canvas -- the icon
+    theme, a terminal -- and pads the grid into a fixed square. Left alone the
+    canvas is derived from the block and the border, which is the normal case
+    and the only one the artifacts use.
     """
     grid = identicon_grid(key)
     red, green, blue = identicon_colour(key, saturation, lightness)
-    cell, margin = _geometry(size)
-    cell, margin, size = cell * scale, margin * scale, size * scale
+    cell = block
+    if edge is None:
+        edge, margin = canvas_edge(block, border), border
+    else:
+        margin = (edge - cell * GRID) // 2
+    size = edge
 
     if background is None:
         back = bytes((0, 0, 0, 0))
@@ -523,15 +550,17 @@ def encode_png(rgba, width, height):
     )
 
 
-def render_png(key, size, **kwargs):
-    edge = size * kwargs.get("scale", 1)
-    return encode_png(render_rgba(key, size, **kwargs), edge, edge)
+def render_png(key, block, **kwargs):
+    edge = kwargs.get("edge") or canvas_edge(block, kwargs.get("border", BORDER))
+    return encode_png(render_rgba(key, block, **kwargs), edge, edge)
 
 
-def render_svg(key, size=256, saturation=SATURATION, lightness=LIGHTNESS, background=None):
+def render_svg(key, block=ARTIFACT_BLOCK, border=BORDER, saturation=SATURATION,
+               lightness=LIGHTNESS, background=None):
     grid = identicon_grid(key)
     colour = hex_colour(identicon_colour(key, saturation, lightness))
-    cell, margin = _geometry(size)
+    cell, margin = block, border
+    size = canvas_edge(block, border)
 
     parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size}" '
@@ -755,7 +784,7 @@ def render_inline(key, protocol, size=INLINE_SIZE, **kwargs):
     """The identicon as a real image, or None if the protocol cannot carry one."""
     if protocol not in (ITERM2, KITTY):
         return None
-    png = render_png(key, size, **kwargs)
+    png = render_png(key, fit_block(size), edge=size, **kwargs)
     return iterm2_image(png) if protocol == ITERM2 else kitty_image(png)
 
 
@@ -821,15 +850,6 @@ def konsole_profile_dir():
 
 IDENTICON_DIR = ".identicon"
 ARTIFACT_STEM = "repository-identicon"
-
-# 256 is a compromise with a reason on each side: crisp on a HiDPI README at
-# any inline size, and still a couple of kilobytes because the image is five
-# by five cells of flat colour.
-ARTIFACT_SIZE = 256
-
-# The same raster again at four times the size. A browser scales the 1x for
-# itself; a native UI wants the pixels.
-ARTIFACT_SCALE = 4
 
 # **Each filename repeats the directory deliberately.** The directory is
 # context, and context is what does not travel: copied out, fetched from a raw
@@ -936,7 +956,7 @@ def resolve_key_for(path=None, explicit=None):
     return stamp_key(seed), source
 
 
-def artifact_bytes(key, size=ARTIFACT_SIZE, **render_kwargs):
+def artifact_bytes(key, block=ARTIFACT_BLOCK, **render_kwargs):
     """What each artifact should contain for this key.
 
     Three files rather than one. A combined file would be readable by every
@@ -947,9 +967,10 @@ def artifact_bytes(key, size=ARTIFACT_SIZE, **render_kwargs):
                               render_kwargs.get("saturation", SATURATION),
                               render_kwargs.get("lightness", LIGHTNESS))
     return {
-        "png": render_png(key, size, **render_kwargs),
-        "png4x": render_png(key, size, scale=ARTIFACT_SCALE, **render_kwargs),
-        "svg": render_svg(key, size, **render_kwargs).encode("utf-8"),
+        "png": render_png(key, block, **render_kwargs),
+        "png4x": render_png(key, block * ARTIFACT_SCALE, border=SCALED_BORDER,
+                            **render_kwargs),
+        "svg": render_svg(key, block, **render_kwargs).encode("utf-8"),
         "colour": (hex_colour(colour) + "\n").encode("utf-8"),
     }
 
@@ -1043,7 +1064,7 @@ def readme_state(root, check=False):
     return "updated", readme
 
 
-def install_into_repo(path=None, seed=None, size=ARTIFACT_SIZE, check=False,
+def install_into_repo(path=None, seed=None, block=ARTIFACT_BLOCK, check=False,
                       reseed=False, remap=False, readme=True, **render_kwargs):
     """Create or update the identicon artifacts in one repository.
 
@@ -1108,7 +1129,7 @@ def install_into_repo(path=None, seed=None, size=ARTIFACT_SIZE, check=False,
             masking = remote_seed
 
     paths = artifact_paths(root)
-    wanted = artifact_bytes(key, size, **render_kwargs)
+    wanted = artifact_bytes(key, block, **render_kwargs)
 
     changes = {}
     for name, target in paths.items():
@@ -1185,13 +1206,14 @@ def install_icon(key, root=None, sizes=INSTALL_SIZES, **render_kwargs):
         directory = root / f"{size}x{size}" / "apps"
         directory.mkdir(parents=True, exist_ok=True)
         target = directory / f"{name}.png"
-        target.write_bytes(render_png(key, size, **render_kwargs))
+        target.write_bytes(render_png(key, fit_block(size), edge=size,
+                                      **render_kwargs))
         written.append(target)
 
     scalable = root / "scalable" / "apps"
     scalable.mkdir(parents=True, exist_ok=True)
     target = scalable / f"{name}.svg"
-    target.write_text(render_svg(key, 256, **render_kwargs))
+    target.write_text(render_svg(key, ARTIFACT_BLOCK, **render_kwargs))
     written.append(target)
     return written
 
@@ -1383,6 +1405,8 @@ def _render_kwargs(args):
 
 
 SOURCE_NOTES = {
+    "key": f"the recorded key, which outranks all of the below",
+    "remap": "the recorded seed, restamped at this mapping version",
     "explicit": "given on the command line",
     "override": f"committed {OVERRIDE_FILENAME}",
     "remote": "git remote, portable across checkouts",
@@ -1394,7 +1418,8 @@ SOURCE_NOTES = {
 def cmd_show(args):
     key, source = _resolve_from_args(args)
     print(f"key       {key}")
-    print(f"source    {source}  ({SOURCE_NOTES[source]})")
+    note = SOURCE_NOTES.get(source)
+    print(f"source    {source}" + (f"  ({note})" if note else ""))
     print(f"project   {project_name(key)}")
     print(f"icon      {icon_name(key)}")
     print(f"profile   {profile_name(key)}")
@@ -1408,10 +1433,14 @@ def cmd_show(args):
 def cmd_render(args):
     key = _key_from_args(args)
     kwargs = _render_kwargs(args)
-    if args.format == "svg":
-        data = render_svg(key, args.size, **kwargs).encode("utf-8")
+    if args.edge:
+        block, extra = fit_block(args.edge), {"edge": args.edge}
     else:
-        data = render_png(key, args.size, **kwargs)
+        block, extra = args.block, {}
+    if args.format == "svg":
+        data = render_svg(key, block, **kwargs).encode("utf-8")
+    else:
+        data = render_png(key, block, **extra, **kwargs)
     if args.out == "-":
         sys.stdout.buffer.write(data)
     else:
@@ -1427,7 +1456,7 @@ def cmd_apply(args):
     and 1 under --check when it is not, so a CI job or a dependent tool can
     branch on it without parsing anything.
     """
-    result = install_into_repo(args.path, args.seed, args.size, args.check,
+    result = install_into_repo(args.path, args.seed, args.block, args.check,
                                args.reseed, args.remap, not args.no_readme,
                                **_render_kwargs(args))
     if args.json:
@@ -1960,8 +1989,10 @@ def build_parser():
     apply_cmd = sub.add_parser(
         "apply", help="create or update the identicon files in a repository")
     add_common(apply_cmd, render=True)
-    apply_cmd.add_argument("--size", type=int, default=ARTIFACT_SIZE,
-                           help=f"PNG and SVG size; default {ARTIFACT_SIZE}")
+    apply_cmd.add_argument("--block", type=int, default=ARTIFACT_BLOCK,
+                           choices=BLOCKS,
+                           help=f"block size in pixels; default "
+                                f"{ARTIFACT_BLOCK}. The canvas follows.")
     apply_cmd.add_argument("--check", action="store_true",
                            help="report what would change, write nothing, and "
                                 "exit 1 if not current")
@@ -1982,7 +2013,11 @@ def build_parser():
 
     render = sub.add_parser("render", help="write one identicon image")
     add_common(render, render=True)
-    render.add_argument("--size", type=int, default=256)
+    render.add_argument("--block", type=int, default=ARTIFACT_BLOCK,
+                        choices=BLOCKS, help="block size in pixels")
+    render.add_argument("--edge", type=int,
+                        help="fit the grid to this exact canvas instead, for "
+                             "somewhere the size is not ours to choose")
     render.add_argument("--format", choices=("png", "svg"), default="png")
     render.add_argument("--out", default="-", help="output file, or - for stdout")
     render.set_defaults(func=cmd_render)

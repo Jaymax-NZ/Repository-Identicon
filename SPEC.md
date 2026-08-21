@@ -303,8 +303,8 @@ The key file is the exception, and is the source of truth. It is not a note of
 what the mark was made from; it is what the mark is made from.
 
 ```
-.identicon/repository-identicon.png       raster, 256px
-.identicon/repository-identicon@4x.png    the same pixels magnified 4x, for native UIs
+.identicon/repository-identicon.png       raster, block 5 (27px canvas)
+.identicon/repository-identicon@4x.png    the mark magnified 4x, for native UIs
 .identicon/repository-identicon.svg       vector, same geometry
 .identicon/repository-identicon.colour    "#rrggbb\n", nothing else
 .identicon/repository-identicon.key       the key, hashed exactly as it reads
@@ -415,26 +415,43 @@ itself, which is the right way round.
 
 ### Raster
 
-A square canvas of side `size`:
+**The block is specified and the canvas is derived.** A block is a whole
+number of pixels, the border is a whole number of pixels, and
 
 ```
-cell = max(1, floor(size / 5.5 + 0.5))
-if cell * 5 > size: cell = max(1, floor(size / 5))
-margin = floor((size - cell * 5) / 2)
+canvas = 5 * block + 2 * border
 ```
 
-Cells are generous relative to the canvas so that a 16-pixel icon still reads as
-a pattern. Filled cells take the colour; everything else is transparent by
-default.
+The defined blocks are **1, 2, 3, 4 and 5** pixels at a border of 1, giving
+canvases of 7, 12, 17, 22 and 27. Filled blocks take the colour; everything
+else is transparent by default.
 
-**A scaled raster MUST multiply this geometry, not re-derive it.** `@4x` is the
-`size` image with every pixel repeated four times in each direction, and an
-implementation MUST produce it by computing `cell` and `margin` at `size` and
-multiplying both by the scale. The rounding above does not scale linearly:
-re-deriving at `size * 4` gives a 1024-pixel canvas `cell = 186, margin = 47`
-where four times the 256-pixel render is `188` and `40`. That is two drawings
-of one mark at different border ratios, which is exactly what a native UI would
-flip between when it swapped assets on a HiDPI screen.
+An implementation MUST NOT derive the block from a canvas. Doing so needs a
+heuristic, heuristics do not scale linearly, and a mark that lands on a
+different block at a different scale is two drawings rather than one.
+
+Where the canvas is genuinely not the implementation's to choose -- the icon
+theme wants exactly 48 pixels at `48x48/apps/`, a terminal is handed a pixel
+budget -- it MUST fit the largest block that leaves room for the border,
+`block = floor((edge - 2 * border) / 5)`, and centre the grid in the canvas it
+was given.
+
+#### The 4x raster
+
+`@4x` multiplies the **block by four and the border by two**:
+
+| block | border | canvas | | 4x block | 4x border | 4x canvas |
+|---|---|---|---|---|---|---|
+| 1 | 1 | 7 | | 4 | 2 | 24 |
+| 2 | 1 | 12 | | 8 | 2 | 44 |
+| 3 | 1 | 17 | | 12 | 2 | 64 |
+| 4 | 1 | 22 | | 16 | 2 | 84 |
+| 5 | 1 | 27 | | 20 | 2 | 104 |
+
+The mark is magnified exactly four times. The border is not, because the border
+is chrome rather than content and quadrupling it would spend the new pixels on
+empty edge. So `@4x` is not a magnification of the whole canvas, and an
+implementation MUST NOT produce it by rendering at four times the canvas size.
 
 ### Terminal
 

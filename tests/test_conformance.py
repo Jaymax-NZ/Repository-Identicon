@@ -199,53 +199,80 @@ class TestTheVectorsCanBeRegenerated(unittest.TestCase):
         self.assertEqual(document, json.loads(result.stdout))
 
 
-class TestTheScaledRaster(unittest.TestCase):
-    """`@4x` must be the PNG with four times the pixels, not a second drawing.
+class TestTheBlocksAndTheCanvas(unittest.TestCase):
+    """The block is specified; the canvas is derived.
 
-    The geometry is a heuristic -- round(size / 5.5) -- so it does not scale
-    linearly. Re-deriving it from the larger canvas gives 1024 a cell of 186
-    and a margin of 47 where four times the 256px render is 188 and 40: two
-    renderings of one mark, at visibly different border ratios, which is what
-    a native UI would flip between on a HiDPI screen.
+    `@4x` multiplies the block by four and the border by two -- the border is
+    chrome, so quadrupling it would spend the new pixels on empty edge. That
+    makes the 4x a magnification of the *mark*, not of the whole canvas, which
+    is the distinction the two assertions below pin.
     """
 
     KEY = "1:github.com/someone/a-project"
 
-    def magnify(self, rgba, size, scale):
-        """The 1x pixels, each repeated `scale` times in both directions."""
+    def area(self, rgba, block, border):
+        """The GRID x GRID block region, with the border cropped off."""
+        edge = identicon.canvas_edge(block, border)
+        side = block * identicon.GRID
         rows = []
-        for y in range(size):
-            row = rgba[y * size * 4:(y + 1) * size * 4]
-            wide = b"".join(row[x * 4:(x + 1) * 4] * scale for x in range(size))
-            rows.extend([wide] * scale)
+        for y in range(border, border + side):
+            start = (y * edge + border) * 4
+            rows.append(rgba[start:start + side * 4])
         return b"".join(rows)
 
-    def test_the_scaled_raster_is_exactly_the_magnified_one(self):
-        for size in (16, 32, 64):
-            with self.subTest(size=size):
-                one = identicon.render_rgba(self.KEY, size)
-                many = identicon.render_rgba(self.KEY, size,
-                                             scale=identicon.ARTIFACT_SCALE)
+    def magnify(self, pixels, side, scale):
+        rows = []
+        for y in range(side):
+            row = pixels[y * side * 4:(y + 1) * side * 4]
+            rows.extend([b"".join(row[x * 4:(x + 1) * 4] * scale
+                                  for x in range(side))] * scale)
+        return b"".join(rows)
+
+    def test_the_canvas_is_five_blocks_and_two_borders(self):
+        self.assertEqual([7, 12, 17, 22, 27],
+                         [identicon.canvas_edge(b, 1) for b in identicon.BLOCKS])
+        self.assertEqual([24, 44, 64, 84, 104],
+                         [identicon.canvas_edge(b * identicon.ARTIFACT_SCALE,
+                                                identicon.SCALED_BORDER)
+                          for b in identicon.BLOCKS])
+
+    def test_the_scaled_mark_is_the_mark_magnified(self):
+        scale, border2 = identicon.ARTIFACT_SCALE, identicon.SCALED_BORDER
+        for block in identicon.BLOCKS:
+            with self.subTest(block=block):
+                one = identicon.render_rgba(self.KEY, block)
+                many = identicon.render_rgba(self.KEY, block * scale,
+                                             border=border2)
                 self.assertEqual(
-                    self.magnify(one, size, identicon.ARTIFACT_SCALE), many)
+                    self.magnify(self.area(one, block, identicon.BORDER),
+                                 block * identicon.GRID, scale),
+                    self.area(many, block * scale, border2))
 
-    def test_scaling_multiplies_the_geometry_rather_than_re_deriving_it(self):
-        size, scale = identicon.ARTIFACT_SIZE, identicon.ARTIFACT_SCALE
-        cell, margin = identicon._geometry(size)
-        redrawn = identicon._geometry(size * scale)
-        self.assertNotEqual((cell * scale, margin * scale), redrawn,
-                            "the heuristic now scales linearly, so this test "
-                            "no longer proves anything -- check why")
+    def test_the_border_doubles_rather_than_quadrupling(self):
+        """Stated as a test because it is the one part of `@4x` that is not a
+        magnification, and it would otherwise look like a bug."""
+        self.assertEqual(2 * identicon.BORDER, identicon.SCALED_BORDER)
+        self.assertNotEqual(identicon.ARTIFACT_SCALE * identicon.BORDER,
+                            identicon.SCALED_BORDER)
 
-    def test_scale_one_changes_nothing(self):
-        self.assertEqual(identicon.render_rgba(self.KEY, 32),
-                         identicon.render_rgba(self.KEY, 32, scale=1))
+    def test_the_pngs_declare_the_derived_canvas(self):
+        for block in identicon.BLOCKS:
+            with self.subTest(block=block):
+                png = identicon.render_png(self.KEY, block)
+                edge = identicon.canvas_edge(block, identicon.BORDER)
+                self.assertEqual((edge, edge),
+                                 struct.unpack(">II", png[16:24]))
 
-    def test_the_scaled_png_declares_the_scaled_edge(self):
-        size, scale = 32, identicon.ARTIFACT_SCALE
-        png = identicon.render_png(self.KEY, size, scale=scale)
-        width, height = struct.unpack(">II", png[16:24])
-        self.assertEqual((size * scale, size * scale), (width, height))
+    def test_a_canvas_somebody_else_fixed_is_filled_exactly(self):
+        """The icon theme wants 48 pixels at `48x48/apps/` whatever that
+        divides into, so `edge` pads rather than changing the file's size."""
+        for edge in identicon.INSTALL_SIZES:
+            with self.subTest(edge=edge):
+                block = identicon.fit_block(edge)
+                self.assertLessEqual(block * identicon.GRID, edge)
+                png = identicon.render_png(self.KEY, block, edge=edge)
+                self.assertEqual((edge, edge),
+                                 struct.unpack(">II", png[16:24]))
 
 
 class TestInstallingIntoARepository(unittest.TestCase):
@@ -371,11 +398,11 @@ class TestInstallingIntoARepository(unittest.TestCase):
         self.assertEqual("github.com/someone/renamed", after["seed_drift"])
 
     def test_artifacts_refresh_without_touching_the_seed(self):
-        """A better renderer or a different size must reach every repository
+        """A better renderer or a different block must reach every repository
         without disturbing anybody's identity."""
         before = identicon.install_into_repo(self.tmp)
         self._rename_remote()
-        after = identicon.install_into_repo(self.tmp, size=128)
+        after = identicon.install_into_repo(self.tmp, block=3)
         self.assertEqual(before["key"], after["key"])
         self.assertEqual("unchanged", after["changes"]["key"])
         self.assertEqual("updated", after["changes"]["png"])
@@ -620,6 +647,21 @@ class TestTheKeyFileWins(unittest.TestCase):
             identicon.install_into_repo(self.tmp, remap=True, readme=False,
                                         check=True)
         self.assertEqual(first["key"], identicon.recorded_key(self.tmp))
+
+    def test_the_read_only_commands_run_in_a_seeded_repository(self):
+        """`show` looked its source up in a table that had never been told
+        about the recorded key, so it crashed in every seeded repository --
+        which is all of them after the first run. Nothing exercised the command
+        end to end, so nothing caught it."""
+        identicon.install_into_repo(self.tmp, readme=False)
+        for command in (["show"], ["render", "--out", os.devnull],
+                        ["emit", "--style", "icon"]):
+            with self.subTest(command=command[0]):
+                done = subprocess.run(
+                    ["python3", str(ROOT / "repository-identicon.py"),
+                     *command, self.tmp],
+                    capture_output=True, text=True, timeout=60)
+                self.assertEqual(0, done.returncode, done.stderr)
 
     def test_show_draws_what_apply_wrote(self):
         """A seeded repository has one mark. The read-only commands resolve
