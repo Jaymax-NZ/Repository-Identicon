@@ -1,7 +1,9 @@
 # Splitting the delivery layers out of `repository-identicon.py`
 
-Status: proposed, nothing moved yet. Written because the file had grown three
-jobs and only one of them is this repository's.
+Status: step 1 done. `Console-Colophon` now holds the Konsole and D-Bus half,
+vendored and checked; nothing has been removed from this repository yet.
+Written because the file had grown three jobs and only one of them is this
+repository's.
 
 ## The rule
 
@@ -83,7 +85,17 @@ this specification, just a fork of it.
    it looks like a derived name. Suggest it moves with the profile code and
    `show` stops printing it — but it is defensible either way, so it should be
    decided rather than left to fall out of a diff.
-3. **`_bg` is dead.** Defined at line 527, referenced from nowhere in any Python
+3. **`SPEC.md` and the code disagree about the icon prefix.** § Derived names
+   says "this repository uses `claude-state-identicon-`", and `ICON_PREFIX` has
+   said `repository-identicon` since before this branch. One of them is stale
+   whatever happens to the split, and the spec is the one making a claim about
+   code it can be checked against.
+4. **The module docstring is about Konsole.** `repository-identicon.py` opens
+   "Per-project identicons for Konsole tabs. A testbed for the two compile-free
+   routes..." and points at `docs/konsole-identicons.md`, which this repository
+   does not have. It needs a docstring about deriving and applying a mark, and
+   the Konsole one has already gone to `Console-Colophon`.
+5. **`_bg` is dead.** Defined at line 527, referenced from nowhere in any Python
    file in the tree. It is the background half of a pair with `_fg`, left behind
    when the half-block grid was removed and the octants stopped taking a
    per-cell background. Delete it in the same pass.
@@ -93,8 +105,9 @@ this specification, just a fork of it.
 The two receiving repositories should have the code before this one drops it, so
 that at no point does a working feature exist nowhere:
 
-1. `Console-Colophon` created, with the vendored core and its own conformance
-   test against `vectors.json`.
+1. ~~`Console-Colophon` created, with the vendored core and its own conformance
+   test against `vectors.json`.~~ Done. The vendored copy was checked
+   byte-for-byte against this implementation across all ten vectors first.
 2. `Claude-Colophon` takes `emit` and `hooks`.
 3. Only then does `repository-identicon.py` lose them, in one commit that also
    deletes `_bg` and reconciles `PERMISSIONS.md` and the README's command list.
