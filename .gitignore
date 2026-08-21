@@ -1,5 +1,11 @@
 __pycache__/
 *.pyc
 
+# Editor swap files. One was committed by accident.
+*.swp
+*.swo
+*~
+.*.sw?
+
 # mix.py scratch output
 work-in-progress/mixes.svg
