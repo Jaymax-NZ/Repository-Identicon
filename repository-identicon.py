@@ -1593,9 +1593,9 @@ def cmd_hooks(args):
 
 def cmd_doctor(args):
     sibling = text_module_path()
-    print(f"{TEXT_MODULE:16} "
-          f"{sibling if sibling.is_file() else 'NOT FOUND - text styles will '
-                                              'print nothing'}")
+    found = (str(sibling) if sibling.is_file()
+             else "NOT FOUND - text styles will print nothing")
+    print(f"{TEXT_MODULE:16} {found}")
     print(f"qdbus            {find_qdbus() or 'NOT FOUND'}")
     print(f"gdbus            {find_gdbus() or 'NOT FOUND'}")
     print(f"icon theme root  {icon_theme_root()}")

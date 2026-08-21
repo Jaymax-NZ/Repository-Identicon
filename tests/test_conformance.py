@@ -438,5 +438,46 @@ class TestInstallingIntoARepository(unittest.TestCase):
         self.assertFalse(json.loads(completed.stdout)["current"])
 
 
+class TestTheTwoFilesAreAPair(unittest.TestCase):
+    """repository-identicon.py needs text-identicon.py for every text style.
+
+    Deployed without it the tool still runs and still exits 0, because `emit`
+    swallows everything so that a hook can never break a turn -- which is
+    exactly what turns a missing file into a silent one. So the loader names
+    the file instead of failing on a bare path, and `doctor` reports it either
+    way. Both are checked here against a copy deployed on its own, because in
+    the tree the sibling is always there.
+    """
+
+    def setUp(self):
+        self.tmp = pathlib.Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.tmp, ignore_errors=True)
+        self.alone = self.tmp / "repository-identicon.py"
+        shutil.copy(ROOT / "repository-identicon.py", self.alone)
+
+    def doctor(self, script):
+        completed = subprocess.run(["python3", str(script), "doctor"],
+                                   capture_output=True, text=True, timeout=60)
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        return completed.stdout
+
+    def test_doctor_gives_the_path_when_the_sibling_is_there(self):
+        self.assertIn(str(ROOT / "text-identicon.py"),
+                      self.doctor(ROOT / "repository-identicon.py"))
+
+    def test_doctor_says_not_found_and_what_it_costs_when_it_is_not(self):
+        report = self.doctor(self.alone)
+        self.assertRegex(report, r"text-identicon\.py\s+NOT FOUND")
+        self.assertIn("text styles will print nothing", report)
+
+    def test_the_loader_names_the_file_rather_than_failing_on_a_bare_path(self):
+        spec = importlib.util.spec_from_file_location("alone", self.alone)
+        alone = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(alone)
+        with self.assertRaises(FileNotFoundError) as raised:
+            alone._text_module()
+        self.assertIn("text-identicon.py", str(raised.exception))
+
+
 if __name__ == "__main__":
     unittest.main()
