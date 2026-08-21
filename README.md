@@ -19,19 +19,14 @@ Run this inside the repository you want marked:
 python3 /path/to/repository-identicon.py apply
 ```
 
-It derives the key from the git remote and writes five files:
+It derives the key from the git remote and writes four files:
 
 ```
 .identicon/repository-identicon.png       raster, 256px
-.identicon/repository-identicon@4x.png    the same raster at 1024px
 .identicon/repository-identicon.svg       vector
 .identicon/repository-identicon.colour    "#rrggbb", and a newline
 .identicon/repository-identicon.key       the seed the others came from
 ```
-
-The `@4x` raster is there for native UIs — Qt, GTK, a desktop panel — which
-pick an asset per scale factor and cannot resample the way a browser does. On
-the web you want the SVG, or the 256px PNG and CSS.
 
 It also adds the mark to the repository's README, after the first heading:
 

@@ -752,17 +752,6 @@ ARTIFACT_STEM = "repository-identicon"
 # by five cells of flat colour.
 ARTIFACT_SIZE = 256
 
-# **And the same raster again at four times that, for native toolkits.**
-# A browser is handed one file and resamples it to whatever density the display
-# has, so CSS needs no second asset. A native UI does: Qt, GTK and desktop
-# panels pick an asset per scale factor, and a 256px source stretched into a 4x
-# slot is visibly soft next to everything drawn beside it. 1024 is the largest
-# size any of them ask for.
-#
-# `@4x` rather than `-1024`: it is the convention native asset pipelines already
-# recognise, so the file is picked up without anything being told about it.
-ARTIFACT_SCALE = 4
-
 # **Each filename repeats the directory deliberately.** The directory is
 # context, and context is what does not travel: copied out, fetched from a raw
 # URL or dropped into `docs/`, a file called `icon.png` describes nothing. The
@@ -775,7 +764,6 @@ def artifact_paths(root):
     directory = root / IDENTICON_DIR
     return {
         "png": directory / f"{ARTIFACT_STEM}.png",
-        "png4x": directory / f"{ARTIFACT_STEM}@{ARTIFACT_SCALE}x.png",
         "svg": directory / f"{ARTIFACT_STEM}.svg",
         "colour": directory / f"{ARTIFACT_STEM}.colour",
     }
@@ -839,20 +827,15 @@ def recorded_seed(root):
 def artifact_bytes(key, size=ARTIFACT_SIZE, **render_kwargs):
     """What each artifact should contain for this key.
 
-    Separate files rather than one. A combined file would be readable by every
+    Three files rather than one. A combined file would be readable by every
     tool that knows the format, which is one tool; a README cannot address a
     fragment inside a blob, and `$(cat …/*.colour)` is a whole parser.
-
-    The `@4x` raster is the same picture at four times the size, not a
-    different one: same key, same geometry, same colour. A consumer that does
-    not know about it is unaffected, which is the point of a separate file.
     """
     colour = identicon_colour(key,
                               render_kwargs.get("saturation", SATURATION),
                               render_kwargs.get("lightness", LIGHTNESS))
     return {
         "png": render_png(key, size, **render_kwargs),
-        "png4x": render_png(key, size * ARTIFACT_SCALE, **render_kwargs),
         "svg": render_svg(key, size, **render_kwargs).encode("utf-8"),
         "colour": (hex_colour(colour) + "\n").encode("utf-8"),
     }
