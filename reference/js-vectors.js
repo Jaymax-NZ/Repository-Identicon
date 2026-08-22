@@ -37,12 +37,14 @@ function vector(key) {
     grid[y / CELL][x / CELL] = 1;
   }
 
+  // The pattern only. From mapping version 2 the colour is this project's own
+  // rule -- a capped ring at one Oklab lightness -- which this library cannot
+  // produce and has no opinion about. The grid rule is unchanged, so it is
+  // still the thing an outside implementation pins.
   return {
     key,
     md5,
     grid: grid.map(r => r.join('')),
-    foreground: rgb(svg.match(/fill:rgba\(([^)]+)\)/)[1]),
-    background: rgb(svg.match(/background-color:rgba\(([^)]+)\)/)[1]),
   };
 }
 

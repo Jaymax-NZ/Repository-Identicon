@@ -40,9 +40,12 @@ Renderings — image, terminal protocol, text — are optional. A port that only
 derives the key, the grid and the colour is a complete and useful port.
 
 The vectors span mapping versions, because keys do: an unprefixed key is
-version 0 and hashes to itself. A port that hashes what it is handed passes all
-of them without knowing any of that, which is the point of putting the version
-in the key rather than in everybody's code.
+version 0 and hashes to itself. The digest and the grid are the same rule at
+every version, so a port that hashes what it is handed gets those for free.
+
+The **colour** is not. Version 2 changed it, and no version ever retires, so a
+port must implement each rule and pick by the version in the key. `vectors.json`
+covers all of them, which is how you find out whether you have.
 
 ### Checking it
 

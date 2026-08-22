@@ -1,6 +1,6 @@
 # Repository Identicon
 
-<picture><source media="(prefers-color-scheme: dark)" srcset=".identicon/repository-identicon-dark.svg"><img alt="" src=".identicon/repository-identicon-light.svg"></picture>
+![](.identicon/repository-identicon.svg)
 
 A deterministic visual identity for a software project, derived from the project
 itself and from nothing else. Any tool implementing this specification produces
@@ -33,16 +33,9 @@ It derives the key from the git remote and writes four files:
 .identicon/repository-identicon.key            the key, hashed exactly as it reads
 ```
 
-Every rendered file comes in three variants — `-base`, `-light`, `-dark` —
-differing in lightness alone. `-base` is the reference's own colour; the other
-two are for the ground they name. Seventeen files, about eight kilobytes.
-
-To put a theme-aware mark in a README, `<picture>` is the only reliable route
-on a forge, and it is what `apply` inserts:
-
-```html
-<picture><source media="(prefers-color-scheme: dark)" srcset=".identicon/repository-identicon-dark.svg"><img alt="" src=".identicon/repository-identicon-light.svg"></picture>
-```
+One file each. The mark holds its brightness right around the colour wheel, so
+the same image sits on a white page and on a near-black one and the project
+looks like itself in both. There is no light or dark variant to choose between.
 
 To hand the mark to GitLab, copy one out yourself. GitLab reads `logo.png` at
 the repository root when no avatar has been uploaded, so this is the whole

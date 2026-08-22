@@ -10,8 +10,7 @@
     "10101",
     "01010"
    ],
-   "foreground": "#2692d9",
-   "background": "#f0f0f0"
+   "foreground": "#2692d9"
   },
   {
    "key": "github.com/justin-maxwell/glyph-hunter",
@@ -23,8 +22,7 @@
     "01110",
     "10101"
    ],
-   "foreground": "#26b4d9",
-   "background": "#f0f0f0"
+   "foreground": "#26b4d9"
   },
   {
    "key": "github.com/justin-maxwell/sentry-mcp",
@@ -36,8 +34,7 @@
     "10001",
     "01010"
    ],
-   "foreground": "#d9c826",
-   "background": "#f0f0f0"
+   "foreground": "#d9c826"
   },
   {
    "key": "github.com/justin-maxwell/markright",
@@ -49,8 +46,7 @@
     "11011",
     "00100"
    ],
-   "foreground": "#b1d926",
-   "background": "#f0f0f0"
+   "foreground": "#b1d926"
   },
   {
    "key": "gitlab.com/justin-maxwell/claude-state-panel",
@@ -62,8 +58,7 @@
     "10001",
     "11011"
    ],
-   "foreground": "#9426d9",
-   "background": "#f0f0f0"
+   "foreground": "#9426d9"
   },
   {
    "key": "github.com/torvalds/linux",
@@ -75,8 +70,7 @@
     "00100",
     "01110"
    ],
-   "foreground": "#8026d9",
-   "background": "#f0f0f0"
+   "foreground": "#8026d9"
   },
   {
    "key": "Code/Projects/MarkRight",
@@ -88,8 +82,7 @@
     "10101",
     "11111"
    ],
-   "foreground": "#41d926",
-   "background": "#f0f0f0"
+   "foreground": "#41d926"
   },
   {
    "key": "/opt/checkouts/Thing",
@@ -101,8 +94,7 @@
     "01010",
     "11111"
    ],
-   "foreground": "#d95b26",
-   "background": "#f0f0f0"
+   "foreground": "#d95b26"
   },
   {
    "key": "",
@@ -114,8 +106,7 @@
     "11011",
     "10101"
    ],
-   "foreground": "#c026d9",
-   "background": "#f0f0f0"
+   "foreground": "#c026d9"
   },
   {
    "key": "a",
@@ -127,8 +118,7 @@
     "11011",
     "11011"
    ],
-   "foreground": "#2677d9",
-   "background": "#f0f0f0"
+   "foreground": "#2677d9"
   },
   {
    "key": "1:github.com/justin-maxwell/claude-state-panel",
@@ -140,8 +130,7 @@
     "00000",
     "10001"
    ],
-   "foreground": "#d92656",
-   "background": "#f0f0f0"
+   "foreground": "#d92656"
   },
   {
    "key": "1:github.com/justin-maxwell/glyph-hunter",
@@ -153,8 +142,7 @@
     "01010",
     "01010"
    ],
-   "foreground": "#2653d9",
-   "background": "#f0f0f0"
+   "foreground": "#2653d9"
   },
   {
    "key": "1:github.com/justin-maxwell/sentry-mcp",
@@ -166,8 +154,7 @@
     "00000",
     "01010"
    ],
-   "foreground": "#d93126",
-   "background": "#f0f0f0"
+   "foreground": "#d93126"
   },
   {
    "key": "1:github.com/justin-maxwell/markright",
@@ -179,8 +166,7 @@
     "11111",
     "10101"
    ],
-   "foreground": "#2627d9",
-   "background": "#f0f0f0"
+   "foreground": "#2627d9"
   },
   {
    "key": "1:gitlab.com/justin-maxwell/claude-state-panel",
@@ -192,8 +178,7 @@
     "01110",
     "10101"
    ],
-   "foreground": "#26d942",
-   "background": "#f0f0f0"
+   "foreground": "#26d942"
   },
   {
    "key": "1:github.com/torvalds/linux",
@@ -205,8 +190,7 @@
     "01110",
     "00100"
    ],
-   "foreground": "#d98e26",
-   "background": "#f0f0f0"
+   "foreground": "#d98e26"
   },
   {
    "key": "1:Code/Projects/MarkRight",
@@ -218,8 +202,7 @@
     "00100",
     "00000"
    ],
-   "foreground": "#d92695",
-   "background": "#f0f0f0"
+   "foreground": "#d92695"
   },
   {
    "key": "1:/opt/checkouts/Thing",
@@ -231,8 +214,7 @@
     "01110",
     "10001"
    ],
-   "foreground": "#95d926",
-   "background": "#f0f0f0"
+   "foreground": "#95d926"
   },
   {
    "key": "1:",
@@ -244,8 +226,7 @@
     "00100",
     "01010"
    ],
-   "foreground": "#d9269c",
-   "background": "#f0f0f0"
+   "foreground": "#d9269c"
   },
   {
    "key": "1:a",
@@ -257,8 +238,127 @@
     "00000",
     "00000"
    ],
-   "foreground": "#d98526",
-   "background": "#f0f0f0"
+   "foreground": "#d98526"
+  },
+  {
+   "key": "2:github.com/justin-maxwell/claude-state-panel",
+   "md5": "8201740ee6ae455ad919182104c49abe",
+   "grid": [
+    "11111",
+    "11111",
+    "11111",
+    "01010",
+    "01010"
+   ],
+   "foreground": "#898500"
+  },
+  {
+   "key": "2:github.com/justin-maxwell/glyph-hunter",
+   "md5": "80a3f0b1758d1f07dc1bdc5379fc8231",
+   "grid": [
+    "11111",
+    "00100",
+    "00100",
+    "00000",
+    "10001"
+   ],
+   "foreground": "#008eb3"
+  },
+  {
+   "key": "2:github.com/justin-maxwell/sentry-mcp",
+   "md5": "a5aa39866e12924846e9d9c95aac3910",
+   "grid": [
+    "00100",
+    "11011",
+    "01110",
+    "11111",
+    "11011"
+   ],
+   "foreground": "#0089c9"
+  },
+  {
+   "key": "2:github.com/justin-maxwell/markright",
+   "md5": "8e62f5ef5243277e6c9d6f0d7dfde756",
+   "grid": [
+    "10101",
+    "01110",
+    "10101",
+    "00100",
+    "01010"
+   ],
+   "foreground": "#b732e7"
+  },
+  {
+   "key": "2:gitlab.com/justin-maxwell/claude-state-panel",
+   "md5": "6da880fab31d28fc9618257c8d2a9617",
+   "grid": [
+    "01110",
+    "00000",
+    "11111",
+    "10101",
+    "00100"
+   ],
+   "foreground": "#934cff"
+  },
+  {
+   "key": "2:github.com/torvalds/linux",
+   "md5": "4c7233032144ee537e1c50a55dd57f61",
+   "grid": [
+    "10101",
+    "11111",
+    "10001",
+    "11111",
+    "00000"
+   ],
+   "foreground": "#b136ee"
+  },
+  {
+   "key": "2:Code/Projects/MarkRight",
+   "md5": "57ceb8756ba77fe16dcabb31c519c005",
+   "grid": [
+    "11011",
+    "00000",
+    "00100",
+    "01110",
+    "10001"
+   ],
+   "foreground": "#7f8900"
+  },
+  {
+   "key": "2:/opt/checkouts/Thing",
+   "md5": "44cb369833047e36d45299ad8a7f6810",
+   "grid": [
+    "11111",
+    "10101",
+    "01110",
+    "10001",
+    "00000"
+   ],
+   "foreground": "#008ac3"
+  },
+  {
+   "key": "2:",
+   "md5": "247730f9d0d2eaad265a470e32aa0cdf",
+   "grid": [
+    "01110",
+    "10101",
+    "10001",
+    "10001",
+    "11011"
+   ],
+   "foreground": "#bb6800"
+  },
+  {
+   "key": "2:a",
+   "md5": "afef96fdb51e70cb34142012193dfdc6",
+   "grid": [
+    "01110",
+    "10001",
+    "00100",
+    "10001",
+    "10001"
+   ],
+   "foreground": "#0091a0"
   }
  ]
 }

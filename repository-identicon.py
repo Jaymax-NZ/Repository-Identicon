@@ -20,6 +20,7 @@ import argparse
 import base64
 import hashlib
 import json
+import math
 import os
 import pathlib
 import re
@@ -82,36 +83,6 @@ def large_geometry(canvas):
                          f"block and border on a {GRID}x{GRID} grid")
     return block, border
 
-# The reference fixes both rather than deriving them from the digest. Named
-# once because they were previously written out at nine call sites, which is
-# how a default drifts from the specification without anyone editing the rule.
-SATURATION = 0.7
-LIGHTNESS = 0.5
-
-# **Three variants of every rendered artifact, differing in lightness alone.**
-#
-# The hue is derived and is the identity; saturation and lightness are
-# presentation, and always have been -- both are parameters with defaults
-# rather than anything the digest decides. So a variant changes nothing about
-# which mark a repository has.
-#
-# `-base` is the reference's own value, kept exactly. `-light` and `-dark` are
-# for the ground they name, and the naming is the whole documentation: a
-# consumer picks by theme without knowing why.
-#
-# One lightness cannot serve both grounds, which is the entire reason there is
-# more than one file. At 0.5, 34 of 72 sampled hues fall below 3.0:1 on white
-# and 10 fall below it on #0d1117 -- a repository is illegible at one end or
-# the other depending on what it happened to draw.
-#
-# 0.75 is the lowest step clearing 4.5:1 for every hue on #0d1117, #1e1e1e,
-# #22272e and black. 0.44 is a chosen compromise rather than a threshold: it
-# is plainly darker on white without reading as a different colour, and it
-# does *not* clear 3.0:1 for every hue -- 30 of 72 still fall below. Clearing
-# the wheel needs 0.35, which is a visibly heavier mark. This is the same
-# trade the reference makes and loses more badly: half of GitHub's own
-# identicons sit under 3.0:1 against their own tile, permanently.
-VARIANTS = (("-base", LIGHTNESS), ("-light", 0.44), ("-dark", 0.75))
 # An icon *theme* namespace, not a filename: it prefixes every PNG installed
 # into the user's theme and every Konsole profile written.
 #
@@ -323,7 +294,7 @@ def resolve_seed(path=None, explicit=None):
 # The vendored library is untouched by any of it: it consumes a digest, and
 # only the string being digested has changed. Conformance to
 # `stewartlord/identicon.js` is exactly as it was.
-MAPPING_VERSION = 1
+MAPPING_VERSION = 2
 
 # `<digits>:` and nothing else, anchored, so a seed that happens to contain a
 # colon -- a scheme, a Windows path -- is never mistaken for a stamped key.
@@ -408,8 +379,50 @@ def _quantise(value):
     return int(value * 255 + 0.5)
 
 
+# ---------------------------------------------------------------------------
+# The colour
+#
+# **One brightness for every hue, which is what lets one file serve both a
+# light page and a dark one.** HSL lightness does not control brightness: at
+# the reference's 0.5, yellow carries several times the light of blue, so any
+# single value is illegible at one end of the wheel or the other. 34 of 72
+# sampled hues fell below 3:1 against white, and 10 fell below it against
+# GitHub's dark canvas. Two files were needed to cover that, and the two
+# differed in colour, so a project did not look like itself across themes.
+#
+# Oklab lightness does control brightness, so holding it fixed holds contrast
+# fixed. Every hue then sits at 3.6:1 or better against white and 4.0:1 or
+# better against near-black, from one file.
+#
+# The chroma is capped rather than flattened. Flattening -- every hue held to
+# what the narrowest can manage -- costs about half the colour on the wheel to
+# buy a uniformity nobody asked for. A cap lets the hues that can be vivid be
+# vivid, and only bites where sRGB has room to spare.
+#
+# The hue draw is unchanged: the same 28 bits from the same digest. It is read
+# as an angle in Oklab rather than in HSL, which also removes the crowding the
+# old mapping had -- a fifth of all projects used to land in a band of green
+# worth about six perceptual degrees, while teal through blue ran at half its
+# share.
+# ---------------------------------------------------------------------------
+
+MARK_LIGHTNESS = 0.60
+MARK_CHROMA = 0.26
+
+# The bisection that finds how much chroma a hue can take. Fixed bounds and a
+# fixed iteration count, because "search until it converges" is not a
+# specification -- two implementations would stop in different places. The
+# result is rounded to four decimals so that a port whose cube roots differ in
+# the last bits still lands on the same number.
+GAMUT_STEPS = 30
+GAMUT_CEILING = 0.4
+
+
 def _hsl_to_rgb(hue, saturation, lightness):
     """The reference's own HSL conversion, transliterated.
+
+    Kept for keys stamped at mapping version 0 or 1, which must keep drawing
+    what they always drew. See `identicon_colour`.
 
     Not `colorsys.hls_to_rgb`. The reference mutates `s` and `b` while building
     the sector table, and indexes it with `h|16` and `h|8` -- an integer trick
@@ -440,17 +453,79 @@ def _hsl_to_rgb(hue, saturation, lightness):
             sectors[(sector | 16) % 6],
             sectors[(sector | 8) % 6])
 
+def _oklch_to_linear(lightness, chroma, degrees):
+    """OkLCh to linear-light RGB, unclamped so the caller can test the range."""
+    radians = math.radians(degrees)
+    a = chroma * math.cos(radians)
+    b = chroma * math.sin(radians)
+    long_ = (lightness + 0.3963377774 * a + 0.2158037573 * b) ** 3
+    medium = (lightness - 0.1055613458 * a - 0.0638541728 * b) ** 3
+    short = (lightness - 0.0894841775 * a - 1.2914855480 * b) ** 3
+    return (4.0767416621 * long_ - 3.3077115913 * medium + 0.2309699292 * short,
+            -1.2684380046 * long_ + 2.6097574011 * medium - 0.3413193965 * short,
+            -0.0041960863 * long_ - 0.7034186147 * medium + 1.7076147010 * short)
 
-def identicon_colour(key, saturation=0.7, lightness=0.5):
+
+def _in_gamut(linear):
+    return all(-1e-4 <= channel <= 1 + 1e-4 for channel in linear)
+
+
+def gamut_chroma(degrees, lightness=MARK_LIGHTNESS, cap=MARK_CHROMA):
+    """The chroma this hue actually gets: the cap, or the most sRGB allows."""
+    if _in_gamut(_oklch_to_linear(lightness, cap, degrees)):
+        return cap
+    low, high = 0.0, GAMUT_CEILING
+    for _ in range(GAMUT_STEPS):
+        middle = (low + high) / 2
+        if _in_gamut(_oklch_to_linear(lightness, middle, degrees)):
+            low = middle
+        else:
+            high = middle
+    return min(cap, int(low * 10000) / 10000)
+
+
+def _encode(channel):
+    """Linear light to an sRGB component, 0-255, rounded half up."""
+    channel = max(0.0, min(1.0, channel))
+    encoded = (1.055 * channel ** (1 / 2.4) - 0.055
+               if channel > 0.0031308 else 12.92 * channel)
+    return _quantise(encoded)
+
+
+# The mapping version selects the colour rule, and old versions never retire.
+#
+# Putting the version in the key was meant to guarantee that a repository's
+# mark cannot change unless that line changes. A version stamp that only
+# records what the mark *was* stamped at, while the current code redraws it
+# anyway, would not be that guarantee -- it would be a comment. So the rule is
+# chosen by the version in the key, and a version 0 or 1 repository keeps the
+# colour it has had since the day it was seeded, whatever this file goes on to
+# do.
+#
+# The cost is that every rule ever shipped stays here, and a port has to
+# implement all of them to reproduce every vector. That is the price of the
+# promise, and it is the right way round: the burden sits with the
+# implementation rather than with somebody's repository.
+COLOUR_RULES = (0, 1, 2)
+
+
+def identicon_colour(key, chroma=MARK_CHROMA, lightness=MARK_LIGHTNESS):
     """Return the foreground colour as an (r, g, b) triple of 0-255 ints.
 
-    Defaults are the reference's: 70% saturation, 50% lightness, both fixed
-    rather than derived. dgraham/identicon derives them from two further digest
-    bytes; that variant was evaluated and not taken, because mixing two
-    references would have produced a specification neither of them implements.
+    Version 0 and 1: the reference's HSL, 70% saturation and half lightness.
+    Version 2 onward: a hue angle in Oklab at one lightness, with the chroma
+    capped. `chroma` and `lightness` are ignored for the older rules, which
+    have no such parameters to vary.
     """
-    red, green, blue = _hsl_to_rgb(identicon_hue(key), saturation, lightness)
-    return (_quantise(red), _quantise(green), _quantise(blue))
+    version, _ = parse_key(key)
+    if version < 2:
+        red, green, blue = _hsl_to_rgb(identicon_hue(key), 0.7, 0.5)
+        return (_quantise(red), _quantise(green), _quantise(blue))
+
+    degrees = identicon_hue(key) * 360.0
+    return tuple(_encode(channel) for channel in
+                 _oklch_to_linear(lightness, gamut_chroma(degrees, lightness,
+                                                          chroma), degrees))
 
 
 def hex_colour(rgb):
@@ -541,8 +616,8 @@ def fit_block(edge, border=1):
     return block
 
 
-def render_rgba(key, block, border=BORDER, saturation=SATURATION,
-                lightness=LIGHTNESS, background=None, edge=None):
+def render_rgba(key, block, border=BORDER, chroma=MARK_CHROMA,
+                lightness=MARK_LIGHTNESS, background=None, edge=None):
     """Return raw RGBA bytes for a square identicon of `block`-pixel blocks.
 
     `edge` is for the callers who do not get to choose their canvas -- the icon
@@ -551,7 +626,7 @@ def render_rgba(key, block, border=BORDER, saturation=SATURATION,
     and the only one the artifacts use.
     """
     grid = identicon_grid(key)
-    red, green, blue = identicon_colour(key, saturation, lightness)
+    red, green, blue = identicon_colour(key, chroma, lightness)
     cell = block
     if edge is None:
         edge, margin = canvas_edge(block, border), border
@@ -608,10 +683,10 @@ def render_png(key, block, **kwargs):
     return encode_png(render_rgba(key, block, **kwargs), edge, edge)
 
 
-def render_svg(key, block=ARTIFACT_BLOCK, border=BORDER, saturation=SATURATION,
-               lightness=LIGHTNESS, background=None):
+def render_svg(key, block=ARTIFACT_BLOCK, border=BORDER, chroma=MARK_CHROMA,
+               lightness=MARK_LIGHTNESS, background=None):
     grid = identicon_grid(key)
-    colour = hex_colour(identicon_colour(key, saturation, lightness))
+    colour = hex_colour(identicon_colour(key, chroma, lightness))
     cell, margin = block, border
     size = canvas_edge(block, border)
 
@@ -724,7 +799,7 @@ def _text_module():
     return _TEXT
 
 
-def render_text(key, saturation=SATURATION, lightness=LIGHTNESS):
+def render_text(key, chroma=MARK_CHROMA, lightness=MARK_LIGHTNESS):
     """The identicon as two lines: the octant grid, then the emoji triple.
 
     **The half-block grid this replaced is gone.** It packed two grid rows into
@@ -736,16 +811,16 @@ def render_text(key, saturation=SATURATION, lightness=LIGHTNESS):
     sequence, because one glyph covering four cells cannot be coloured per cell.
     """
     grid = identicon_grid(key)
-    colour = identicon_colour(key, saturation, lightness)
+    colour = identicon_colour(key, chroma, lightness)
     return _text_module().text(grid, colour).split("\n")
 
 
 def render_banner(key, source=None, depth=TRUECOLOR, **kwargs):
     """The identicon with the project name beside it."""
-    rows = render_text(key, kwargs.get("saturation", SATURATION),
-                       kwargs.get("lightness", LIGHTNESS))
-    colour = identicon_colour(key, kwargs.get("saturation", SATURATION),
-                              kwargs.get("lightness", LIGHTNESS))
+    rows = render_text(key, kwargs.get("chroma", MARK_CHROMA),
+                       kwargs.get("lightness", MARK_LIGHTNESS))
+    colour = identicon_colour(key, kwargs.get("chroma", MARK_CHROMA),
+                              kwargs.get("lightness", MARK_LIGHTNESS))
     name = project_name(key)
     if depth != NONE:
         name = f"{_fg(colour, depth)}{name}{RESET}"
@@ -761,8 +836,8 @@ def render_line(key, depth=TRUECOLOR, **kwargs):
     single line loses the pattern and keeps only the colour. A coloured chip
     where escape sequences work, the emoji triple where they do not.
     """
-    colour = identicon_colour(key, kwargs.get("saturation", SATURATION),
-                              kwargs.get("lightness", LIGHTNESS))
+    colour = identicon_colour(key, kwargs.get("chroma", MARK_CHROMA),
+                              kwargs.get("lightness", MARK_LIGHTNESS))
     mark = (f"{_fg(colour, depth)}{CHIP}{RESET}" if depth != NONE
             else _text_module().emoji_triple(colour))
     return [f"{mark} {project_name(key)}"]
@@ -865,7 +940,7 @@ def render(key, style="icon", source=None, depth=TRUECOLOR, protocol=TEXT,
 
 _TEXT_STYLES = {
     TEXT: lambda key, source=None, depth=TRUECOLOR, **kw: render_text(
-        key, kw.get("saturation", SATURATION), kw.get("lightness", LIGHTNESS)),
+        key, kw.get("chroma", MARK_CHROMA), kw.get("lightness", MARK_LIGHTNESS)),
     "full": lambda key, source=None, depth=TRUECOLOR, **kw: render_ansi(key).splitlines(),
     "banner": render_banner,
     "line": lambda key, source=None, depth=TRUECOLOR, **kw: render_line(key, depth, **kw),
@@ -912,24 +987,20 @@ ARTIFACT_STEM = "repository-identicon"
 
 
 def artifact_names():
-    """Every artifact as (key, filename), light then dark.
+    """Every artifact as (key, filename).
 
     One list, walked by both the path builder and the byte builder, so a file
     that exists in one and not the other cannot happen.
-    """
-    for suffix, _ in VARIANTS:
-        yield f"png{suffix}", f"{ARTIFACT_STEM}{suffix}.png"
-        yield (f"png4x{suffix}",
-               f"{ARTIFACT_STEM}@{ARTIFACT_SCALE}x{suffix}.png")
-        for canvas in LARGE_CANVASES:
-            yield (f"png{canvas}{suffix}",
-                   f"{ARTIFACT_STEM}-{canvas}{suffix}.png")
-        yield f"svg{suffix}", f"{ARTIFACT_STEM}{suffix}.svg"
 
-    # One colour file, holding the base colour. The mark has one colour; the
-    # variants are how it survives a ground, not three identities. `cat` is
-    # meant to be the whole integration and a consumer choosing between three
-    # of these would be parsing.
+    One of each. The mark holds its brightness across the hue wheel, so the
+    same file sits on a white page and a near-black one, and a project looks
+    like itself in both.
+    """
+    yield "png", f"{ARTIFACT_STEM}.png"
+    yield "png4x", f"{ARTIFACT_STEM}@{ARTIFACT_SCALE}x.png"
+    for canvas in LARGE_CANVASES:
+        yield f"png{canvas}", f"{ARTIFACT_STEM}-{canvas}.png"
+    yield "svg", f"{ARTIFACT_STEM}.svg"
     yield "colour", f"{ARTIFACT_STEM}.colour"
 
 
@@ -1032,21 +1103,19 @@ def artifact_bytes(key, block=ARTIFACT_BLOCK, **render_kwargs):
     tool that knows the format, which is one tool; a README cannot address a
     fragment inside a blob, and `$(cat …/*.colour)` is a whole parser.
     """
-    wanted = {}
-    for suffix, lightness in VARIANTS:
-        kwargs = dict(render_kwargs, lightness=lightness)
-        wanted[f"png{suffix}"] = render_png(key, block, **kwargs)
-        wanted[f"png4x{suffix}"] = render_png(key, block * ARTIFACT_SCALE,
-                                              border=SCALED_BORDER, **kwargs)
-        for canvas in LARGE_CANVASES:
-            large_block, large_border = large_geometry(canvas)
-            wanted[f"png{canvas}{suffix}"] = render_png(
-                key, large_block, border=large_border, **kwargs)
-        wanted[f"svg{suffix}"] = render_svg(key, block, **kwargs).encode("utf-8")
-
+    wanted = {
+        "png": render_png(key, block, **render_kwargs),
+        "png4x": render_png(key, block * ARTIFACT_SCALE, border=SCALED_BORDER,
+                            **render_kwargs),
+        "svg": render_svg(key, block, **render_kwargs).encode("utf-8"),
+    }
+    for canvas in LARGE_CANVASES:
+        large_block, large_border = large_geometry(canvas)
+        wanted[f"png{canvas}"] = render_png(key, large_block,
+                                            border=large_border, **render_kwargs)
     colour = identicon_colour(key,
-                              render_kwargs.get("saturation", SATURATION),
-                              LIGHTNESS)
+                              render_kwargs.get("chroma", MARK_CHROMA),
+                              render_kwargs.get("lightness", MARK_LIGHTNESS))
     wanted["colour"] = (hex_colour(colour) + "\n").encode("utf-8")
     return wanted
 
@@ -1055,23 +1124,7 @@ def artifact_bytes(key, block=ARTIFACT_BLOCK, **render_kwargs):
 # every repository already has is a README. So the line goes in by default and
 # --no-readme is the way out, rather than the other way round: an identicon
 # nobody put on the page is an identicon nobody sees.
-# **A `<picture>`, not a markdown image, because markdown cannot switch.**
-#
-# CSS inside an SVG is not a reliable route on a forge -- GitHub sanitises
-# rendered SVG and does not render it inline -- so the switch has to happen in
-# the host document. `<picture>` with a `prefers-color-scheme` source is the
-# one mechanism GitHub documents for this, and it degrades correctly: anything
-# that does not understand it falls back to the `<img>`, which is the light
-# variant, which is the right guess for an unstyled page.
-#
-# One line rather than four. It is going into somebody else's README.
-README_MARK = (
-    f'<picture>'
-    f'<source media="(prefers-color-scheme: dark)" '
-    f'srcset="{IDENTICON_DIR}/{ARTIFACT_STEM}-dark.svg">'
-    f'<img alt="" src="{IDENTICON_DIR}/{ARTIFACT_STEM}-light.svg">'
-    f'</picture>'
-)
+README_MARK = f"![]({IDENTICON_DIR}/{ARTIFACT_STEM}.svg)"
 
 # **What counts as the mark already being there, twice corrected by
 # dogfooding.** Matching the bare path anywhere was wrong: a README that
@@ -1080,8 +1133,9 @@ README_MARK = (
 # reference was still wrong, because this repository's own README shows the
 # markdown in a fenced block as an example. So: strip fenced code first, then
 # look for an image. A mark inside a code fence is a mark being talked about.
-# No trailing dot on the path: the artifacts gained variant suffixes, and a
-# mark pointing at `-light.svg` is still a mark.
+# No trailing dot on the path: a mark somebody pointed at one of the sized
+# rasters, or at a variant from an older version of this tool, is still a mark
+# and must not be duplicated.
 README_NEEDLE = re.compile(
     r"!\[[^\]]*\]\([^)]*{path}|<img[^>]+src\s*=\s*[\"'][^\"']*{path}".format(
         path=re.escape(f"{IDENTICON_DIR}/{ARTIFACT_STEM}")))
@@ -1266,8 +1320,8 @@ def install_into_repo(path=None, seed=None, block=ARTIFACT_BLOCK, check=False,
             paths["readme"] = readme_file
 
     colour = identicon_colour(key,
-                              render_kwargs.get("saturation", SATURATION),
-                              render_kwargs.get("lightness", LIGHTNESS))
+                              render_kwargs.get("chroma", MARK_CHROMA),
+                              render_kwargs.get("lightness", MARK_LIGHTNESS))
     return {
         "key": key,
         "seed": resolved_seed,
@@ -1492,7 +1546,7 @@ def _render_kwargs(args):
             raise SystemExit("--background wants a six digit hex colour")
         background = tuple(int(text[i:i + 2], 16) for i in (0, 2, 4))
     return {
-        "saturation": args.saturation,
+        "chroma": args.chroma,
         "lightness": args.lightness,
         "background": background,
     }
@@ -1518,7 +1572,7 @@ def cmd_show(args):
     print(f"icon      {icon_name(key)}")
     print(f"profile   {profile_name(key)}")
     print(f"badge     {badge_label(key)}")
-    print(f"colour    {hex_colour(identicon_colour(key, args.saturation, args.lightness))}")
+    print(f"colour    {hex_colour(identicon_colour(key, args.chroma, args.lightness))}")
     print()
     print(render_ansi(key))
     return 0
@@ -1709,7 +1763,7 @@ def cmd_badge(args):
     dbus_call(service, path, "setBadgeEnabled", ["true"])
     print(f"badge text  {label}")
 
-    colour = hex_colour(identicon_colour(key, args.saturation, args.lightness))
+    colour = hex_colour(identicon_colour(key, args.chroma, args.lightness))
     if "setBadgeColor" in members:
         dbus_call(service, path, "setBadgeColor", [colour])
         print(f"badge colour {colour}")
@@ -1818,7 +1872,7 @@ def cmd_emit(args):
             depth=resolve_colour_depth(args.colour),
             protocol=resolve_protocol(args.protocol),
             size=args.size,
-            saturation=args.saturation,
+            chroma=args.chroma,
             lightness=args.lightness,
         )
 
@@ -2068,11 +2122,11 @@ def build_parser():
         else:
             target.set_defaults(seed=None)
         if render:
-            target.add_argument("--saturation", type=float, default=SATURATION)
-            target.add_argument("--lightness", type=float, default=LIGHTNESS)
+            target.add_argument("--chroma", type=float, default=MARK_CHROMA)
+            target.add_argument("--lightness", type=float, default=MARK_LIGHTNESS)
             target.add_argument("--background", help="six digit hex; default transparent")
         else:
-            target.set_defaults(saturation=SATURATION, lightness=LIGHTNESS, background=None)
+            target.set_defaults(chroma=MARK_CHROMA, lightness=MARK_LIGHTNESS, background=None)
         if session:
             target.add_argument("--session",
                                 help="service:/Sessions/N; default from the "
