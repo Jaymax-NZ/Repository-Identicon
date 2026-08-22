@@ -309,16 +309,21 @@ class TestTheLargeCanvasesAndTheDarkVariant(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     identicon.large_geometry(canvas)
 
-    def test_the_dark_variant_keeps_the_hue(self):
-        """Hue is the identity. Lightness is presentation. A dark variant must
-        not be a different mark."""
-        light = identicon.identicon_colour(self.KEY)
-        dark = identicon.identicon_colour(self.KEY,
-                                          lightness=identicon.DARK_LIGHTNESS)
-        self.assertNotEqual(light, dark)
-        self.assertGreater(self.luminance(dark), self.luminance(light))
-        self.assertEqual(identicon.identicon_grid(self.KEY),
-                         identicon.identicon_grid(self.KEY))
+    def test_the_variants_differ_in_lightness_alone(self):
+        """Hue is the identity, lightness is presentation, and the variants
+        must order themselves darkest to lightest or they are not a set."""
+        seen = [identicon.identicon_colour(self.KEY, lightness=lightness)
+                for _, lightness in identicon.VARIANTS]
+        self.assertEqual(len(seen), len(set(seen)))
+        base, light, dark = seen
+        self.assertLess(self.luminance(light), self.luminance(base))
+        self.assertGreater(self.luminance(dark), self.luminance(base))
+
+    def test_base_is_the_reference_lightness_untouched(self):
+        """`-base` exists to be exactly what the reference produces. If it
+        drifts, the name is a lie and vectors.json disagrees with a file."""
+        self.assertEqual(("-base", identicon.LIGHTNESS), identicon.VARIANTS[0])
+        self.assertEqual(0.5, identicon.LIGHTNESS)
 
     def test_the_dark_lightness_clears_every_hue_on_every_dark_ground(self):
         """The reason the constant has the value it has. If somebody lowers it,
@@ -326,7 +331,8 @@ class TestTheLargeCanvasesAndTheDarkVariant(unittest.TestCase):
         grounds = ((13, 17, 23), (30, 30, 30), (34, 39, 46), (0, 0, 0))
         for degrees in range(0, 360, 5):
             red, green, blue = identicon._hsl_to_rgb(
-                degrees / 360, identicon.SATURATION, identicon.DARK_LIGHTNESS)
+                degrees / 360, identicon.SATURATION,
+                dict(identicon.VARIANTS)["-dark"])
             mark = tuple(identicon._quantise(v) for v in (red, green, blue))
             for ground in grounds:
                 with self.subTest(hue=degrees, ground=ground):
@@ -337,6 +343,19 @@ class TestTheLargeCanvasesAndTheDarkVariant(unittest.TestCase):
         vectors.json pins 0.5 and this must not drift off it."""
         self.assertEqual(0.5, identicon.LIGHTNESS)
 
+    def test_the_light_variant_is_darker_without_clearing_the_wheel(self):
+        """0.44 is a chosen compromise, not a threshold, and saying so here
+        stops anybody reading the file as an accessibility guarantee."""
+        light = dict(identicon.VARIANTS)["-light"]
+        white = (255, 255, 255)
+        failing = sum(
+            1 for degrees in range(0, 360, 5)
+            if self.contrast(
+                tuple(identicon._quantise(v) for v in identicon._hsl_to_rgb(
+                    degrees / 360, identicon.SATURATION, light)), white) < 3.0)
+        self.assertGreater(failing, 0, "0.44 is not claimed to clear 3.0:1")
+        self.assertLess(light, identicon.LIGHTNESS)
+
     def test_names_and_bytes_cannot_disagree(self):
         """Both sides walk one list, so an artifact with a path and no content
         -- or content and no path -- is impossible rather than unlikely."""
@@ -344,21 +363,32 @@ class TestTheLargeCanvasesAndTheDarkVariant(unittest.TestCase):
         wanted = identicon.artifact_bytes(self.KEY)
         self.assertEqual(set(paths), set(wanted))
 
-    def test_the_set_is_light_and_dark_of_everything(self):
+    def test_every_rendered_artifact_has_all_three_variants(self):
         wanted = identicon.artifact_bytes(self.KEY)
-        light = {n for n in wanted if not n.endswith(identicon.DARK_SUFFIX)}
-        dark = {n for n in wanted if n.endswith(identicon.DARK_SUFFIX)}
-        self.assertEqual(len(light), len(dark))
-        for name in light:
-            self.assertIn(name + identicon.DARK_SUFFIX, dark)
-            self.assertNotEqual(wanted[name],
-                                wanted[name + identicon.DARK_SUFFIX],
-                                f"{name} is identical in both variants")
+        suffixes = [suffix for suffix, _ in identicon.VARIANTS]
+        stems = {n[:-len(suffixes[0])] for n in wanted if n.endswith(suffixes[0])}
+        self.assertTrue(stems)
+        for stem in stems:
+            bodies = [wanted[stem + suffix] for suffix in suffixes]
+            for suffix in suffixes:
+                self.assertIn(stem + suffix, wanted)
+            self.assertEqual(len(bodies), len(set(bodies)),
+                             f"{stem} does not differ across all three")
+
+    def test_there_is_exactly_one_colour_file(self):
+        """The mark has one colour. The variants are how it survives a ground,
+        not three identities, and `cat` has to stay the whole integration."""
+        wanted = identicon.artifact_bytes(self.KEY)
+        self.assertIn("colour", wanted)
+        self.assertEqual([n for n in wanted if n.startswith("colour")], ["colour"])
+        expected = identicon.hex_colour(
+            identicon.identicon_colour(self.KEY, lightness=identicon.LIGHTNESS))
+        self.assertEqual(expected + "\n", wanted["colour"].decode())
 
     def test_the_large_pngs_declare_their_canvas(self):
         wanted = identicon.artifact_bytes(self.KEY)
         for canvas in identicon.LARGE_CANVASES:
-            for suffix in ("", identicon.DARK_SUFFIX):
+            for suffix, _ in identicon.VARIANTS:
                 with self.subTest(canvas=canvas, variant=suffix or "light"):
                     png = wanted[f"png{canvas}{suffix}"]
                     self.assertEqual((canvas, canvas),
@@ -387,11 +417,26 @@ class TestInstallingIntoARepository(unittest.TestCase):
         self.assertEqual("github.com/someone/a-project", result["seed"])
         self.assertEqual("1:github.com/someone/a-project", result["key"])
         self.assertEqual("remote", result["source"])
-        for name in ("png", "png4x", "svg", "colour"):
+        for name in ("png-base", "png4x-base", "svg-base", "colour"):
             with self.subTest(artifact=name):
                 path = pathlib.Path(result["files"][name])
                 self.assertTrue(path.is_file(), path)
                 self.assertEqual("created", result["changes"][name])
+
+    def test_a_hand_written_mark_in_any_variant_is_left_alone(self):
+        """The mark somebody already placed is theirs. Any of the variants
+        counts, in markdown or in HTML, because all of them are the mark."""
+        for body in (
+            "# T\n\n![](.identicon/repository-identicon-light.svg)\n",
+            "# T\n\n![](.identicon/repository-identicon-dark.svg)\n",
+            '# T\n\n<img width="64" src=".identicon/repository-identicon-base.svg">\n',
+            "# T\n\n![](.identicon/repository-identicon-256.png)\n",
+        ):
+            with self.subTest(body=body.splitlines()[-1][:44]):
+                readme = pathlib.Path(self.tmp) / "README.md"
+                readme.write_text(body)
+                identicon.install_into_repo(self.tmp)
+                self.assertEqual(body, readme.read_text())
 
     def test_the_colour_file_is_the_whole_parser(self):
         """A consumer runs `cat`, and that is the entire integration."""
@@ -437,7 +482,7 @@ class TestInstallingIntoARepository(unittest.TestCase):
                                             readme=False)
         self.assertNotEqual(before["colour"], after["colour"])
 
-        for name in ("png", "svg", "colour", "key"):
+        for name in ("png-base", "svg-base", "colour", "key"):
             with self.subTest(artifact=name):
                 kept = identicon.prior_path(after["files"][name])
                 self.assertTrue(kept.is_file(), kept)
@@ -450,7 +495,7 @@ class TestInstallingIntoARepository(unittest.TestCase):
 
     def test_nothing_is_kept_when_nothing_is_replaced(self):
         result = identicon.install_into_repo(self.tmp, readme=False)
-        for name in ("png", "svg", "colour", "key"):
+        for name in ("png-base", "svg-base", "colour", "key"):
             with self.subTest(artifact=name):
                 self.assertFalse(
                     identicon.prior_path(result["files"][name]).exists())
@@ -495,7 +540,7 @@ class TestInstallingIntoARepository(unittest.TestCase):
         after = identicon.install_into_repo(self.tmp, block=3)
         self.assertEqual(before["key"], after["key"])
         self.assertEqual("unchanged", after["changes"]["key"])
-        self.assertEqual("updated", after["changes"]["png"])
+        self.assertEqual("updated", after["changes"]["png-base"])
 
     def test_reseed_is_the_only_thing_that_changes_the_mark(self):
         before = identicon.install_into_repo(self.tmp)
@@ -604,7 +649,7 @@ class TestInstallingIntoARepository(unittest.TestCase):
         result = identicon.install_into_repo(self.tmp, readme=False)
         self.assertNotIn("readme", result["changes"])
         self.assertEqual("# Thing\n", readme.read_text(encoding="utf-8"))
-        self.assertEqual("created", result["changes"]["png"])
+        self.assertEqual("created", result["changes"]["png-base"])
 
     def test_check_does_not_touch_the_readme(self):
         readme = self._readme("# Thing\n")

@@ -72,20 +72,6 @@ SCALED_BORDER = 2
 # needs those should take the SVG or downscale one of these.
 LARGE_CANVASES = (128, 256)
 
-# **The dark variant is the same hue at a higher lightness.**
-#
-# The hue is derived and is the identity; saturation and lightness are
-# presentation, and always have been -- both are parameters with defaults
-# rather than anything the digest decides. So a dark variant changes nothing
-# about which mark a repository has.
-#
-# It is needed because a fixed lightness cannot serve both grounds. At the
-# reference's 0.5 the worst hue scores 2.13:1 on GitHub's dark canvas and
-# 1.51:1 on white -- illegible at one end or the other depending on what a
-# repository happened to draw. 0.75 was chosen as the lowest step that clears
-# 4.5:1 for every hue on #0d1117, #1e1e1e, #22272e and true black.
-DARK_LIGHTNESS = 0.75
-DARK_SUFFIX = "-dark"
 
 
 def large_geometry(canvas):
@@ -101,6 +87,31 @@ def large_geometry(canvas):
 # how a default drifts from the specification without anyone editing the rule.
 SATURATION = 0.7
 LIGHTNESS = 0.5
+
+# **Three variants of every rendered artifact, differing in lightness alone.**
+#
+# The hue is derived and is the identity; saturation and lightness are
+# presentation, and always have been -- both are parameters with defaults
+# rather than anything the digest decides. So a variant changes nothing about
+# which mark a repository has.
+#
+# `-base` is the reference's own value, kept exactly. `-light` and `-dark` are
+# for the ground they name, and the naming is the whole documentation: a
+# consumer picks by theme without knowing why.
+#
+# One lightness cannot serve both grounds, which is the entire reason there is
+# more than one file. At 0.5, 34 of 72 sampled hues fall below 3.0:1 on white
+# and 10 fall below it on #0d1117 -- a repository is illegible at one end or
+# the other depending on what it happened to draw.
+#
+# 0.75 is the lowest step clearing 4.5:1 for every hue on #0d1117, #1e1e1e,
+# #22272e and black. 0.44 is a chosen compromise rather than a threshold: it
+# is plainly darker on white without reading as a different colour, and it
+# does *not* clear 3.0:1 for every hue -- 30 of 72 still fall below. Clearing
+# the wheel needs 0.35, which is a visibly heavier mark. This is the same
+# trade the reference makes and loses more badly: half of GitHub's own
+# identicons sit under 3.0:1 against their own tile, permanently.
+VARIANTS = (("-base", LIGHTNESS), ("-light", 0.44), ("-dark", 0.75))
 # An icon *theme* namespace, not a filename: it prefixes every PNG installed
 # into the user's theme and every Konsole profile written.
 #
@@ -906,7 +917,7 @@ def artifact_names():
     One list, walked by both the path builder and the byte builder, so a file
     that exists in one and not the other cannot happen.
     """
-    for suffix in ("", DARK_SUFFIX):
+    for suffix, _ in VARIANTS:
         yield f"png{suffix}", f"{ARTIFACT_STEM}{suffix}.png"
         yield (f"png4x{suffix}",
                f"{ARTIFACT_STEM}@{ARTIFACT_SCALE}x{suffix}.png")
@@ -914,7 +925,12 @@ def artifact_names():
             yield (f"png{canvas}{suffix}",
                    f"{ARTIFACT_STEM}-{canvas}{suffix}.png")
         yield f"svg{suffix}", f"{ARTIFACT_STEM}{suffix}.svg"
-        yield f"colour{suffix}", f"{ARTIFACT_STEM}{suffix}.colour"
+
+    # One colour file, holding the base colour. The mark has one colour; the
+    # variants are how it survives a ground, not three identities. `cat` is
+    # meant to be the whole integration and a consumer choosing between three
+    # of these would be parsing.
+    yield "colour", f"{ARTIFACT_STEM}.colour"
 
 
 def artifact_paths(root):
@@ -1017,11 +1033,8 @@ def artifact_bytes(key, block=ARTIFACT_BLOCK, **render_kwargs):
     fragment inside a blob, and `$(cat …/*.colour)` is a whole parser.
     """
     wanted = {}
-    for suffix, overrides in (("", {}), (DARK_SUFFIX, {"lightness": DARK_LIGHTNESS})):
-        kwargs = dict(render_kwargs, **overrides)
-        colour = identicon_colour(key,
-                                  kwargs.get("saturation", SATURATION),
-                                  kwargs.get("lightness", LIGHTNESS))
+    for suffix, lightness in VARIANTS:
+        kwargs = dict(render_kwargs, lightness=lightness)
         wanted[f"png{suffix}"] = render_png(key, block, **kwargs)
         wanted[f"png4x{suffix}"] = render_png(key, block * ARTIFACT_SCALE,
                                               border=SCALED_BORDER, **kwargs)
@@ -1030,7 +1043,11 @@ def artifact_bytes(key, block=ARTIFACT_BLOCK, **render_kwargs):
             wanted[f"png{canvas}{suffix}"] = render_png(
                 key, large_block, border=large_border, **kwargs)
         wanted[f"svg{suffix}"] = render_svg(key, block, **kwargs).encode("utf-8")
-        wanted[f"colour{suffix}"] = (hex_colour(colour) + "\n").encode("utf-8")
+
+    colour = identicon_colour(key,
+                              render_kwargs.get("saturation", SATURATION),
+                              LIGHTNESS)
+    wanted["colour"] = (hex_colour(colour) + "\n").encode("utf-8")
     return wanted
 
 
@@ -1038,7 +1055,23 @@ def artifact_bytes(key, block=ARTIFACT_BLOCK, **render_kwargs):
 # every repository already has is a README. So the line goes in by default and
 # --no-readme is the way out, rather than the other way round: an identicon
 # nobody put on the page is an identicon nobody sees.
-README_MARK = f"![]({IDENTICON_DIR}/{ARTIFACT_STEM}.svg)"
+# **A `<picture>`, not a markdown image, because markdown cannot switch.**
+#
+# CSS inside an SVG is not a reliable route on a forge -- GitHub sanitises
+# rendered SVG and does not render it inline -- so the switch has to happen in
+# the host document. `<picture>` with a `prefers-color-scheme` source is the
+# one mechanism GitHub documents for this, and it degrades correctly: anything
+# that does not understand it falls back to the `<img>`, which is the light
+# variant, which is the right guess for an unstyled page.
+#
+# One line rather than four. It is going into somebody else's README.
+README_MARK = (
+    f'<picture>'
+    f'<source media="(prefers-color-scheme: dark)" '
+    f'srcset="{IDENTICON_DIR}/{ARTIFACT_STEM}-dark.svg">'
+    f'<img alt="" src="{IDENTICON_DIR}/{ARTIFACT_STEM}-light.svg">'
+    f'</picture>'
+)
 
 # **What counts as the mark already being there, twice corrected by
 # dogfooding.** Matching the bare path anywhere was wrong: a README that
@@ -1047,9 +1080,11 @@ README_MARK = f"![]({IDENTICON_DIR}/{ARTIFACT_STEM}.svg)"
 # reference was still wrong, because this repository's own README shows the
 # markdown in a fenced block as an example. So: strip fenced code first, then
 # look for an image. A mark inside a code fence is a mark being talked about.
+# No trailing dot on the path: the artifacts gained variant suffixes, and a
+# mark pointing at `-light.svg` is still a mark.
 README_NEEDLE = re.compile(
     r"!\[[^\]]*\]\([^)]*{path}|<img[^>]+src\s*=\s*[\"'][^\"']*{path}".format(
-        path=re.escape(f"{IDENTICON_DIR}/{ARTIFACT_STEM}.")))
+        path=re.escape(f"{IDENTICON_DIR}/{ARTIFACT_STEM}")))
 README_FENCE = re.compile(r"^(```|~~~)", re.MULTILINE)
 
 
@@ -1240,8 +1275,6 @@ def install_into_repo(path=None, seed=None, block=ARTIFACT_BLOCK, check=False,
         "source": source,
         "root": str(root),
         "colour": hex_colour(colour),
-        "colour_dark": hex_colour(identicon_colour(
-            key, render_kwargs.get("saturation", SATURATION), DARK_LIGHTNESS)),
         "files": {name: str(target) for name, target in paths.items()},
         "changes": changes,
         "current": all(state == "unchanged" for state in changes.values()),

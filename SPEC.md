@@ -336,31 +336,70 @@ The key file is the exception, and is the source of truth. It is not a note of
 what the mark was made from; it is what the mark is made from.
 
 ```
-.identicon/repository-identicon.png            block 5, 27px canvas
-.identicon/repository-identicon@4x.png         the mark magnified 4x, 104px
-.identicon/repository-identicon-128.png        for a consumer that fixes the size
-.identicon/repository-identicon-256.png        likewise
-.identicon/repository-identicon.svg            vector, same geometry
-.identicon/repository-identicon.colour         "#rrggbb\n", nothing else
-.identicon/repository-identicon-dark.*         every one of the above again, for a dark ground
+.identicon/repository-identicon-base.png       block 5, 27px canvas
+.identicon/repository-identicon@4x-base.png    the mark magnified 4x, 104px
+.identicon/repository-identicon-128-base.png   for a consumer that fixes the size
+.identicon/repository-identicon-256-base.png   likewise
+.identicon/repository-identicon-base.svg       vector, same geometry
+.identicon/repository-identicon-light.*        each of the five again, for a light ground
+.identicon/repository-identicon-dark.*         and again, for a dark ground
+.identicon/repository-identicon.colour         "#rrggbb\n", nothing else — one per repository
 .identicon/repository-identicon.key            the key, hashed exactly as it reads
 ```
 
-### The dark variant
+### The three variants
 
 The **hue is derived and is the identity**; saturation and lightness are
-presentation. So an implementation MUST emit each rendered artifact twice: once
-at the reference lightness of 0.5, and once at **0.75**, suffixed `-dark`. The
-two differ in lightness alone and are the same mark.
+presentation. So an implementation MUST emit each rendered artifact three
+times, differing in lightness alone:
 
-A single lightness cannot serve both grounds. At 0.5 the worst hue scores
-1.51:1 against white and 2.13:1 against `#0d1117`, so a repository is illegible
-at one end or the other depending on what it happened to draw. 0.75 is the
-lowest step that clears 4.5:1 for every hue against `#0d1117`, `#1e1e1e`,
-`#22272e` and black.
+| suffix | lightness | for |
+|---|---|---|
+| `-base` | **0.5** | the reference's own value, unchanged |
+| `-light` | **0.44** | a light ground |
+| `-dark` | **0.75** | a dark ground |
 
-Conformance is unaffected: `vectors.json` pins the derivation and the reference
-lightness, and the light artifact is still exactly that.
+The suffix is the documentation. A consumer picks by theme and needs to know
+nothing else.
+
+`-base` MUST be exactly what the reference produces, because that is its whole
+job: `vectors.json` pins the derivation at 0.5, and `-base` is that colour as a
+file. Conformance is therefore unaffected by the other two existing.
+
+One lightness cannot serve both grounds, which is why there is more than one
+file. At 0.5, **34 of 72 sampled hues fall below 3.0:1 against white** and 10
+fall below it against `#0d1117` — a repository is illegible at one end or the
+other depending on what it happened to draw.
+
+0.75 is the lowest step clearing 4.5:1 for every hue against `#0d1117`,
+`#1e1e1e`, `#22272e` and black.
+
+**0.44 is a chosen compromise and not a threshold.** It is plainly darker on
+white without reading as a different colour, and 30 of 72 hues still fall below
+3.0:1. Clearing the whole wheel needs 0.35, which is a visibly heavier mark.
+An implementation MUST NOT present `-light` as an accessibility guarantee.
+
+### One colour file
+
+There is **one** `.colour`, holding the `-base` colour. A repository has one
+colour; the variants are how that colour survives a ground, not three
+identities. `cat` is meant to be the entire integration, and a consumer
+choosing between three files would be parsing.
+
+### Pointing a README at a pair
+
+Markdown cannot switch on theme, and CSS inside an SVG is not a reliable route
+on a forge — GitHub sanitises rendered SVG and does not render it inline. The
+switch therefore belongs in the host document, and `<picture>` with a
+`prefers-color-scheme` source is the mechanism GitHub documents for it:
+
+```html
+<picture><source media="(prefers-color-scheme: dark)" srcset=".identicon/repository-identicon-dark.svg"><img alt="" src=".identicon/repository-identicon-light.svg"></picture>
+```
+
+It degrades correctly: anything that does not understand `<picture>` falls back
+to the `<img>`, which is the light variant, which is the right guess for an
+unstyled page. The alt text is empty for the reason given below.
 
 ### Copying one out as a forge logo
 

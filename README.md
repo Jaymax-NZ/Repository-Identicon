@@ -1,6 +1,6 @@
 # Repository Identicon
 
-![](.identicon/repository-identicon.svg)
+<picture><source media="(prefers-color-scheme: dark)" srcset=".identicon/repository-identicon-dark.svg"><img alt="" src=".identicon/repository-identicon-light.svg"></picture>
 
 A deterministic visual identity for a software project, derived from the project
 itself and from nothing else. Any tool implementing this specification produces
@@ -22,18 +22,27 @@ python3 /path/to/repository-identicon.py apply
 It derives the key from the git remote and writes four files:
 
 ```
-.identicon/repository-identicon.png            block 5, 27px canvas
-.identicon/repository-identicon@4x.png         the mark magnified 4x, 104px
-.identicon/repository-identicon-128.png        for a consumer that fixes the size
-.identicon/repository-identicon-256.png        likewise
-.identicon/repository-identicon.svg            vector, same geometry
-.identicon/repository-identicon.colour         "#rrggbb\n", nothing else
-.identicon/repository-identicon-dark.*         every one of the above again, for a dark ground
+.identicon/repository-identicon-base.png       block 5, 27px canvas
+.identicon/repository-identicon@4x-base.png    the mark magnified 4x, 104px
+.identicon/repository-identicon-128-base.png   for a consumer that fixes the size
+.identicon/repository-identicon-256-base.png   likewise
+.identicon/repository-identicon-base.svg       vector, same geometry
+.identicon/repository-identicon-light.*        each of the five again, for a light ground
+.identicon/repository-identicon-dark.*         and again, for a dark ground
+.identicon/repository-identicon.colour         "#rrggbb\n", nothing else — one per repository
 .identicon/repository-identicon.key            the key, hashed exactly as it reads
 ```
 
-Every rendered file comes in a `-dark` variant too — the same mark, lightened
-so it stays legible on a dark ground. Thirteen files, six kilobytes in total.
+Every rendered file comes in three variants — `-base`, `-light`, `-dark` —
+differing in lightness alone. `-base` is the reference's own colour; the other
+two are for the ground they name. Seventeen files, about eight kilobytes.
+
+To put a theme-aware mark in a README, `<picture>` is the only reliable route
+on a forge, and it is what `apply` inserts:
+
+```html
+<picture><source media="(prefers-color-scheme: dark)" srcset=".identicon/repository-identicon-dark.svg"><img alt="" src=".identicon/repository-identicon-light.svg"></picture>
+```
 
 To hand the mark to GitLab, copy one out yourself. GitLab reads `logo.png` at
 the repository root when no avatar has been uploaded, so this is the whole
