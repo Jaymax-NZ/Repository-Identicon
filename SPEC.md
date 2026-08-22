@@ -303,11 +303,45 @@ The key file is the exception, and is the source of truth. It is not a note of
 what the mark was made from; it is what the mark is made from.
 
 ```
-.identicon/repository-identicon.png       raster, block 5 (27px canvas)
-.identicon/repository-identicon@4x.png    the mark magnified 4x, for native UIs
-.identicon/repository-identicon.svg       vector, same geometry
-.identicon/repository-identicon.colour    "#rrggbb\n", nothing else
-.identicon/repository-identicon.key       the key, hashed exactly as it reads
+.identicon/repository-identicon.png            block 5, 27px canvas
+.identicon/repository-identicon@4x.png         the mark magnified 4x, 104px
+.identicon/repository-identicon-128.png        for a consumer that fixes the size
+.identicon/repository-identicon-256.png        likewise
+.identicon/repository-identicon.svg            vector, same geometry
+.identicon/repository-identicon.colour         "#rrggbb\n", nothing else
+.identicon/repository-identicon-dark.*         every one of the above again, for a dark ground
+.identicon/repository-identicon.key            the key, hashed exactly as it reads
+```
+
+### The dark variant
+
+The **hue is derived and is the identity**; saturation and lightness are
+presentation. So an implementation MUST emit each rendered artifact twice: once
+at the reference lightness of 0.5, and once at **0.75**, suffixed `-dark`. The
+two differ in lightness alone and are the same mark.
+
+A single lightness cannot serve both grounds. At 0.5 the worst hue scores
+1.51:1 against white and 2.13:1 against `#0d1117`, so a repository is illegible
+at one end or the other depending on what it happened to draw. 0.75 is the
+lowest step that clears 4.5:1 for every hue against `#0d1117`, `#1e1e1e`,
+`#22272e` and black.
+
+Conformance is unaffected: `vectors.json` pins the derivation and the reference
+lightness, and the light artifact is still exactly that.
+
+### Copying one out as a forge logo
+
+GitLab uses `logo.png`, `logo.jpg` or `logo.gif` at the repository root as the
+project avatar where none has been uploaded — 200 KB maximum, 192 pixels ideal.
+`repository-identicon-256.png` satisfies it at about a kilobyte.
+
+This is **a documented manual copy, not something an implementation does**.
+Writing to the repository root is a decision about somebody's project, and the
+whole of `.identicon/` exists so that a consumer can take what it needs without
+the generator reaching outside its own directory.
+
+```bash
+cp .identicon/repository-identicon-256.png logo.png
 ```
 
 **Three files rather than one.** A combined file would be readable by every
@@ -430,11 +464,30 @@ An implementation MUST NOT derive the block from a canvas. Doing so needs a
 heuristic, heuristics do not scale linearly, and a mark that lands on a
 different block at a different scale is two drawings rather than one.
 
-Where the canvas is genuinely not the implementation's to choose -- the icon
-theme wants exactly 48 pixels at `48x48/apps/`, a terminal is handed a pixel
-budget -- it MUST fit the largest block that leaves room for the border,
-`block = floor((edge - 2 * border) / 5)`, and centre the grid in the canvas it
-was given.
+#### Canvases a consumer fixes
+
+Some consumers will not take a vector and will not take a 27-pixel raster: a
+forge that asks for a logo of a stated size, a desktop icon directory, an
+`.ico` or `.icns` member. Those canvases are still derived from a block, not
+fitted to by a heuristic. For any canvas that is a multiple of 32:
+
+```
+block  = 3 * canvas / 16
+border = canvas / 32
+```
+
+which satisfies `canvas = 5 * block + 2 * border` exactly, and puts the border
+at 3.1% of the canvas at every size — near enough the 3.7% at block 5 that the
+mark reads the same throughout.
+
+**16 and 48 have no such geometry and MUST NOT be generated.** `canvas - 5 *
+block` has to be even, so the block matches the canvas in parity, and the
+thinnest border those two can carry is 18.8% and 8.3% respectively — several
+times the family ratio, which would make them look like different marks. A
+consumer needing them SHOULD take the SVG or downscale a larger raster.
+
+An implementation MUST refuse a canvas with no exact geometry rather than
+fitting the nearest block and padding the difference.
 
 #### The 4x raster
 

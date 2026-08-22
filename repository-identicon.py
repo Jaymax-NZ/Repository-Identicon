@@ -54,6 +54,48 @@ ARTIFACT_BLOCK = 5
 ARTIFACT_SCALE = 4
 SCALED_BORDER = 2
 
+# **Canvases a consumer fixes rather than derives.** A forge that asks for a
+# logo of a certain size, a desktop with sized icon directories, an .ico or an
+# .icns member: none of them will take a 27-pixel raster or a vector.
+#
+# They need no fitting and no heuristic, because they come out of the same rule
+# as everything else. For any canvas that is a multiple of 32,
+#
+#     block = 3 * canvas / 16      border = canvas / 32
+#
+# is exact, and the border is 3.1% of the canvas at every size -- near enough
+# the 3.7% at block 5 that the mark reads the same across the whole range.
+#
+# 16 and 48 are deliberately absent. The block must match the canvas in parity,
+# so the thinnest border they can carry is 18.8% and 8.3% -- several times the
+# family ratio, which would make them look like different marks. Anything that
+# needs those should take the SVG or downscale one of these.
+LARGE_CANVASES = (128, 256)
+
+# **The dark variant is the same hue at a higher lightness.**
+#
+# The hue is derived and is the identity; saturation and lightness are
+# presentation, and always have been -- both are parameters with defaults
+# rather than anything the digest decides. So a dark variant changes nothing
+# about which mark a repository has.
+#
+# It is needed because a fixed lightness cannot serve both grounds. At the
+# reference's 0.5 the worst hue scores 2.13:1 on GitHub's dark canvas and
+# 1.51:1 on white -- illegible at one end or the other depending on what a
+# repository happened to draw. 0.75 was chosen as the lowest step that clears
+# 4.5:1 for every hue on #0d1117, #1e1e1e, #22272e and true black.
+DARK_LIGHTNESS = 0.75
+DARK_SUFFIX = "-dark"
+
+
+def large_geometry(canvas):
+    """The (block, border) for a canvas somebody else fixed. Exact or nothing."""
+    block, border = 3 * canvas // 16, canvas // 32
+    if GRID * block + 2 * border != canvas:
+        raise ValueError(f"{canvas} is not a multiple of 32 and has no exact "
+                         f"block and border on a {GRID}x{GRID} grid")
+    return block, border
+
 # The reference fixes both rather than deriving them from the digest. Named
 # once because they were previously written out at nine call sites, which is
 # how a default drifts from the specification without anyone editing the rule.
@@ -858,15 +900,26 @@ ARTIFACT_STEM = "repository-identicon"
 # point the unqualified name is the ambiguous one.
 
 
+def artifact_names():
+    """Every artifact as (key, filename), light then dark.
+
+    One list, walked by both the path builder and the byte builder, so a file
+    that exists in one and not the other cannot happen.
+    """
+    for suffix in ("", DARK_SUFFIX):
+        yield f"png{suffix}", f"{ARTIFACT_STEM}{suffix}.png"
+        yield (f"png4x{suffix}",
+               f"{ARTIFACT_STEM}@{ARTIFACT_SCALE}x{suffix}.png")
+        for canvas in LARGE_CANVASES:
+            yield (f"png{canvas}{suffix}",
+                   f"{ARTIFACT_STEM}-{canvas}{suffix}.png")
+        yield f"svg{suffix}", f"{ARTIFACT_STEM}{suffix}.svg"
+        yield f"colour{suffix}", f"{ARTIFACT_STEM}{suffix}.colour"
+
+
 def artifact_paths(root):
-    root = pathlib.Path(root)
-    directory = root / IDENTICON_DIR
-    return {
-        "png": directory / f"{ARTIFACT_STEM}.png",
-        "png4x": directory / f"{ARTIFACT_STEM}@{ARTIFACT_SCALE}x.png",
-        "svg": directory / f"{ARTIFACT_STEM}.svg",
-        "colour": directory / f"{ARTIFACT_STEM}.colour",
-    }
+    directory = pathlib.Path(root) / IDENTICON_DIR
+    return {name: directory / filename for name, filename in artifact_names()}
 
 
 # **The key is recorded, and changing it is a positive act.**
@@ -963,16 +1016,22 @@ def artifact_bytes(key, block=ARTIFACT_BLOCK, **render_kwargs):
     tool that knows the format, which is one tool; a README cannot address a
     fragment inside a blob, and `$(cat …/*.colour)` is a whole parser.
     """
-    colour = identicon_colour(key,
-                              render_kwargs.get("saturation", SATURATION),
-                              render_kwargs.get("lightness", LIGHTNESS))
-    return {
-        "png": render_png(key, block, **render_kwargs),
-        "png4x": render_png(key, block * ARTIFACT_SCALE, border=SCALED_BORDER,
-                            **render_kwargs),
-        "svg": render_svg(key, block, **render_kwargs).encode("utf-8"),
-        "colour": (hex_colour(colour) + "\n").encode("utf-8"),
-    }
+    wanted = {}
+    for suffix, overrides in (("", {}), (DARK_SUFFIX, {"lightness": DARK_LIGHTNESS})):
+        kwargs = dict(render_kwargs, **overrides)
+        colour = identicon_colour(key,
+                                  kwargs.get("saturation", SATURATION),
+                                  kwargs.get("lightness", LIGHTNESS))
+        wanted[f"png{suffix}"] = render_png(key, block, **kwargs)
+        wanted[f"png4x{suffix}"] = render_png(key, block * ARTIFACT_SCALE,
+                                              border=SCALED_BORDER, **kwargs)
+        for canvas in LARGE_CANVASES:
+            large_block, large_border = large_geometry(canvas)
+            wanted[f"png{canvas}{suffix}"] = render_png(
+                key, large_block, border=large_border, **kwargs)
+        wanted[f"svg{suffix}"] = render_svg(key, block, **kwargs).encode("utf-8")
+        wanted[f"colour{suffix}"] = (hex_colour(colour) + "\n").encode("utf-8")
+    return wanted
 
 
 # The artifacts are inert until something points at them, and the one thing
@@ -1181,6 +1240,8 @@ def install_into_repo(path=None, seed=None, block=ARTIFACT_BLOCK, check=False,
         "source": source,
         "root": str(root),
         "colour": hex_colour(colour),
+        "colour_dark": hex_colour(identicon_colour(
+            key, render_kwargs.get("saturation", SATURATION), DARK_LIGHTNESS)),
         "files": {name: str(target) for name, target in paths.items()},
         "changes": changes,
         "current": all(state == "unchanged" for state in changes.values()),

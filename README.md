@@ -22,12 +22,29 @@ python3 /path/to/repository-identicon.py apply
 It derives the key from the git remote and writes four files:
 
 ```
-.identicon/repository-identicon.png       raster, block 5 (27px canvas)
-.identicon/repository-identicon@4x.png    the mark magnified 4x, for native UIs
-.identicon/repository-identicon.svg       vector
-.identicon/repository-identicon.colour    "#rrggbb", and a newline
-.identicon/repository-identicon.key       the key the others came from
+.identicon/repository-identicon.png            block 5, 27px canvas
+.identicon/repository-identicon@4x.png         the mark magnified 4x, 104px
+.identicon/repository-identicon-128.png        for a consumer that fixes the size
+.identicon/repository-identicon-256.png        likewise
+.identicon/repository-identicon.svg            vector, same geometry
+.identicon/repository-identicon.colour         "#rrggbb\n", nothing else
+.identicon/repository-identicon-dark.*         every one of the above again, for a dark ground
+.identicon/repository-identicon.key            the key, hashed exactly as it reads
 ```
+
+Every rendered file comes in a `-dark` variant too — the same mark, lightened
+so it stays legible on a dark ground. Thirteen files, six kilobytes in total.
+
+To hand the mark to GitLab, copy one out yourself. GitLab reads `logo.png` at
+the repository root when no avatar has been uploaded, so this is the whole
+integration, and no other forge offers an equivalent:
+
+```bash
+cp .identicon/repository-identicon-256.png logo.png
+```
+
+It is a manual copy on purpose. Writing to your repository root is your
+decision, not the tool's.
 
 It also adds the mark to the repository's README, after the first heading:
 

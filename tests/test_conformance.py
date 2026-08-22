@@ -275,6 +275,96 @@ class TestTheBlocksAndTheCanvas(unittest.TestCase):
                                  struct.unpack(">II", png[16:24]))
 
 
+class TestTheLargeCanvasesAndTheDarkVariant(unittest.TestCase):
+    """Sizes a consumer fixes, and a mark that survives the ground it lands on."""
+
+    KEY = "1:github.com/someone/a-project"
+
+    @staticmethod
+    def luminance(rgb):
+        def channel(value):
+            value /= 255
+            return (value / 12.92 if value <= 0.03928
+                    else ((value + 0.055) / 1.055) ** 2.4)
+        red, green, blue = (channel(v) for v in rgb)
+        return 0.2126 * red + 0.7152 * green + 0.0722 * blue
+
+    def contrast(self, a, b):
+        first, second = self.luminance(a), self.luminance(b)
+        return (max(first, second) + 0.05) / (min(first, second) + 0.05)
+
+    def test_every_large_canvas_is_exact(self):
+        """No fitting, no padding, no heuristic: the same rule as block 1."""
+        for canvas in identicon.LARGE_CANVASES:
+            with self.subTest(canvas=canvas):
+                block, border = identicon.large_geometry(canvas)
+                self.assertEqual(canvas, identicon.canvas_edge(block, border))
+                self.assertAlmostEqual(border / canvas, 1 / 32)
+
+    def test_a_canvas_with_no_exact_geometry_is_refused(self):
+        """16 and 48 cannot carry a proportional border on a five-block grid,
+        so they are an error rather than a silently fat one."""
+        for canvas in (16, 48, 100):
+            with self.subTest(canvas=canvas):
+                with self.assertRaises(ValueError):
+                    identicon.large_geometry(canvas)
+
+    def test_the_dark_variant_keeps_the_hue(self):
+        """Hue is the identity. Lightness is presentation. A dark variant must
+        not be a different mark."""
+        light = identicon.identicon_colour(self.KEY)
+        dark = identicon.identicon_colour(self.KEY,
+                                          lightness=identicon.DARK_LIGHTNESS)
+        self.assertNotEqual(light, dark)
+        self.assertGreater(self.luminance(dark), self.luminance(light))
+        self.assertEqual(identicon.identicon_grid(self.KEY),
+                         identicon.identicon_grid(self.KEY))
+
+    def test_the_dark_lightness_clears_every_hue_on_every_dark_ground(self):
+        """The reason the constant has the value it has. If somebody lowers it,
+        this says which repositories go illegible."""
+        grounds = ((13, 17, 23), (30, 30, 30), (34, 39, 46), (0, 0, 0))
+        for degrees in range(0, 360, 5):
+            red, green, blue = identicon._hsl_to_rgb(
+                degrees / 360, identicon.SATURATION, identicon.DARK_LIGHTNESS)
+            mark = tuple(identicon._quantise(v) for v in (red, green, blue))
+            for ground in grounds:
+                with self.subTest(hue=degrees, ground=ground):
+                    self.assertGreaterEqual(self.contrast(mark, ground), 4.5)
+
+    def test_the_light_mark_is_the_reference_lightness(self):
+        """Whatever the dark variant does, conformance is about the light one:
+        vectors.json pins 0.5 and this must not drift off it."""
+        self.assertEqual(0.5, identicon.LIGHTNESS)
+
+    def test_names_and_bytes_cannot_disagree(self):
+        """Both sides walk one list, so an artifact with a path and no content
+        -- or content and no path -- is impossible rather than unlikely."""
+        paths = identicon.artifact_paths("/nowhere")
+        wanted = identicon.artifact_bytes(self.KEY)
+        self.assertEqual(set(paths), set(wanted))
+
+    def test_the_set_is_light_and_dark_of_everything(self):
+        wanted = identicon.artifact_bytes(self.KEY)
+        light = {n for n in wanted if not n.endswith(identicon.DARK_SUFFIX)}
+        dark = {n for n in wanted if n.endswith(identicon.DARK_SUFFIX)}
+        self.assertEqual(len(light), len(dark))
+        for name in light:
+            self.assertIn(name + identicon.DARK_SUFFIX, dark)
+            self.assertNotEqual(wanted[name],
+                                wanted[name + identicon.DARK_SUFFIX],
+                                f"{name} is identical in both variants")
+
+    def test_the_large_pngs_declare_their_canvas(self):
+        wanted = identicon.artifact_bytes(self.KEY)
+        for canvas in identicon.LARGE_CANVASES:
+            for suffix in ("", identicon.DARK_SUFFIX):
+                with self.subTest(canvas=canvas, variant=suffix or "light"):
+                    png = wanted[f"png{canvas}{suffix}"]
+                    self.assertEqual((canvas, canvas),
+                                     struct.unpack(">II", png[16:24]))
+
+
 class TestInstallingIntoARepository(unittest.TestCase):
     """The thing the project is for: putting the mark in the repository.
 
