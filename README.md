@@ -19,12 +19,13 @@ Run this inside the repository you want marked:
 python3 /path/to/repository-identicon.py apply
 ```
 
-It derives the key from the git remote and writes four files:
+It derives the key from the git remote and writes five files:
 
 ```
 .identicon/repository-identicon.png       raster, 256px
 .identicon/repository-identicon.svg       vector
 .identicon/repository-identicon.colour    "#rrggbb", and a newline
+.identicon/repository-identicon.txt       the text mark, two lines
 .identicon/repository-identicon.key       the seed the others came from
 ```
 

@@ -226,15 +226,21 @@ stale.
 .identicon/repository-identicon.png       raster, 256px
 .identicon/repository-identicon.svg       vector, same geometry
 .identicon/repository-identicon.colour    "#rrggbb\n", nothing else
+.identicon/repository-identicon.txt       the text mark, two lines
 .identicon/repository-identicon.key       the seed these were derived from
 ```
 
-**Three files rather than one.** A combined file would be readable by every
+**Four files rather than one.** A combined file would be readable by every
 tool that knows the format, which is one tool. A README cannot address a
 fragment inside a blob, `![](.identicon/repository-identicon.svg)` is a whole
 integration, and `$(cat .identicon/repository-identicon.colour)` is a whole
 parser. Each is usable by a consumer that knows nothing about this
 specification.
+
+`.txt` is the rendering from *Text, the fallback* below — two lines of octants
+with the emoji triple carrying the colour — for a medium that will take neither
+an image nor an escape sequence. Committing it means a consumer in that
+position needs no Unicode tables and no palette of its own: it needs `cat`.
 
 **Each filename repeats the directory deliberately.** The directory is context,
 and context is what does not travel: copied out, fetched from a raw URL or

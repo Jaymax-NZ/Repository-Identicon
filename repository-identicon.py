@@ -766,6 +766,7 @@ def artifact_paths(root):
         "png": directory / f"{ARTIFACT_STEM}.png",
         "svg": directory / f"{ARTIFACT_STEM}.svg",
         "colour": directory / f"{ARTIFACT_STEM}.colour",
+        "txt": directory / f"{ARTIFACT_STEM}.txt",
     }
 
 
@@ -827,17 +828,26 @@ def recorded_seed(root):
 def artifact_bytes(key, size=ARTIFACT_SIZE, **render_kwargs):
     """What each artifact should contain for this key.
 
-    Three files rather than one. A combined file would be readable by every
+    Four files rather than one. A combined file would be readable by every
     tool that knows the format, which is one tool; a README cannot address a
     fragment inside a blob, and `$(cat …/*.colour)` is a whole parser.
+
+    **`.txt` is the mark for a medium that will take neither an image nor an
+    escape sequence** -- two lines of octants with the emoji triple carrying
+    the colour. `text-identicon.py` is named for this artifact rather than for
+    its technique, and then nothing wrote it: the installer was built around
+    the three files that already existed, so the module and the directory
+    disagreed about what the set was.
     """
     colour = identicon_colour(key,
                               render_kwargs.get("saturation", SATURATION),
                               render_kwargs.get("lightness", LIGHTNESS))
+    grid = identicon_grid(key)
     return {
         "png": render_png(key, size, **render_kwargs),
         "svg": render_svg(key, size, **render_kwargs).encode("utf-8"),
         "colour": (hex_colour(colour) + "\n").encode("utf-8"),
+        "txt": (_text_module().text(grid, colour) + "\n").encode("utf-8"),
     }
 
 

@@ -16,6 +16,7 @@ import importlib.util
 import json
 import os
 import pathlib
+import re
 import shutil
 import subprocess
 import tempfile
@@ -171,6 +172,46 @@ class TestTheVectorsCanBeRegenerated(unittest.TestCase):
         self.assertEqual(vectors, json.loads(result.stdout))
 
 
+class TestTheDocumentsAndTheCodeAgreeOnTheArtifacts(unittest.TestCase):
+    """Every file the specification lists is one the installer writes.
+
+    **This exists because `.txt` was documented and never written.**
+    `text-identicon.py` is named for that artifact, its docstring says "the
+    artifact is .txt", a day went into the rendering, and nothing put it in a
+    repository. A tidy-up pass looked for unused imports and dead constants
+    and found nothing wrong, because nothing *was* wrong internally: the code
+    was consistent with itself and incomplete against its own documents.
+
+    Reading for dead code and reading for missing output are different
+    audits. This is the second one, and a machine can do it.
+    """
+
+    def documented(self, path):
+        body = (ROOT / path).read_text(encoding="utf-8")
+        return set(re.findall(
+            r"\.identicon/repository-identicon\.([a-z]+)", body))
+
+    def produced(self):
+        names = set(identicon.artifact_paths(".")) | {"key"}
+        return {"png", "svg", "colour", "txt", "key"} & names | names
+
+    def test_spec_lists_exactly_what_is_written(self):
+        self.assertEqual(self.produced(), self.documented("SPEC.md"))
+
+    def test_the_readme_lists_exactly_what_is_written(self):
+        self.assertEqual(self.produced(), self.documented("README.md"))
+
+    def test_every_artifact_has_content_derived_from_the_key(self):
+        """Not a placeholder, not empty, and different for a different key."""
+        one = identicon.artifact_bytes("github.com/a/one")
+        two = identicon.artifact_bytes("github.com/b/two")
+        for name, body in one.items():
+            with self.subTest(artifact=name):
+                self.assertTrue(body, f"{name} is empty")
+                self.assertNotEqual(body, two[name],
+                                    f"{name} does not depend on the key")
+
+
 class TestInstallingIntoARepository(unittest.TestCase):
     """The thing the project is for: putting the mark in the repository.
 
@@ -188,15 +229,26 @@ class TestInstallingIntoARepository(unittest.TestCase):
                         "git@github.com:someone/a-project.git"],
                        check=True, timeout=30)
 
-    def test_it_writes_the_three_artifacts(self):
+    def test_it_writes_every_artifact(self):
         result = identicon.install_into_repo(self.tmp)
         self.assertEqual("github.com/someone/a-project", result["key"])
         self.assertEqual("remote", result["source"])
-        for name in ("png", "svg", "colour"):
+        for name in ("png", "svg", "colour", "txt"):
             with self.subTest(artifact=name):
                 path = pathlib.Path(result["files"][name])
                 self.assertTrue(path.is_file(), path)
                 self.assertEqual("created", result["changes"][name])
+
+    def test_the_text_artifact_is_the_text_rendering(self):
+        """text-identicon.py is named for this file. Nothing wrote it until
+        somebody asked why it was missing."""
+        result = identicon.install_into_repo(self.tmp)
+        body = pathlib.Path(result["files"]["txt"]).read_text(encoding="utf-8")
+        expected = text_identicon.text(
+            identicon.identicon_grid(result["key"]),
+            identicon.identicon_colour(result["key"]))
+        self.assertEqual(expected + "\n", body)
+        self.assertEqual(2, len(body.rstrip("\n").split("\n")))
 
     def test_the_colour_file_is_the_whole_parser(self):
         """A consumer runs `cat`, and that is the entire integration."""
