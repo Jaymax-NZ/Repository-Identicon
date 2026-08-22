@@ -31,8 +31,9 @@ mapping and it will say which of these it breaks and how often.
 
 import colorsys
 import importlib.util
+import pathlib
 
-D = "/home/justin/Code/Projects/Repository-Identicon/"
+D = str(pathlib.Path(__file__).resolve().parent.parent) + "/"
 
 
 def load(name, module):
@@ -176,14 +177,13 @@ def violations(rgb, indices):
 
 
 def gamut():
-    """Every colour identicon.js can produce, once each."""
+    """Every colour the current mapping can produce, once each."""
     MAX = 0xFFFFFFF
     seen, out = set(), []
     for k in range(0, MAX, MAX // 20000):
-        rgb = tuple(identicon._quantise(v)
-                    for v in identicon._hsl_to_rgb(k / MAX,
-                                                   identicon.SATURATION,
-                                                   identicon.LIGHTNESS))
+        degrees = k / MAX * 360.0
+        rgb = tuple(identicon._encode(v) for v in identicon._oklch_to_linear(
+            identicon.MARK_LIGHTNESS, identicon.gamut_chroma(degrees), degrees))
         if rgb not in seen:
             seen.add(rgb)
             out.append(rgb)

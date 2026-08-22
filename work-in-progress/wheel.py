@@ -28,7 +28,7 @@ import math
 import pathlib
 import sys
 
-D = "/home/justin/Code/Projects/Repository-Identicon/"
+D = str(pathlib.Path(__file__).resolve().parent.parent) + "/"
 S = pathlib.Path(__file__).parent
 
 
@@ -251,11 +251,16 @@ def bench(out, rows):
 
 
 def gamut_at(hue):
-    """The colour identicon.js produces at this hue, at its fixed s and l."""
-    return tuple(identicon._quantise(v)
-                 for v in identicon._hsl_to_rgb((hue % 360) / 360,
-                                                identicon.SATURATION,
-                                                identicon.LIGHTNESS))
+    """The colour mapping version 2 produces at this hue.
+
+    One Oklab lightness right around the wheel, with the chroma capped or held
+    to what sRGB carries, whichever is smaller. The ring is the thing a block
+    is judged against, so it has to be the ring the project actually draws --
+    it was identicon.js's fixed-saturation HSL until version 2 replaced it.
+    """
+    degrees = hue % 360
+    return tuple(identicon._encode(v) for v in identicon._oklch_to_linear(
+        identicon.MARK_LIGHTNESS, identicon.gamut_chroma(degrees), degrees))
 
 
 def hue_of(rgb):
