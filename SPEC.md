@@ -269,6 +269,39 @@ six degrees of perceptual space. A perceptually uniform draw would fix it, and
 this is a known cost of taking the colour from the reference rather than
 choosing it.
 
+### Where this departs from the reference
+
+One place, deliberately: **the background.**
+
+`identicon.js` defaults to `background: [240, 240, 240, 255]` — opaque
+`#f0f0f0`, alpha 255 — and writes it onto the SVG root. GitHub ships the same
+thing. Two identicons pulled from `avatars.githubusercontent.com` and decoded
+are PNG colour type 2, **no alpha channel at all**, with `(240, 240, 240)`
+filling 69% and 80% of their pixels. Neither has a dark variant, because
+neither needs one: the artifact is a light tile, and on a dark page it is a
+light square.
+
+This specification renders **transparent**, and an implementation MUST NOT
+paint the background. `vectors.json` still records `#f0f0f0` for every vector
+because that is what the library produced from the same digest, but no artifact
+uses it and no conformance check reads it.
+
+The reason is the consumers this exists for. A tile is a rectangle, and a
+rectangle in a terminal badge or a status panel is chrome — it wants corners,
+insets and a border reconciled against whatever surrounds it, none of which
+belongs in a specification about deriving a mark. A transparent mark
+composites into what is already there and asks for nothing.
+
+**The tile is not the more legible choice, only the more predictable one.**
+Measured against `#f0f0f0` at the reference lightness, 36 of 72 sampled hues
+score below 3.0:1, worst 1.33:1 — GitHub's own identicons sit at 1.4–1.6:1
+against their own ground, permanently, in every theme. What the tile buys is
+invariance: the mark never depends on the page. What it costs is the rectangle.
+
+This specification takes the opposite trade, and the dark variant is the price.
+A fixed ground makes a fixed lightness work forever; an unknown ground does
+not, so the mark is emitted at two lightnesses instead of on two grounds.
+
 ## Derived names
 
 From `sha256(key)` as lowercase hex, take:
