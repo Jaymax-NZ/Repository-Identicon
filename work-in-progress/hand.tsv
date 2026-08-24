@@ -1,0 +1,115 @@
+# The ring, as placed, and nothing else.
+#
+# **Flattened from wheel59 plus #14.** This file used to be the history of
+# how the ring was arrived at -- a hundred-odd swaps, rolls, presses and
+# inserts, each shoving tiles that earlier lines had placed. That made an
+# angle written here mean something other than what it said: placements are
+# all resolved before any op runs, so `ring 14 6.74` collided with where
+# #73 still was at that moment and got pushed somewhere else entirely.
+#
+# Now every tile carries the angle it is actually drawn at. To move one,
+# change its number. To close a gap, subtract the gap from the tile and from
+# everything you want to travel with it. Nothing moves that is not named.
+#
+#   ring <n> <deg>   on the ring, at that angle
+#   in / out <n> [k] off the ring, k tiers deeper / further out
+#   eject <n>        off the ring
+#
+# The ring, clockwise from the top.
+#
+# **Closed up.** The seven seams below a degree are gone -- 0.380 and smaller,
+# none of them a gap anybody could point at. The 1.282 degrees they held had to
+# go somewhere, and it is spread evenly over the six gaps that stay, so each
+# grew by about a fifth of a degree rather than one of them swallowing the lot.
+# The kept gaps are the six at 1.094 and above; the distribution breaks cleanly
+# there, with nothing at all between 0.380 and 1.094.
+#
+# Then turned -0.36 degrees, which is the rotation that best lines the ring up
+# with the hues its blends read as. It is worth almost nothing -- mean offset
+# 2.375 to 2.350 -- because the ring was already close to the best a rigid turn
+# can do. What offset remains is placement, not rotation.
+ring 14 6.376
+ring 50 13.684
+ring 21 19.684
+ring 9 25.684
+ring 8 31.337
+ring 41 37.337
+ring 40 43.337
+ring 16 51.321
+ring 15 59.321
+ring 77 67.321
+ring 52 73.321
+ring 22 79.321
+ring 58 87.321
+ring 59 95.321
+ring 18 101.321
+ring 105 107.321
+ring 107 115.059
+ring 64 121.059
+ring 65 130.712
+ring 92 140.376
+ring 94 148.376
+ring 93 156.376
+ring 125 162.376
+ring 61 166.376
+ring 89 170.376
+ring 126 176.376
+ring 113 182.376
+ring 114 186.376
+ring 110 188.876
+ring 115 191.376
+ring 129 197.376
+ring 111 203.376
+ring 119 209.376
+ring 118 217.376
+ring 116 223.376
+ring 117 229.376
+ring 144 237.376
+ring 133 243.376
+ring 132 247.376
+ring 138 253.376
+ring 139 261.376
+ring 136 267.376
+ring 137 273.376
+ring 31 279.376
+ring 154 285.376
+ring 148 291.376
+ring 146 293.876
+ring 147 296.376
+ring 32 302.376
+ring 152 310.376
+ring 36 316.376
+ring 72 320.376
+ring 33 326.376
+ring 38 334.376
+ring 37 342.376
+ring 74 350.376
+ring 73 358.376
+#
+# Off the ring: which tier each sits in.
+in 26
+out 35
+in 159
+in 157
+in 156
+out 51
+in 85
+in 4
+in 60
+out 11
+eject 128
+in 98
+in 161 2
+out 43
+in 82 3
+out 142
+out 34
+in 96
+in 160
+in 106
+in 12
+out 104
+in 123
+eject 67
+eject 95
+eject 102
