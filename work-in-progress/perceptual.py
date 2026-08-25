@@ -77,18 +77,25 @@ MAX_GAP = 125.0
 # gamut and two whites say it is at the light end, so they answer to DARK and
 # LIGHT. `purple white white` on luminance 0.29 is the case that fails here.
 #
-# **One of them tints.** A single achromatic among two chromatics shades the
-# mix rather than claiming anything about where the colour sits, and reads
-# honestly almost anywhere -- `blue purple white` on 0.28 is a violet with a
-# lift, not a claim that violet is light. It answers only to the far end of the
-# gamut, five hundredths inside each extreme, which is TINT_DARK and TINT_LIGHT.
+# **One of them tints, and is not objected to at all.** A single achromatic
+# among two chromatics shades the mix rather than claiming anything about where
+# the colour sits -- `blue purple white` on 0.28 is a violet with a lift, not a
+# claim that violet is light.
+#
+# There used to be a pair of thresholds here, TINT_DARK 0.75 and TINT_LIGHT
+# 0.25, catching a single achromatic at the far ends of the gamut. Both were
+# written against a gamut that no longer exists. **The version 2 gamut runs
+# 0.2012 to 0.4911**, so 0.75 was unreachable -- the black-on rule had not
+# fired once in the whole 165 -- and 0.25 was not five hundredths inside the
+# light end but a fifth of the way up the entire range, which is why it took
+# eight triples, `red red white` and `red brown white` among them. Justin reads
+# both of those as fine on the ring. A threshold that can only fire at one end,
+# and fires there on things that look right, is not measuring anything.
 #
 # This replaces a per-hue exception. A rule naming one colour is a rule that has
 # stopped explaining anything, and the count is what was actually doing the work.
 DARK = 0.33
 LIGHT = 0.58
-TINT_DARK = 0.75
-TINT_LIGHT = 0.25
 
 ACHROMATIC = {"black", "white"}
 
@@ -167,12 +174,8 @@ def violations(rgb, indices):
     blacks, whites = names.count("black"), names.count("white")
     if blacks >= 2 and lum > DARK:
         out.append(f"two blacks on a target of luminance {lum:.2f}")
-    elif blacks == 1 and lum > TINT_DARK:
-        out.append(f"black on a target of luminance {lum:.2f}")
     if whites >= 2 and lum < LIGHT:
         out.append(f"two whites on a target of luminance {lum:.2f}")
-    elif whites == 1 and lum < TINT_LIGHT:
-        out.append(f"white on a target of luminance {lum:.2f}")
     return out
 
 

@@ -209,9 +209,10 @@ def harness():
     return _PERC
 
 
+# `W` and `K`, for a single white or black on an extreme target, were dropped
+# with the rule behind them -- see the tint note in perceptual.py.
 FLAGS = [("opponent", "opp"), ("gap", "gap"), ("two whites", "WW"),
-         ("two blacks", "KK"), ("white on", "W"), ("black on", "K"),
-         ("forbidden", "no")]
+         ("two blacks", "KK"), ("forbidden", "no")]
 
 
 def flag_of(broken):
@@ -343,6 +344,70 @@ def bias_of(names):
     return step
 
 
+# Where the two cuts fall, in the same 0-100 luminance the blocks are drawn in.
+# Widened from 45 and 74 on Justin's eye: `red green black` at 48.6 reads dark
+# and `red green white` at 64.9 reads light, and both were in the middle band.
+#
+# **Set past the block that moved them, not at it.** 48.7 would have taken #29
+# and left `orange blue black` at 48.8 behind, which is a tenth of a point and
+# nothing anybody can see. Each cut sits in the nearest real hole in the
+# distribution instead -- 50.5 falls between 49.9 and 53.2, 63.0 between 61.6
+# and 64.8 -- so no pair a hair apart ends up in different rings.
+#
+# Frozen rather than taken from the ring's own range, which is what they were
+# first set against: a threshold that moves when the ring moves would quietly
+# reband a tile between one render and the next.
+SUNK_DARK, SUNK_MID, SUNK_LIGHT = 0, 1, 2
+SUNK_DARK_MAX = 50.5
+SUNK_LIGHT_MIN = 63.0
+
+
+def luminance(rgb):
+    """Perceived lightness of a blend, 0 to 100, gamma-aware.
+
+    Straight-average grey put `yellow white white` and `blue black black` far
+    closer together than any eye does, and the bands drawn off it did not look
+    like bands.
+    """
+    r, g, b = ((c / 255) ** 2.2 for c in rgb)
+    return 100 * (0.2126 * r + 0.7152 * g + 0.0722 * b) ** (1 / 2.2)
+
+
+def sunk_band(rgb):
+    """Which of the three sunk rings a rejected blend belongs in."""
+    lit = luminance(rgb)
+    if lit <= SUNK_DARK_MAX:
+        return SUNK_DARK
+    return SUNK_LIGHT if lit >= SUNK_LIGHT_MIN else SUNK_MID
+
+
+def is_sunk(names):
+    """Whether a tile has been sent to the inner-inner band.
+
+    `sink` is for the ones judged noise: they are read as a block, if at all,
+    and never against the tile beside them. So they come out from among the
+    alternatives, where their only effect was to push the tiers that are still
+    being judged inward and away from the ring.
+    """
+    return hand().get(names, ("", None))[0] == "sink"
+
+
+def sunk_at(names):
+    """The angle a `sink` line gives, if it gives one.
+
+    **The one verdict that moves a tile in angle without seating it.** For
+    anything still under judgement that would be a lie -- the whole point of a
+    tier is that a tile sits at the hue its blend reads, so it can be compared
+    with the ring above it. A sunk tile is not being compared with anything, so
+    a few degrees costs nothing, and spending them is what lets the set close
+    up into two rows instead of splaying across nine.
+    """
+    verdict, where = hand().get(names, ("", None))
+    if verdict != "sink":
+        return None
+    return where[1] if where and where[0] == "at" else None
+
+
 HAND = S / "hand.tsv"
 
 
@@ -361,7 +426,9 @@ def hand():
     if not HAND.exists():
         return out
     for line in HAND.read_text().splitlines():
-        if not line.strip() or line.lstrip().startswith("#"):
+        # A trailing comment, so a placement can carry what it cost beside it.
+        line = line.split("#", 1)[0]
+        if not line.strip():
             continue
         parts = line.split()
         verb, args = parts[0], parts[1:]
@@ -395,6 +462,8 @@ def hand():
             out[names] = ("ring", ("at", float(args[1])) if len(args) > 1 else None)
         elif verb == "eject":
             out[names] = ("inner", None)
+        elif verb == "sink":
+            out[names] = ("sink", ("at", float(args[1])) if len(args) > 1 else None)
         elif verb in ("in", "out"):
             out[names] = (verb, ("count", int(args[1]) if len(args) > 1 else 1))
         elif verb == "ccw":
@@ -1096,8 +1165,34 @@ def tiers(out, proposal, rest, tiers_map=None):
     for row in sorted(proposal, key=lambda r: r[1]):
         drop(row, 0)
     behind = len(ends)
-    for row in sorted(rest, key=lambda r: (bias_of(r[2]), r[1])):
+    for row in sorted((r for r in rest if not is_sunk(r[2])),
+                      key=lambda r: (bias_of(r[2]), r[1])):
         drop(row, behind + max(0, bias_of(row[2])))
+
+    # **The sunk ones start below everything, not merely deeper.** Given a
+    # bias they still competed for tiers with the alternatives, and one that
+    # happened to find room surfaced among them -- which is the one thing the
+    # verdict is for preventing. Their floor is whatever depth the rest ended
+    # at, so the band is theirs alone and cannot be entered from above.
+    #
+    # **And banded by luminance, darkest band first.** Sunk together they were
+    # 41 blocks in two rows packed by angle, which is a hedge and not a
+    # judgement: nothing could be said about them as a group. Split by how dark
+    # the blend actually comes out and the two ends read as what they are --
+    # too dark to carry a hue, too light to carry one -- with the middle band
+    # holding the ones rejected for some other reason entirely. Each band's
+    # floor is the depth the band above ended at, so no tile can surface out of
+    # its own band however much room happens to be going in the one above it.
+    # Outermost first, so: neither, then too light, then too dark hard against
+    # the middle of the wheel. The two ends are done being looked at and the
+    # middle band is not, so the band that still has questions in it sits
+    # nearest the tiers that are still being judged.
+    for band in (SUNK_MID, SUNK_LIGHT, SUNK_DARK):
+        floor = len(ends)
+        for row in sorted((r for r in rest
+                           if is_sunk(r[2]) and sunk_band(r[3]) == band),
+                          key=lambda r: r[1]):
+            drop(row, floor)
 
     # **Nothing is reordered after packing.** Ranking the tiers by chroma was
     # tried, to sink the near-neutral pastilles toward the middle, and it broke
@@ -1136,7 +1231,10 @@ def tiers(out, proposal, rest, tiers_map=None):
             f'fill="{text.hex_colour(mixed)}" stroke="{colour}" '
             f'stroke-width="{weight}"{dash}/>')
         tiers_map[names] = tier
-        number(out, at, n, outer - height - (pitch - height) / 2)
+        # Up against the block rather than centred in the gap below it. Centred
+        # sat a number as near the tier beneath as the one it names, and on a
+        # wheel nine deep that is a real question every time you read one.
+        number(out, at, n, outer - height - (pitch - height) * 0.3)
         constituents(out, names, at, outer - height / 2, hi - lo)
         if proposed:
             ticks.append((at, warp_angle(_reads), mixed))
@@ -1474,8 +1572,9 @@ def numbered(picks, others):
                      flag_at(names, warp_theta(at))))
     for i, (delta, reads, names, mixed, flag) in enumerate(
             sorted(others, key=lambda r: r[1])):
-        rows.append((delta, warp_angle(reads), names, mixed, canon(names),
-                     False, reads, flag))
+        moved = sunk_at(names)
+        rows.append((delta, warp_angle(reads) if moved is None else moved,
+                     names, mixed, canon(names), False, reads, flag))
     return rows
 
 
@@ -1494,8 +1593,8 @@ def checklist(rows, picks, tiers_of):
     # reporting it as a failure buries the ones that matter.
     last = {}
     for line in HAND.read_text().splitlines():
-        parts = line.split()
-        if not parts or parts[0].startswith("#"):
+        parts = line.split("#", 1)[0].split()
+        if not parts:
             continue
         take = 2 if parts[0] in ("swap", "roll") else 1
         for x in parts[1:1 + take]:
@@ -1505,9 +1604,9 @@ def checklist(rows, picks, tiers_of):
     print("  instruction        triple                  outcome")
     trouble = 0
     for line in HAND.read_text().splitlines():
-        if not line.strip() or line.lstrip().startswith("#"):
+        parts = line.split("#", 1)[0].split()
+        if not parts:
             continue
-        parts = line.split()
         # One number for most verbs, two for swap and roll. Scanning the whole
         # line for anything numeric read the count in `in 82 3` as tile #3 and
         # reported on the wrong tile -- the same class of mistake this file was
