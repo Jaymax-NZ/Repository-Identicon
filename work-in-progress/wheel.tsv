@@ -1,0 +1,203 @@
+# Every tile, where it is, and nothing else. This file is the wheel.
+#
+# **One file, and all 165 in it.** `hand.tsv` held only what had been argued
+# about -- the ring, the handful moved between tiers, and the rejected set --
+# and the other 34 were placed by the packer falling through to its default.
+# Nothing was lost that way, because the packing is deterministic and the wheel
+# redrew identically. But the file did not *say* where a third of the tiles
+# were, so it could not be read as the record of what was decided, and
+# `purple purple white` sat in a tier with its argument written down in
+# `perceptual.py` and no line here at all. Every tile now has a line.
+#
+# **The number is the position, and the position is clockwise from the top.**
+# It was the triple's index in the palette enumeration, which no render could
+# move -- the right choice while the ring was still being settled, when a note
+# saying "promote #143" had to still mean that by the time the next picture
+# came back. The ring is closed now, 360 of 360 with nothing spare, so the
+# churn that protected against cannot happen, and a number is free to do the
+# more useful job of telling you where to look. The ring is 1 to 63 and walks
+# the hue circle; the tiers behind it follow, outward-in and clockwise within
+# each; then the three sunk bands in the order they are drawn; then the six
+# that average to a neutral and have no place at all.
+#
+# **The triple is on the line, so the number does not have to be trusted.**
+# Keying by number alone was what stopped a triple being transcribed onto the
+# wrong tile, and that protection is kept by carrying both: the engine reads
+# the names, and the number is checked against the line it sits on. If the two
+# disagree the file says so rather than drawing something wrong.
+#
+# To move a tile, change its angle. To renumber after moving one, sort.
+#
+#   ring <deg>    on the ring, at that angle
+#   tier          off the ring, wherever the packing puts it
+#   eject         off the ring by decision rather than for want of room
+#   in / out <k>  off the ring, k tiers deeper / further out than that
+#   sink <deg>    rejected outright; the band is read off the colour
+#   hueless       averages to a neutral, so there is no hue to stand on
+#
+#  n	verdict	where	triple
+1	ring	6.376	red orange purple
+2	ring	12.376	orange orange purple
+3	ring	18.376	red black white
+4	ring	26.376	red brown white
+5	ring	32.376	red red black
+6	ring	34.876	red red red
+7	ring	37.376	red red brown
+8	ring	41.376	red brown brown
+9	ring	45.376	red red orange
+10	ring	51.376	red orange black
+11	ring	59.376	red orange brown
+12	ring	65.376	red orange orange
+13	ring	69.376	red red yellow
+14	ring	73.376	orange orange black
+15	ring	79.376	red yellow brown
+16	ring	87.376	orange yellow brown
+17	ring	95.376	orange yellow black
+18	ring	103.376	yellow brown black
+19	ring	109.376	orange yellow yellow
+20	ring	113.376	yellow yellow brown
+21	ring	117.376	yellow yellow black
+22	ring	123.376	orange yellow green
+23	ring	131.376	orange green black
+24	ring	139.376	yellow green brown
+25	ring	147.376	yellow green white
+26	ring	155.376	yellow green black
+27	ring	161.376	green brown brown
+28	ring	165.376	orange green green
+29	ring	169.376	yellow green green
+30	ring	175.376	green brown black
+31	ring	181.376	green green brown
+32	ring	185.376	green green black
+33	ring	187.876	green green green
+34	ring	190.376	green green white
+35	ring	196.376	green black white
+36	ring	202.376	green green blue
+37	ring	208.376	green blue black
+38	ring	216.376	green blue brown
+39	ring	224.376	green blue white
+40	ring	230.376	green blue blue
+41	ring	232.876	blue blue blue
+42	ring	235.376	blue blue black
+43	ring	241.376	blue black white
+44	ring	247.376	blue blue purple
+45	ring	253.376	blue purple black
+46	ring	261.376	blue purple white
+47	ring	267.376	blue purple purple
+48	ring	273.376	blue purple brown
+49	ring	279.376	red blue blue
+50	ring	285.376	purple black white
+51	ring	289.876	purple purple purple
+52	ring	292.376	purple purple black
+53	ring	296.376	purple purple brown
+54	ring	302.376	red blue purple
+55	ring	310.376	purple brown white
+56	ring	316.376	red purple purple
+57	ring	320.376	purple brown brown
+58	ring	326.376	red blue brown
+59	ring	334.376	red purple black
+60	ring	342.376	red purple brown
+61	ring	348.376	red red blue
+62	ring	352.376	red red purple
+63	ring	358.376	orange purple brown
+64	eject	--	yellow purple black
+65	tier	--	red red white
+66	tier	--	orange green purple
+67	tier	--	red orange white
+68	tier	--	orange black white
+69	tier	--	orange orange white
+70	out	1	orange orange brown
+71	tier	--	orange orange orange
+72	out	1	red orange yellow
+73	tier	--	orange orange yellow
+74	out	1	yellow brown brown
+75	tier	--	yellow black white
+76	tier	--	yellow black black
+77	tier	--	orange green white
+78	tier	--	yellow yellow green
+79	tier	--	green brown white
+80	eject	--	green black black
+81	tier	--	green blue purple
+82	tier	--	blue blue brown
+83	out	1	blue brown white
+84	tier	--	green purple purple
+85	eject	--	orange blue blue
+86	tier	--	purple purple white
+87	out	1	red blue white
+88	tier	--	orange purple purple
+89	tier	--	red purple white
+90	tier	--	orange purple black
+91	tier	--	red orange blue
+92	tier	--	red yellow purple
+93	tier	--	orange yellow purple
+94	tier	--	orange brown white
+95	tier	--	orange brown brown
+96	tier	--	red yellow white
+97	tier	--	red yellow black
+98	tier	--	red yellow yellow
+99	tier	--	orange orange green
+100	tier	--	orange green brown
+101	tier	--	blue blue white
+102	tier	--	blue brown black
+103	out	1	red blue black
+104	tier	--	yellow purple purple
+105	tier	--	yellow purple brown
+106	tier	--	orange brown black
+107	in	1	red orange green
+108	in	1	yellow yellow purple
+109	in	1	yellow brown white
+110	in	3	yellow yellow yellow
+111	sink	1.062	yellow blue black
+112	sink	11.000	yellow blue brown
+113	sink	17.000	orange orange blue
+114	sink	23.000	red yellow blue
+115	sink	40.729	brown brown white
+116	sink	78.625	red red green
+117	sink	105.188	red green brown
+118	sink	160.083	red green green
+119	sink	201.300	green green purple
+120	sink	261.924	yellow blue blue
+121	sink	298.521	orange blue purple
+122	sink	306.521	yellow blue purple
+123	sink	314.521	red green blue
+124	sink	339.250	red green purple
+125	sink	347.250	orange blue brown
+126	sink	6.729	yellow purple white
+127	sink	12.729	brown white white
+128	sink	16.729	red white white
+129	sink	45.688	orange yellow blue
+130	sink	51.688	orange white white
+131	sink	85.000	yellow yellow blue
+132	sink	91.000	orange yellow white
+133	sink	99.521	yellow white white
+134	sink	105.521	yellow green purple
+135	sink	113.521	red green white
+136	sink	119.521	yellow yellow white
+137	sink	125.521	red yellow green
+138	sink	176.633	yellow green blue
+139	sink	191.656	green white white
+140	sink	237.342	green purple white
+141	sink	243.699	blue white white
+142	sink	287.396	purple white white
+143	sink	329.896	orange blue white
+144	sink	347.250	orange purple white
+145	sink	355.250	yellow blue white
+146	sink	29.396	brown black white
+147	sink	35.396	red black black
+148	sink	41.396	red brown black
+149	sink	51.000	brown black black
+150	sink	55.000	brown brown black
+151	sink	57.500	brown brown brown
+152	sink	71.188	orange black black
+153	sink	116.521	red green black
+154	sink	233.241	green purple black
+155	sink	239.241	blue black black
+156	sink	286.333	blue brown brown
+157	sink	290.333	purple black black
+158	sink	309.354	purple brown black
+159	sink	332.375	orange blue black
+160	hueless	--	orange green blue
+161	hueless	--	green purple brown
+162	hueless	--	black black white
+163	hueless	--	black white white
+164	hueless	--	white white white
+165	hueless	--	black black black

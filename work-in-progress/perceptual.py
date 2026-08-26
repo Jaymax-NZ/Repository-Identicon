@@ -94,6 +94,26 @@ MAX_GAP = 125.0
 #
 # This replaces a per-hue exception. A rule naming one colour is a rule that has
 # stopped explaining anything, and the count is what was actually doing the work.
+# **Both are stated against the dead gamut, and `LIGHT` is above its maximum.**
+# So the two-white rule fires at every hue and is not discriminating at all.
+#
+# Do not "fix" that by moving the cut into the gap in the distribution. The
+# verdicts were checked against the ring, and on the fourteen triples these
+# rules speak to, refusing outright is what the eye did:
+#
+#   two whites   all seven sunk. The rule flags all seven. Unanimous.
+#   two blacks   the rule flags six; the seventh, `red black black`, it passes
+#                and the eye sank anyway.
+#
+# So a cut at 0.38 -- the middle of the hole between `purple` and `blue` -- would
+# pass `blue`, `green`, `yellow` and `orange` with two whites, every one of which
+# was rejected by eye. The threshold is degenerate and the answer it gives is
+# right, which is an uncomfortable pair but not a licence to move it.
+#
+# What the evidence actually suggests is that on a gamut this narrow and this
+# uniformly mid-lightness, two achromatics always overclaim, and the honest rule
+# is the count with no luminance test at all. That is a rule change and wants
+# Justin's eye on it, not a constant nudged in the dark.
 DARK = 0.33
 LIGHT = 0.58
 
@@ -193,38 +213,33 @@ def gamut():
     return out
 
 
-# Triples Justin has said should exist, by eye, with where he saw them. A
-# checker that only rejects can never notice an absence: green-blue went missing
-# for three iterations because nothing ever emitted it, so nothing ever failed.
-# These are the other half -- what must be reachable somewhere in the gamut.
-REQUIRED = [
-    (("orange", "orange", "yellow"), "3K-4B"),
-    (("yellow", "yellow", "green"), "from 4Q"),
-    (("green", "green", "blue"), "the blue-greens"),
-    (("green", "blue", "blue"), "the blue-greens"),
-    (("white", "white", "green"), "works: green is neutral enough"),
-    (("red", "black", "black"), "narrow, at the darkest reds"),
-    (("blue", "black", "purple"), "the dark blue-purples"),
-    (("brown", "orange", "yellow"), "a whole possibility class"),
-    (("red", "red", "black"), "darkest reds"),
-    (("blue", "blue", "black"), "darkest blues"),
-    (("blue", "white", "white"), "the light blues"),
-    (("blue", "purple", "white"), "scope around Q16 on sheet 5"),
-]
-
-
-def coverage(chooser):
-    """Which required triples the mapping never produces."""
-    produced = set()
-    for rgb in gamut():
-        produced.add(tuple(sorted(text.PALETTE[k][1] for k in chooser(rgb))))
-    missing = [(want, why) for want, why in REQUIRED
-               if tuple(sorted(want)) not in produced]
-    return produced, missing
+# **`REQUIRED` and `coverage` are gone.** Twelve triples were listed here as
+# having to be reachable somewhere in the gamut, because a checker that only
+# rejects cannot notice an absence -- green-blue went missing for three
+# iterations and nothing ever failed, since nothing emitted it and there was
+# nothing to reject.
+#
+# That was a real hole, and the list was the patch for it: candidates fed back
+# in by hand against an automatic chooser that kept losing them. The chooser is
+# what has gone. The ring is placed by eye, tile by tile, and every one of the
+# 165 has a line in `wheel.tsv` saying where it is -- so an absence is not
+# something that has to be detected any more, it is something written down. A
+# triple missing from the ring is missing because somebody put it in a tier.
+#
+# It had also stopped agreeing with the eye that wrote it. Three of the twelve
+# were later sunk as rejected, `blue white white` among them -- required as "the
+# light blues" and refused as too light to carry a hue. A list that records what
+# was wanted at one moment cannot arbitrate against a later look at the same
+# tile, and it was being read as though it could.
 
 
 def audit(chooser, label):
-    """Report how a candidate mapping fares. Returns the failure count."""
+    """Report how a candidate mapping fares. Returns the failure count.
+
+    Rejections only. What a mapping fails to produce used to be reported here
+    too, against a hand-written list of triples that had to be reachable; that
+    went with the automatic chooser it was compensating for.
+    """
     colours = gamut()
     failed, kinds, examples = 0, {}, {}
     for rgb in colours:
@@ -253,14 +268,7 @@ def audit(chooser, label):
     effective = 1 / sum((c / total) ** 2 for c in counts.values())
     print(f"   spread: {len(counts)} distinct, {effective:.1f} effective")
 
-    produced, missing = coverage(chooser)
-    if missing:
-        print(f"   MISSING {len(missing)} of {len(REQUIRED)} required triples:")
-        for want, why in missing:
-            print(f"      {' '.join(want):<28} ({why})")
-    else:
-        print(f"   coverage: all {len(REQUIRED)} required triples present")
-    return failed, missing
+    return failed
 
 
 if __name__ == "__main__":
