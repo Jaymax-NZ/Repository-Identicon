@@ -135,6 +135,18 @@ must be refused, blue-green is *also* 120 degrees and must be allowed. Teal is
 an ordinary colour; reddish-green is not one at all. The check is a short list of
 opponent pairs, and it is biology rather than geometry.
 
+**Hashing an output of the mapping adds nothing to it.** The order of the three
+squares, and which of them are circles, were taken from a hash of `#rrggbb` — so
+that the shipped `.colour` file would be sufficient on its own, which is a real
+property and was argued for on real grounds. But the colour is what the mapping
+produces, so a channel derived from it cannot separate two projects the mapping
+has already put in the same place: over four thousand projects it yielded fewer
+distinct marks than there were distinct colours. The measurement that was
+supposed to catch this swept the gamut one sample per colour, which makes every
+mark look distinct by construction. **Measure over the population you have, not
+over the space it lives in.** Both now come from the grid, which is fifteen bits
+of the key's digest and already in hand wherever a mark is drawn.
+
 **Two domains must not be compared.** The palette is anchored on Unicode
 *names*, so `yellow` is nominally `#ffff00` — a colour no font paints and the
 gamut never reaches, since `identicon.js` fixes saturation at 0.7. Matching a

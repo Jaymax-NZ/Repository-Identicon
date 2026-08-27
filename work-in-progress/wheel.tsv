@@ -1,4 +1,13 @@
+# Colour mapping wheel, version 0.3.
+#
 # Every tile, where it is, and nothing else. This file is the wheel.
+#
+# **The wheel's version is not the mapping version.** The key stamps say which
+# colour rule drew a mark and are integers, 0 through 3. This is the version of
+# the tricolour arrangement -- which three squares stand for which stretch of
+# the draw -- and it moves when a tile moves. Version 3 of the colour rule and
+# version 0.3 of the wheel are different numbers about different things that
+# happen to have arrived together.
 #
 # **One file, and all 165 in it.** `hand.tsv` held only what had been argued
 # about -- the ring, the handful moved between tiers, and the rejected set --

@@ -272,4 +272,8 @@ def audit(chooser, label):
 
 
 if __name__ == "__main__":
-    audit(lambda rgb: text.triple(rgb), "current algorithm")
+    # `triple_indices`, not `triple`: the harness judges which squares were
+    # chosen, and that is a question about the colour alone. The order they are
+    # laid out in comes from the grid now and cannot break a rule -- the same
+    # three squares in a different order are the same colours.
+    audit(lambda rgb: text.triple_indices(rgb), "current algorithm")

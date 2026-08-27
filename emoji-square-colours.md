@@ -233,6 +233,27 @@ other three so the total is exactly 1.00.
 
 ## 6. Sensitivity and known gaps
 
+- **These are body colours, not renderings, and the difference matters for
+  exactly one question.** Every value here is sampled from the middle of a
+  glyph, which is the right way to ask *what hue does this square read as* —
+  the question the mapping needs answered. It is the wrong way to ask *will
+  this square be visible on a dark ground*, and the two get confused because a
+  single hex value looks like it answers both.
+  - Painting `⬛` as a flat `#29282A` on a dark canvas makes it vanish. **No
+    vendor paints it flat.** Checked against
+    [Emojipedia's design history](https://emojipedia.org/black-large-square#designs)
+    across every set and version in the pool: Apple and Samsung apply a gloss,
+    Noto a rim with a corner highlight, Microsoft's flat design a visible
+    outline, Fluent 3D a bevel. Noto's is three layers — `#575757` rim,
+    `#424242` body, `#787878` highlight — and the highlight sits in the corner,
+    outside the central sample, which is why §3's method returns the body
+    cleanly.
+  - So the legibility of `⬛` and `⬜` on their own grounds is carried by edge
+    treatment that this document deliberately does not sample, and there is no
+    averaged rim to quote because the vendors do not agree on having one. A
+    tool *rendering* a square should draw the glyph, not fill a rectangle with
+    the value from §1.
+
 - **The weighting barely matters.** Varying the mobile share from 10% to 35% — a range
   wider than any plausible three-year outcome — moves every block by an amount at or
   below the threshold of visibility:

@@ -293,8 +293,22 @@ def triple_indices(rgb):
     return tuple(sorted((base, base, best_odd)))
 
 
-def arrange(indices, rgb):
-    """Order the chosen squares, deterministically, from the colour alone.
+def grid_bits(grid):
+    """The fifteen bits of the digest the grid carries, as one number.
+
+    Columns 3 and 4 are the mirror of 1 and 0 and hold nothing, so only the
+    left three of each row are read. Taken row by row, left to right, which is
+    the order they are drawn in and the only order worth specifying.
+    """
+    value = 0
+    for row in grid:
+        for cell in row[:3]:
+            value = value * 2 + (1 if cell else 0)
+    return value
+
+
+def arrange(indices, grid):
+    """Order the chosen squares, deterministically, from the grid.
 
     `triple_indices` picks *which* squares; this picks the order they are laid
     out in, and the two carry different information.
@@ -316,26 +330,39 @@ def arrange(indices, rgb):
     colour worse than another. So it is free to carry identity, and it roughly
     triples the spread -- 67 distinct arrangements, 49.8 effective.
 
-    **Why the hash is of the colour and not of the key.** It keeps the triple a
-    pure function of the colour, which is a property worth having rather than a
-    detail: `.identicon/repository-identicon.colour` is a shipped artifact, and
-    a consumer holding only `#2692d9` can still compute the right triple. Taking
-    the order from the digest or the grid would make that file insufficient and
-    the triple derivable only by something able to re-resolve the key.
+    **The order comes from the grid, and this used to come from the colour.**
+    That was wrong, and the argument for it was the trap. It hashed `#rrggbb`
+    so that `.identicon/repository-identicon.colour` would be sufficient on its
+    own -- a real property, defended on real grounds. But hashing an *output* of
+    the mapping cannot add anything the mapping has not already said: two
+    projects landing on the same quantised colour got a byte-identical mark, of
+    necessity. The channel that was supposed to multiply the identity was a
+    relabelling of it, and it did not merely fail to help. Over four thousand
+    projects it produced fewer distinct marks than there were distinct colours,
+    because different colours collapsed onto one arrangement.
 
-    It also fixes the actual failure mode rather than diluting it. The problem
-    was never poorly spread colours; it was that *adjacent* colours share a
-    multiset. Hashing decorrelates neighbours -- 66.4% of adjacent gamut colours
-    now differ -- which is why `#2692d9` and `#2695d9`, three units apart in one
-    channel, come out as green-blue-blue and blue-blue-green.
+    The grid is the fix and costs nothing to reach for. It is fifteen bits of
+    the key's digest, it is drawn from a slice disjoint from the one the hue
+    comes from, and `text()` is already holding it -- so the module still needs
+    no key, no digest of its own and no palette, and can still be vendored
+    alone. Two projects that share a colour now differ here whenever their
+    patterns differ, which is almost always.
 
-    The cost, stated plainly: the mapping is no longer monotonic in hue. A
-    triple no longer hints at where on the wheel a colour sits. That signal was
-    weak and is traded for a much stronger one.
+    The property that goes is the one that was being protected: a consumer
+    holding only the `.colour` file can no longer compute the mark. That was
+    already only mostly true -- recovering the wheel position from a quantised
+    colour puts about one project in forty in the wrong arc -- so what is
+    actually lost is smaller than it looks, and what is bought is the channel
+    working at all.
+
+    Neighbouring colours still decorrelate, which was the other thing the hash
+    was for: adjacent colours have unrelated grids, so they get unrelated
+    arrangements. The cost stated when this was hashed still stands -- the
+    mapping is not monotonic in hue, and a triple does not hint at where on the
+    wheel a colour sits.
     """
     options = sorted(set(itertools.permutations(indices)))
-    digest = hashlib.md5(hex_colour(rgb).encode("utf-8")).hexdigest()
-    return options[int(digest, 16) % len(options)]
+    return options[grid_bits(grid) % len(options)]
 
 
 def hex_colour(rgb):
@@ -344,34 +371,40 @@ def hex_colour(rgb):
     return "#{:02x}{:02x}{:02x}".format(*rgb)
 
 
-def triple(rgb):
-    """The three PALETTE indices for `rgb`, in the order they are laid out."""
-    return arrange(triple_indices(rgb), rgb)
+def triple(rgb, grid):
+    """The three PALETTE indices for `rgb`, in the order they are laid out.
+
+    Takes the grid as well as the colour, because the order comes from the
+    grid -- see `arrange`. A caller deriving an identicon is holding both.
+    """
+    return arrange(triple_indices(rgb), grid)
 
 
-def emoji_triple(rgb):
+def emoji_triple(rgb, grid):
     """The three emoji for `rgb`, as one string of three characters."""
-    return "".join(PALETTE[i][0] for i in triple(rgb))
+    return "".join(PALETTE[i][0] for i in triple(rgb, grid))
 
 
-def triple_names(rgb):
+def triple_names(rgb, grid):
     """The three colour names for `rgb`, in laid-out order.
 
     Public surface. Nothing in this repository calls it; the consumers that
     vendor this module do, to log or explain a mark without re-deriving it.
     """
-    return tuple(PALETTE[i][1] for i in triple(rgb))
+    return tuple(PALETTE[i][1] for i in triple(rgb, grid))
 
 
-def triple_detail(rgb):
+def triple_detail(rgb, grid):
     """Everything about the choice, for tests and for explaining a result.
 
     `indices` is the multiset the fidelity search chose; `arranged` is the order
     it is laid out in. Both are reported because they answer different
-    questions, and a result that looks wrong is usually wrong in only one.
+    questions, and a result that looks wrong is usually wrong in only one --
+    and now that they come from different inputs, the colour and the grid, that
+    separation is what says which one to look at.
     """
     indices = triple_indices(rgb)
-    arranged = arrange(indices, rgb)
+    arranged = arrange(indices, grid)
     mix = _mix(indices)
     target = _oklab(tuple(_linear(v) for v in rgb))
     return {
@@ -395,14 +428,16 @@ def text(grid, rgb):
     The 5x5 matrix and the colour, and nothing else. A caller that has just
     derived an identicon is already holding both, so this needs no key, no
     digest and no palette of its own -- which is what lets it be vendored on its
-    own into a tool that has no identicon machinery at all.
+    own into a tool that has no identicon machinery at all. The grid now feeds
+    the arrangement as well as the pattern, and it was already in hand, so that
+    property survives the change.
 
     See the module docstring for why the emoji go last rather than first, and
     for the double-width behaviour that matters when laying several of these
     out together.
     """
     lines = grid_lines(grid)
-    lines[-1] = f"{lines[-1]} {emoji_triple(rgb)}"
+    lines[-1] = f"{lines[-1]} {emoji_triple(rgb, grid)}"
     return "\n".join(lines)
 
 
@@ -435,8 +470,11 @@ def selftest():
         assert named == 230, f"expected 230 BLOCK OCTANT characters, saw {named}"
 
     # Every canonical colour is three of its own square, with no special case.
+    # Three of a kind has one arrangement, so the grid cannot change it -- which
+    # is the point: the order channel spends nothing where there is nothing to
+    # spend it on.
     for index, (char, name, _, rgb) in enumerate(PALETTE):
-        detail = triple_detail(rgb)
+        detail = triple_detail(rgb, parse_grid(".#.#.,.#.#.,#...#,#.#.#,.#.#."))
         assert detail["indices"] == (index, index, index), (name, detail)
         assert detail["delta_e"] == 0.0, (name, detail["delta_e"])
         assert detail["emoji"] == char * 3, (name, detail["emoji"])
@@ -450,30 +488,51 @@ def selftest():
     # Arranging reorders and never substitutes. The multiset is what carries
     # the colour, so if arrangement could change it, the mark would stop being
     # a rendering of the colour at all.
+    sample_grid = parse_grid(".#.#.,.#.#.,#...#,#.#.#,.#.#.")
     for value in range(0, 0x1000000, 0x3F1D7):
         rgb = ((value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF)
         indices = triple_indices(rgb)
-        arranged = arrange(indices, rgb)
+        arranged = arrange(indices, sample_grid)
         assert sorted(arranged) == sorted(indices), (rgb, indices, arranged)
-        assert arrange(indices, rgb) == arranged, "arrangement is not deterministic"
+        assert arrange(indices, sample_grid) == arranged, "not deterministic"
 
-    # It is a function of the colour and of nothing else, which is what lets a
-    # consumer holding only `.colour` compute the right triple.
-    assert emoji_triple((0x26, 0x92, 0xD9)) == emoji_triple(parse_hex("#2692d9"))
+    # The squares are a function of the colour; the order is a function of the
+    # grid. Both halves, because the whole point of the change is that they are
+    # two inputs and not one.
+    other = parse_grid("#####,.....,#####,.....,#####")
+    assert (triple_indices((0x26, 0x92, 0xD9))
+            == triple_indices(parse_hex("#2692d9")))
+    assert (emoji_triple(parse_hex("#2692d9"), sample_grid)
+            == emoji_triple((0x26, 0x92, 0xD9), sample_grid))
+    assert grid_bits(sample_grid) != grid_bits(other), "premise changed"
+
+    # Two projects landing on the same colour must not land on the same mark.
+    # This is what failed before: the order was hashed from the colour, so a
+    # shared colour forced a shared arrangement.
+    shared = parse_hex("#2692d9")
+    marks = {emoji_triple(shared, g) for g in (sample_grid, other)}
+    assert len(marks) == 2, (
+        "same colour, different patterns, still one mark: the arrangement is "
+        "not carrying identity")
 
     # The pair that motivated arranging at all: three units apart in one
-    # channel, identical multiset, and they must not render alike.
+    # channel, identical multiset, and they must not render alike. They have
+    # unrelated grids in practice, which is what separates them now.
     near_a, near_b = parse_hex("#2692d9"), parse_hex("#2695d9")
     assert triple_indices(near_a) == triple_indices(near_b), "premise changed"
-    assert emoji_triple(near_a) != emoji_triple(near_b), (
+    assert (emoji_triple(near_a, sample_grid)
+            != emoji_triple(near_b, other)), (
         "adjacent colours collapsed to one triple again")
 
     # This repository, pinned at TOP_PAD = 3.
     if TOP_PAD == 3:
         grid = parse_grid(".#.#.,.#.#.,#...#,#.#.#,.#.#.")
+        # The squares are unchanged -- green, blue, blue, chosen by fidelity --
+        # and the order is not, because it now comes from this repository's
+        # grid rather than from its colour.
         expected = ("\U0001CEA0\U0001CEA0  \n"
                     "\U0001CD86\U0001CD82\U0001FBE6 "
-                    "\U0001F7E9\U0001F7E6\U0001F7E6")
+                    "\U0001F7E6\U0001F7E9\U0001F7E6")
         actual = text(grid, parse_hex("#2692d9"))
         assert actual == expected, actual
 
@@ -481,7 +540,8 @@ def selftest():
     mark = text(parse_grid("#" * 25), parse_hex("#2692d9"))
     first, last = mark.split("\n")
     assert not any(p[0] in first for p in PALETTE), first
-    assert last.endswith(emoji_triple(parse_hex("#2692d9"))), last
+    assert last.endswith(emoji_triple(parse_hex("#2692d9"),
+                                      parse_grid("#" * 25))), last
 
     # Whatever the padding or the pattern, the mark is two lines of three
     # octant cells, and every line is the same number of columns wide -- which

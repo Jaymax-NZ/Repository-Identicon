@@ -39,6 +39,69 @@ The collision guard in `propose` stays although nothing trips it. It is what
 says so when an edit to the file overlaps two tiles, and a silently overlapping
 ring is the failure the whole flattening was done to avoid.
 
+## The wheel is in the generator now
+
+**Mapping version 3** carries the blue-green compression into
+`repository-identicon.py`. The warp is `(215, 50, 4)` -- the same closed form
+the wheel uses, checked against `wheel.warp_theta` over 36,000 samples at zero
+disagreement. It is a new colour rule rather than an edit to version 2, because
+the key stamps the rule and old rules never retire; ten new vectors came with
+it, which `load_vectors` enforces.
+
+**Do not confuse the three version numbers.** `VERSION` is the tool, at
+`0.0.build`. `MAPPING_VERSION` is the colour rule, an integer in every key, now
+3. The wheel is `0.3`, in `wheel.tsv`. `--version` prints the first two together
+because a report about a colour means the second.
+
+**`in-use.tsv` is indexed by the draw, not by the hue.** Those were the same
+number until version 3 warped one into the other. A consumer indexing by hue is
+wrong by up to a third of the wheel around the blue-greens -- the file says so
+in its own header.
+
+**The warp strength was re-examined and stands.** A gentler warp gives back some
+teal and costs tricolour coverage; `coverage3.svg` is that comparison, and the
+aqua-cyan stretch is already the sparsest on the ring. Anything gentler starves
+it further. `peak = 4` is not over-tuned.
+
+Two things that were proposed and are dead, so they are not proposed again:
+reallocating the draw by how many distinct `#rrggbb` exist -- that counts values
+in a domain the eye does not work in, and measured worst of five for tiling --
+and moving `DARK`/`LIGHT`, which are degenerate and right on all fourteen
+triples they touch.
+
+## The order and the shapes come from the grid
+
+They were hashed from `#rrggbb`, so both channels were functions of an *output*
+of the mapping and could not separate two projects it had already put in the
+same place. Over four thousand projects that yielded 696 distinct marks against
+1,013 distinct colours -- the channel was subtracting. From the grid it yields
+1,404.
+
+The grid, not the key's digest: they measure the same, and the grid is already
+fifteen bits of that digest sitting at the call site, so `text(grid, rgb)` still
+needs no key and stays vendorable alone.
+
+No mapping bump. The vectors pin grid and colour only, and `SPEC.md` records the
+triple as not yet normative, so nothing pinned moved.
+
+**The measurement that hid this swept the gamut, one sample per colour.** That
+makes every mark look distinct however many projects pile onto one. `shaped.py`
+samples projects now. Measure over the population, not the space.
+
+## `glyphs.py`: the squares as they are actually painted
+
+Noto paints every square in three layers -- `⬛` is `#575757` over `#424242`
+under a `#787878` corner highlight, and is not black at all. Flat rectangles from
+`PAINTED` made it vanish on a dark ground, which is not what any reader sees.
+`glyphs.py` reads the real outlines out of the COLRv1 font and emits them as
+plain SVG paths, defined once and referenced.
+
+`PAINTED` itself is not at fault and was not changed: it samples the centre of
+each glyph across seven vendor sets, which is the right way to ask what hue a
+square reads as. It is the wrong way to ask whether one is visible, and every
+vendor applies edge treatment that settles that question -- see the note added
+to `emoji-square-colours.md` § 6.
+
 ## `wheel.tsv` is the wheel
 
 One file, all 165 tiles, one line each. `hand.tsv` is gone -- it held only what
@@ -212,6 +275,7 @@ down rather than something to be detected. It had also stopped agreeing with the
 eye that wrote it: three of the twelve were later sunk, `blue white white` among
 them -- required as "the light blues", refused as too light to carry a hue.
 
-`work-in-progress/` holds `wheel81.svg` and `wheel80.svg` and nothing else in the
-way of renders -- every earlier one has been deleted, including the four that
-were committed. `next_path` takes max + 1, so the next render is wheel82.
+`work-in-progress/` holds `wheel81.svg` and `wheel80.svg`, `coverage3.svg` for
+the warp-strength decision, and `sheet3`/`sheet4` with their dark pairs -- the
+400-project sheets in Noto's squares and in the weighted average. `next_path`
+takes max + 1, so the next wheel render is wheel82.

@@ -294,7 +294,25 @@ def resolve_seed(path=None, explicit=None):
 # The vendored library is untouched by any of it: it consumes a digest, and
 # only the string being digested has changed. Conformance to
 # `stewartlord/identicon.js` is exactly as it was.
-MAPPING_VERSION = 2
+MAPPING_VERSION = 3
+
+# **Three version numbers, and they count different things.** They get confused
+# the moment they are written down near each other, so they are written down
+# near each other on purpose:
+#
+#   VERSION          this tool, as a release. Nothing is released.
+#   MAPPING_VERSION  the colour rule, stamped into every key. An integer,
+#                    because the key format is `<digits>:seed`. Bumping it
+#                    changes what new repositories are seeded at and never
+#                    changes an existing one.
+#   wheel version    which tricolours stand over the gamut, in
+#                    `work-in-progress/wheel.tsv`. Currently 0.3, and not read
+#                    by this file at all -- the fallback rendering here is still
+#                    the search in `text-identicon.py`.
+#
+# The first is not the third and neither is the second, however alike 0.3 and 3
+# look side by side.
+VERSION = "0.0.build"
 
 # `<digits>:` and nothing else, anchored, so a seed that happens to contain a
 # colon -- a scheme, a Windows path -- is never mistaken for a stamped key.
@@ -409,6 +427,64 @@ def _quantise(value):
 MARK_LIGHTNESS = 0.60
 MARK_CHROMA = 0.26
 
+# ---------------------------------------------------------------------------
+# The hue draw, compressed around blue-green
+#
+# **Every hue still exists; what changes is how many projects land on one.** The
+# draw off the digest is uniform over the circle, so each degree of hue gets the
+# same share whether or not anything can be said about it. Around blue-green
+# there is very little that can: the emoji-square vocabulary has nothing between
+# green and blue, so every mixture of the two reads at essentially one hue, and
+# whole bands there cannot be named at all. That is a fact about the palette,
+# not about the colour, and it cannot be fixed by placement -- see
+# `work-in-progress/README.md`.
+#
+# So that arc is given less of the draw than its width suggests. The hue advances
+# faster through it, which spends the same 360 degrees over fewer projects, and
+# the projects saved land where the vocabulary can tell them apart.
+#
+# The speed function is a raised cosine -- one full cosine period, centred, with
+# zero derivative at both ends -- so the ramp has no corner and no project sits
+# on a discontinuity. Its integral is elementary, and that matters more than it
+# looks: this has to be reimplementable, and a closed form with one sine in it
+# is a paragraph of specification where a spline would be a page.
+#
+# (centre, half-width, peak) in degrees of Oklab hue. `peak` is how much faster
+# the hue advances at the centre, so the share landing there falls by roughly
+# that factor. These are the values the wheel was solved against.
+HUE_WARP = (215.0, 50.0, 4.0)
+
+
+def _warp_bump(turned, half):
+    """The integral of the raised-cosine bump, from its start to `turned`.
+
+    Written out rather than integrated numerically, so two implementations
+    cannot disagree about where a project lands. Flat at zero before the bump
+    begins and flat at `half` after it ends, which is what makes the whole
+    function monotonic and its ends continuous.
+    """
+    if turned <= -half:
+        return 0.0
+    if turned >= half:
+        return half
+    return (0.5 * (turned + half)
+            + (half / (2 * math.pi)) * math.sin(math.pi * turned / half))
+
+
+def warp_hue(degrees, warp=HUE_WARP):
+    """A uniform draw in degrees, to the hue it names. Monotonic, onto [0, 360).
+
+    `None` for `warp` is the uniform draw, which is what mapping versions
+    before 3 use.
+    """
+    if warp is None:
+        return degrees % 360.0
+    centre, half, peak = warp
+    degrees %= 360.0
+    total = 360.0 + (peak - 1.0) * half
+    return 360.0 * (degrees
+                    + (peak - 1.0) * _warp_bump(degrees - centre, half)) / total
+
 # The bisection that finds how much chroma a hue can take. Fixed bounds and a
 # fixed iteration count, because "search until it converges" is not a
 # specification -- two implementations would stop in different places. The
@@ -506,7 +582,7 @@ def _encode(channel):
 # implement all of them to reproduce every vector. That is the price of the
 # promise, and it is the right way round: the burden sits with the
 # implementation rather than with somebody's repository.
-COLOUR_RULES = (0, 1, 2)
+COLOUR_RULES = (0, 1, 2, 3)
 
 
 def identicon_colour(key, chroma=MARK_CHROMA, lightness=MARK_LIGHTNESS):
@@ -516,6 +592,12 @@ def identicon_colour(key, chroma=MARK_CHROMA, lightness=MARK_LIGHTNESS):
     Version 2 onward: a hue angle in Oklab at one lightness, with the chroma
     capped. `chroma` and `lightness` are ignored for the older rules, which
     have no such parameters to vary.
+
+    Version 3 adds the hue warp: the same 28 bits, read as a position in the
+    draw rather than directly as an angle, so the arc around blue-green that
+    the vocabulary cannot name takes fewer projects. Nothing else changes --
+    same digest, same grid, same lightness, same chroma cap. A version 2
+    repository keeps its colour, which is the whole point of the stamp.
     """
     version, _ = parse_key(key)
     if version < 2:
@@ -523,6 +605,8 @@ def identicon_colour(key, chroma=MARK_CHROMA, lightness=MARK_LIGHTNESS):
         return (_quantise(red), _quantise(green), _quantise(blue))
 
     degrees = identicon_hue(key) * 360.0
+    if version >= 3:
+        degrees = warp_hue(degrees)
     return tuple(_encode(channel) for channel in
                  _oklch_to_linear(lightness, gamut_chroma(degrees, lightness,
                                                           chroma), degrees))
@@ -2109,6 +2193,11 @@ def build_parser():
         description="Per-project identicons for Konsole tabs, over the session "
                     "D-Bus interface.",
     )
+    # Both numbers, because the one people need is usually the other one: a bug
+    # report about a colour is about the mapping version, not the release.
+    parser.add_argument("--version", action="version",
+                        version=f"repository-identicon {VERSION} "
+                                f"(mapping version {MAPPING_VERSION})")
     sub = parser.add_subparsers(dest="command", required=True)
 
     def add_common(target, *, path=True, render=False, session=False):

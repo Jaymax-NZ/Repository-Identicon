@@ -414,7 +414,12 @@ class TestInstallingIntoARepository(unittest.TestCase):
     def test_it_writes_the_three_artifacts(self):
         result = identicon.install_into_repo(self.tmp)
         self.assertEqual("github.com/someone/a-project", result["seed"])
-        self.assertEqual("2:github.com/someone/a-project", result["key"])
+        # The current version, not a literal: this asserts that a fresh seed is
+        # stamped at whatever this implementation seeds at, which is what the
+        # test is about. Written as "2:" it failed on the bump to 3 while
+        # testing nothing that had changed.
+        self.assertEqual(f"{identicon.MAPPING_VERSION}:github.com/someone/a-project",
+                         result["key"])
         self.assertEqual("remote", result["source"])
         for name in ("png", "png4x", "svg", "colour"):
             with self.subTest(artifact=name):
@@ -547,7 +552,7 @@ class TestInstallingIntoARepository(unittest.TestCase):
         after = identicon.install_into_repo(self.tmp, reseed=True)
         self.assertEqual("github.com/someone/renamed", after["seed"])
         self.assertNotEqual(before["colour"], after["colour"])
-        self.assertEqual("2:github.com/someone/renamed",
+        self.assertEqual(f"{identicon.MAPPING_VERSION}:github.com/someone/renamed",
                          identicon.recorded_key(self.tmp))
         self.assertIsNone(after["seed_drift"])
 
