@@ -39,13 +39,19 @@ A port needs three things and nothing else:
 Renderings — image, terminal protocol, text — are optional. A port that only
 derives the key, the grid and the colour is a complete and useful port.
 
-The vectors span mapping versions, because keys do: an unprefixed key is
-version 0 and hashes to itself. The digest and the grid are the same rule at
-every version, so a port that hashes what it is handed gets those for free.
+**While this is pre-release, there is one mapping version and the vectors pin
+only that.** A port implements one colour rule and refuses any key stamped at
+another — refuses, rather than drawing it with the rule it has, because that
+would move somebody's mark.
 
-The **colour** is not. Version 2 changed it, and no version ever retires, so a
-port must implement each rule and pick by the version in the key. `vectors.json`
-covers all of them, which is how you find out whether you have.
+That changes at the first release. No rule that reaches a release ever retires,
+so from then on a port implements every released rule and picks by the version
+in the key, and `vectors.json` keeps the vectors for each. Versions 0 to 2 were
+drafts and have been withdrawn; if you seeded a repository from one of those
+builds, `remap` moves it.
+
+The digest and the grid are the same rule at every version, so a port that
+hashes what it is handed gets those for free.
 
 ### Checking it
 

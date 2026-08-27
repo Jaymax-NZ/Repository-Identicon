@@ -19,19 +19,21 @@ Run this inside the repository you want marked:
 python3 /path/to/repository-identicon.py apply
 ```
 
-It derives the key from the git remote and writes four files:
+It derives the key from the git remote and writes these:
 
 ```
-.identicon/repository-identicon-base.png       block 5, 27px canvas
-.identicon/repository-identicon@4x-base.png    the mark magnified 4x, 104px
-.identicon/repository-identicon-128-base.png   for a consumer that fixes the size
-.identicon/repository-identicon-256-base.png   likewise
-.identicon/repository-identicon-base.svg       vector, same geometry
-.identicon/repository-identicon-light.*        each of the five again, for a light ground
-.identicon/repository-identicon-dark.*         and again, for a dark ground
-.identicon/repository-identicon.colour         "#rrggbb\n", nothing else — one per repository
+.identicon/repository-identicon.png            block 5, 27px canvas
+.identicon/repository-identicon@4x.png         the mark magnified 4x, 104px
+.identicon/repository-identicon-128.png        for a consumer that fixes the size
+.identicon/repository-identicon-256.png        likewise
+.identicon/repository-identicon.svg            vector, same geometry
+.identicon/repository-identicon.colour         "#rrggbb\n", nothing else
+.identicon/repository-identicon.grid           five lines of "01010"
 .identicon/repository-identicon.key            the key, hashed exactly as it reads
 ```
+
+`.colour` and `.grid` are the mark as text — enough to draw it with no PNG
+decoder and no SVG parser.
 
 One file each. The mark holds its brightness right around the colour wheel, so
 the same image sits on a white page and on a near-black one and the project

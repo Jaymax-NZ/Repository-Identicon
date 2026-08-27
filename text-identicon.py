@@ -1,135 +1,54 @@
 #!/usr/bin/env python3
 """The identicon as text: two lines, for clients that render neither an image
-nor ANSI colour. The artifact is `.txt`, and this file is named for that rather
-than for the technique, so that the module, the function and the file a reader
-opens all say the same word.
-
-A terminal chat client shows an assistant message as plain markdown: the inline
-PNG arrives as literal base64, and ANSI escapes are stripped before they reach
-the terminal. What does survive is text -- including Unicode block glyphs and
-colour emoji. This module renders an identicon into those two channels.
-
-"Mosaic" is the historical term for exactly these *glyphs*, and survives here
-only in that sense -- as the lineage of the characters, not as a name for what
-this produces. Teletext called its
-block-graphics characters mosaics and distinguished contiguous from separated
-ones; the octants here are their descendants, and Unicode kept the distinction
--- `SEPARATED BLOCK QUADRANT-1` and 77 siblings -- while dropping the word. It
-also describes the result: small coloured tiles making a picture.
-
-The output is two lines:
+nor ANSI colour. A terminal chat client shows an assistant message as plain
+markdown -- an inline PNG arrives as literal base64 and ANSI escapes are
+stripped -- but Unicode block glyphs and colour emoji survive.
 
     <octant><octant><octant>
     <octant><octant><octant> <emoji><emoji><emoji>
 
-Three octant characters by two lines carry the whole 5x5 grid, and the three
-emoji carry the colour. The emoji terminate the mark on the lower line rather
-than opening it on the upper one: an emoji is a full character cell tall, so
-it sits flush beside a line that is full of grid, where beside the upper line
--- which is mostly the padding described at TOP_PAD -- it would float.
+Three octant characters by two lines carry the whole 5x5 grid; the three emoji
+carry the colour. They terminate the mark rather than opening it: an emoji is a
+full character cell tall, so it sits flush beside the line that is full of grid.
 
-A blank sub-cell is SPACE -- U+0020 genuinely *is* the octant for the all-blank
-pattern -- but it is emitted doubled, see BLANK, because it is the one
-single-width character in the set. Each line is therefore three octant *cells*
-and six columns, though not always three characters. The upper line is entirely
-blank whenever the grid's top row is, roughly one repository in eight; it
-carries no information in that case, but anything that strips trailing
-whitespace still collapses the mark's height, so keep both lines intact.
+Octants and emoji both render double-width, so a three-cell octant block is six
+columns -- exactly three emoji -- and single-width text interleaved with them
+needs two spaces per glyph column. SPACE is the one single-width character in
+the set, which is what BLANK compensates for.
 
-**Both the octants and the emoji render double-width.** Checked against Konsole
-with the fonts installed here, across the new astral octants, the inherited
-block elements and the quadrants alike: all of them occupy two columns, and
-SPACE occupies one, which is the whole reason BLANK doubles it. Treat this as
-the normal case rather than a local quirk. A three-cell octant block is six
-columns, exactly three emoji. Anything laying several marks out on one line
-cannot assume one column per character, and single-width text interleaved with
-them needs two spaces per glyph column to stay in step.
+No key, no digest and no palette of its own: `text` takes a grid and a colour,
+so this file can be vendored alone into a tool with no identicon machinery.
 
-Two halves, two sets of reasoning.
-
-**The grid, in octants.** Unicode 16.0 divides a character cell into 2x4
-subcells, and a terminal cell is roughly twice as tall as it is wide, so an
-octant subcell is square. A 5x5 grid at one subcell per cell therefore fits in
-three characters by two lines and stays in proportion. The table below is
-literal rather than computed, because the obvious construction is wrong: there
-are **230** `BLOCK OCTANT-n` characters at U+1CD00-U+1CDE5, not 240, since 26
-of the 256 patterns are encoded elsewhere under descriptive names -- the
-sixteen quadrant-representable ones, four single top/bottom subcells, four
-full-row blocks and two middle-row pairs. Deriving the codepoint by offset
-arithmetic with the wrong exclusion set produces plausible, wrong glyphs, and
-past U+1CDE5 it walks into pictograms: an early draft rendered
-U+1CDED BOTTOM HALF LEFT-FACING RUNNER FRAME-1 into the middle of an identicon.
-`selftest` re-derives the whole table from `unicodedata` where the host is
-Unicode 16 or later, so the literal is checkable rather than merely asserted.
-
-**The colour, in emoji.** A pure function of the colour: `#rrggbb` in, three
-emoji out. Nothing else is consulted -- not the key, not the digest, not the
-grid. That is worth keeping rather than incidental: `.colour` is a shipped
-artifact, and a consumer holding only a hex string can compute the right triple
-without being able to re-resolve the key.
-
-Two projects with the identical colour still share a triple. Two projects with
-*similar* colours no longer do, which is the case that actually arises -- see
-`arrange`, where the choice of squares carries the colour and the order they are
-laid out in carries identity.
-
-The palette is anchored on the Unicode *names*, and nothing here reads the
-local system. LARGE BLUE SQUARE is blue, so it is `#0000FF`, whatever any
-particular font paints -- the installed Noto renders it Material Blue 700
-`#1976D2`, and Apple, Twemoji and Windows all differ again.
-
-This is a requirement, not a simplification. A repository must produce the same
-sequence of emoji for everyone who works on it: two people looking at the same
-project should be describing the same mark to each other, and a triple derived
-from whichever font happened to be installed would be a property of the
-reader's machine rather than of the repository. Do not sample fonts here, and
-be suspicious of any change that makes the output depend on the environment.
-
-A consequence worth having: every canonical colour maps to three of its own
-square, with no special case in the code.
-
-The nearest single colour is used twice. Choosing freely from all 165 mixtures
--- every multiset of three drawn from nine squares, C(11,3) -- minimises error
-but reads badly, because the eye does not average three large squares: it reads
-the majority. Yellow-green `#d5d926` is closest to RED YELLOW GREEN, a muddle;
-constraining it to YELLOW YELLOW BLACK costs 0.02 mean dE across the hue circle
-and is obviously yellow.
-
-Measured over the identicon's whole 1074-colour gamut, the unconstrained search
-is better on fidelity and *worse* on spread -- 0.0393 mean dE against 0.0597,
-but 16.5 effective identifiers against 17.5. Both are answering one question
-about a one-dimensional gamut, so neither can escape it. Spread comes from
-`arrange` instead, which answers a different question and costs the first
-nothing.
-
-Averaging is in linear light, which is what optical mixing does, and compared
-in Oklab, which is near enough perceptually uniform for Euclidean distance to
-mean something. Fixed-lightness HSL, which the identicon draws its colour
-from, is not, and clusters badly in the greens.
+    python3 text-identicon.py '#2692d9' '.#.#.,.#.#.,#...#,#.#.#,.#.#.'
 
 Standard library only.
 """
 
-import hashlib
 import itertools
 import math
 
 # ---------------------------------------------------------------------------
 # Octants
 #
+# A terminal cell is roughly twice as tall as it is wide, so a 2x4 subcell is
+# square: a 5x5 grid is three characters by two lines, in proportion.
+#
 # Bit i of a pattern is subcell (row i // 2, col i % 2), rows top to bottom.
 # Unicode numbers the octants 1..8 in that same order, so BLOCK OCTANT-247 is
 # the pattern with bits 1, 3 and 6 set. Index this table by the pattern.
 #
-# Twenty-six of the 256 entries are inherited rather than new: the quadrants
-# and block elements that already existed were not re-encoded when Unicode 16
-# specified the set. They are the right characters and they are the right
-# width, but they come from a far older design pass, and fonts commonly do not
-# harmonise them with the 230 drawn in 2024 -- differing weight and coverage
-# show as visible seams within a single rendered mark. Nothing on this side can
-# fix that; it needs the fonts to redraw the old glyphs against the new set.
-# Do not attempt to substitute lookalikes: for most of these patterns there is
-# no alternative encoding at all.
+# The table is literal because the obvious construction is wrong: there are 230
+# `BLOCK OCTANT-n` characters at U+1CD00-U+1CDE5, not 240, since 26 of the 256
+# patterns are encoded elsewhere under descriptive names. Offset arithmetic
+# with the wrong exclusion set produces plausible, wrong glyphs, and past
+# U+1CDE5 it walks into pictograms -- an early draft rendered U+1CDED BOTTOM
+# HALF LEFT-FACING RUNNER FRAME-1 into the middle of a mark.
+#
+# Those 26 inherited characters come from a far older design pass, and fonts
+# commonly do not harmonise them with the 230 drawn in 2024 -- differing weight
+# and coverage show as visible seams within a single rendered mark. Do not
+# substitute lookalikes: for most of these patterns there is no alternative
+# encoding at all.
 # ---------------------------------------------------------------------------
 
 OCTANTS = (
@@ -145,21 +64,21 @@ OCTANTS = (
 
 GRID_SIZE = 5
 
-# What to emit for the all-blank pattern. OCTANTS[0] is U+0020, which is
-# correct -- SPACE genuinely is the character for that pattern -- but it is
-# single-width where every other octant is double, so a blank in the middle of
-# a line makes that line one column short and the mark visibly skews against
-# the line below. Two ASCII spaces restore the column count. The table stays
-# canonical; the compensation lives here, at the point of emission.
+# What to emit for the all-blank pattern. OCTANTS[0] is U+0020, which genuinely
+# is the octant for that pattern, but it is the one single-width character in
+# the set: a blank mid-line would leave that line a column short and the mark
+# visibly skewed against the line below. Two ASCII spaces restore the column
+# count. The table stays canonical; the compensation lives here, at emission.
 BLANK = "  "
 
 # Sub-rows of blank above the grid. Two lines of octants are eight sub-rows and
-# the grid is five, so there are three to spend; all three go above. That fills
-# the lower line completely with grid, which is what lets the emoji sit flush
-# against it, and it leaves the padding where it does the least harm -- the
-# upper line holds only the grid's top row, so when that row is empty the line
-# is blank but nothing is lost. Centring the grid instead (TOP_PAD 1 or 2)
-# splits the padding but puts a partly-empty line under the emoji.
+# the grid is five, so all three spare sub-rows go above: that fills the lower
+# line completely with grid, which is what lets the emoji sit flush against it.
+# The upper line then holds only the grid's top row, and is entirely blank
+# whenever that row is, roughly one repository in eight -- keep both lines
+# intact anyway, because anything that strips trailing whitespace collapses the
+# mark's height. Centring instead (TOP_PAD 1 or 2) puts a partly-empty line
+# under the emoji.
 TOP_PAD = 3
 
 
@@ -176,23 +95,24 @@ def parse_grid(text):
 
 
 def grid_lines(grid):
-    """The grid as octant characters: three per line, two lines.
+    """The grid as octant characters: three per line, two lines."""
+    cells_per_line = (GRID_SIZE + 1) // 2
+    line_count = (GRID_SIZE + TOP_PAD + 3) // 4
 
-    One grid cell per subcell. Five columns need three characters (two
-    subcolumns each) and five rows need two lines (four subrows each), with
-    the grid pushed down by TOP_PAD; subcells outside the grid are empty.
-    """
     def filled(row, col):
+        # The lower bound is not redundant -- TOP_PAD makes `row` negative in
+        # the padding, and a negative index would wrap to the grid's bottom.
         return (0 <= row < GRID_SIZE and 0 <= col < GRID_SIZE
                 and bool(grid[row][col]))
 
     lines = []
-    for line in range((GRID_SIZE + TOP_PAD + 3) // 4):
+    for line_index in range(line_count):
         chars = []
-        for cell in range((GRID_SIZE + 1) // 2):
+        for cell in range(cells_per_line):
             pattern = 0
             for bit in range(8):
-                if filled(line * 4 + bit // 2 - TOP_PAD, cell * 2 + bit % 2):
+                if filled(line_index * 4 + bit // 2 - TOP_PAD,
+                          cell * 2 + bit % 2):
                     pattern |= 1 << bit
             chars.append(BLANK if pattern == 0 else OCTANTS[pattern])
         lines.append("".join(chars))
@@ -205,6 +125,17 @@ def grid_lines(grid):
 # Unicode names each square by a colour word, and that word is the definition.
 # Red, green and blue take the RGB primaries. Orange, purple and brown have no
 # primary reading and take their CSS named-colour values.
+#
+# The name is the anchor, never the installed font: LARGE BLUE SQUARE is
+# `#0000FF` whatever a font paints it (the Noto here paints Material Blue 700
+# `#1976D2`, and Apple, Twemoji and Windows differ again). A repository must
+# produce the same triple for everyone who works on it, so do not sample fonts
+# here, and be suspicious of any change that makes the output depend on the
+# environment.
+#
+# Mixtures are averaged in linear light, which is what optical mixing does, and
+# compared in Oklab; fixed-lightness HSL, which the identicon's colour comes
+# from, clusters badly in the greens.
 # ---------------------------------------------------------------------------
 
 PALETTE = (
@@ -282,6 +213,13 @@ def triple_indices(rgb):
     linear-light mean closest to the target. When the target *is* a palette
     colour the third is the base again, so canonical colours land on three of
     a kind without that being written down anywhere.
+
+    The nearest square is used twice deliberately. Choosing freely from all 165
+    mixtures -- every multiset of three drawn from nine squares, C(11,3) --
+    minimises error but reads badly, because the eye reads the majority rather
+    than averaging: yellow-green `#d5d926` is closest to RED YELLOW GREEN, a
+    muddle, where constraining it to YELLOW YELLOW BLACK costs 0.02 mean dE
+    across the hue circle and is obviously yellow.
     """
     target = _oklab(tuple(_linear(v) for v in rgb))
     base = nearest_square(rgb)
@@ -293,12 +231,18 @@ def triple_indices(rgb):
     return tuple(sorted((base, base, best_odd)))
 
 
+# ---------------------------------------------------------------------------
+# Arrangement
+#
+# Which squares is a function of the colour; what order is a function of the
+# grid. Two inputs, and they must stay two.
+# ---------------------------------------------------------------------------
+
 def grid_bits(grid):
     """The fifteen bits of the digest the grid carries, as one number.
 
     Columns 3 and 4 are the mirror of 1 and 0 and hold nothing, so only the
-    left three of each row are read. Taken row by row, left to right, which is
-    the order they are drawn in and the only order worth specifying.
+    left three of each row are read, row by row, left to right.
     """
     value = 0
     for row in grid:
@@ -316,13 +260,13 @@ def arrange(indices, grid):
     **Why order at all.** Which squares to use is a question about fidelity, and
     fidelity is what limits spread: neighbouring colours must choose the same
     squares, or the choice would not be tracking the colour. Measured over the
-    whole gamut that leaves about 17 distinguishable triples, and the arithmetic
-    is unforgiving -- eight projects collide 85% of the time. Choosing squares
-    more cleverly cannot help. Selecting freely from all 165 combinations rather
-    than constraining to a majority *improves* mean error to 0.0393 from 0.0597
-    and yet leaves spread slightly worse, at 16.5 effective against 17.5,
-    because both are answering the same question about the same one-dimensional
-    gamut.
+    whole 1074-colour gamut that leaves about 17 distinguishable triples, and
+    the arithmetic is unforgiving -- eight projects collide 85% of the time.
+    Choosing squares more cleverly cannot help. Selecting freely from all 165
+    combinations rather than constraining to a majority *improves* mean error
+    to 0.0393 from 0.0597 and yet leaves spread slightly worse, at 16.5
+    effective against 17.5, because both are answering the same question about
+    the same one-dimensional gamut.
 
     Order answers a different question, and costs nothing to the first. The same
     three squares in a different arrangement are the same colours, mixing to the
@@ -330,44 +274,27 @@ def arrange(indices, grid):
     colour worse than another. So it is free to carry identity, and it roughly
     triples the spread -- 67 distinct arrangements, 49.8 effective.
 
-    **The order comes from the grid, and this used to come from the colour.**
-    That was wrong, and the argument for it was the trap. It hashed `#rrggbb`
-    so that `.identicon/repository-identicon.colour` would be sufficient on its
-    own -- a real property, defended on real grounds. But hashing an *output* of
-    the mapping cannot add anything the mapping has not already said: two
-    projects landing on the same quantised colour got a byte-identical mark, of
-    necessity. The channel that was supposed to multiply the identity was a
-    relabelling of it, and it did not merely fail to help. Over four thousand
-    projects it produced fewer distinct marks than there were distinct colours,
-    because different colours collapsed onto one arrangement.
+    **Take the order from the grid, never from the colour.** Hashing an output
+    of the mapping cannot add anything the mapping has not already said: over
+    four thousand projects it produced fewer distinct marks than there were
+    distinct colours. The grid is fifteen bits of the key's digest, drawn from
+    a slice disjoint from the one the hue comes from, and `text()` is already
+    holding it.
 
-    The grid is the fix and costs nothing to reach for. It is fifteen bits of
-    the key's digest, it is drawn from a slice disjoint from the one the hue
-    comes from, and `text()` is already holding it -- so the module still needs
-    no key, no digest of its own and no palette, and can still be vendored
-    alone. Two projects that share a colour now differ here whenever their
-    patterns differ, which is almost always.
-
-    The property that goes is the one that was being protected: a consumer
-    holding only the `.colour` file can no longer compute the mark. That was
-    already only mostly true -- recovering the wheel position from a quantised
-    colour puts about one project in forty in the wrong arc -- so what is
-    actually lost is smaller than it looks, and what is bought is the channel
-    working at all.
-
-    Neighbouring colours still decorrelate, which was the other thing the hash
-    was for: adjacent colours have unrelated grids, so they get unrelated
-    arrangements. The cost stated when this was hashed still stands -- the
-    mapping is not monotonic in hue, and a triple does not hint at where on the
-    wheel a colour sits.
+    What is given up is that a consumer holding only `.colour` can compute the
+    mark -- already only mostly true, since recovering the wheel position from a
+    quantised colour puts about one project in forty in the wrong arc. Adjacent
+    colours have unrelated grids, so they get unrelated arrangements; the
+    mapping is still not monotonic in hue, and a triple does not say where on
+    the wheel a colour sits.
     """
     options = sorted(set(itertools.permutations(indices)))
     return options[grid_bits(grid) % len(options)]
 
 
 def hex_colour(rgb):
-    """`#rrggbb`. The exact spelling hashed by `arrange`, so it is fixed here
-    rather than assumed to match some caller's formatting."""
+    """`#rrggbb`. Public surface -- the vendoring consumers and
+    `work-in-progress/` call it."""
     return "#{:02x}{:02x}{:02x}".format(*rgb)
 
 
@@ -375,7 +302,7 @@ def triple(rgb, grid):
     """The three PALETTE indices for `rgb`, in the order they are laid out.
 
     Takes the grid as well as the colour, because the order comes from the
-    grid -- see `arrange`. A caller deriving an identicon is holding both.
+    grid -- see `arrange`.
     """
     return arrange(triple_indices(rgb), grid)
 
@@ -389,7 +316,7 @@ def triple_names(rgb, grid):
     """The three colour names for `rgb`, in laid-out order.
 
     Public surface. Nothing in this repository calls it; the consumers that
-    vendor this module do, to log or explain a mark without re-deriving it.
+    vendor this module do, to log or explain a mark.
     """
     return tuple(PALETTE[i][1] for i in triple(rgb, grid))
 
@@ -399,9 +326,7 @@ def triple_detail(rgb, grid):
 
     `indices` is the multiset the fidelity search chose; `arranged` is the order
     it is laid out in. Both are reported because they answer different
-    questions, and a result that looks wrong is usually wrong in only one --
-    and now that they come from different inputs, the colour and the grid, that
-    separation is what says which one to look at.
+    questions, and a result that looks wrong is usually wrong in only one.
     """
     indices = triple_indices(rgb)
     arranged = arrange(indices, grid)
@@ -413,7 +338,7 @@ def triple_detail(rgb, grid):
         "emoji": "".join(PALETTE[i][0] for i in arranged),
         "names": tuple(PALETTE[i][1] for i in arranged),
         "base": PALETTE[nearest_square(rgb)][1],
-        "mix_hex": "#{:02x}{:02x}{:02x}".format(*(_encode(v) for v in mix)),
+        "mix_hex": hex_colour(tuple(_encode(v) for v in mix)),
         "delta_e": math.dist(_oklab(mix), target),
     }
 
@@ -425,16 +350,7 @@ def triple_detail(rgb, grid):
 def text(grid, rgb):
     """The identicon as two lines, the emoji terminating the lower one.
 
-    The 5x5 matrix and the colour, and nothing else. A caller that has just
-    derived an identicon is already holding both, so this needs no key, no
-    digest and no palette of its own -- which is what lets it be vendored on its
-    own into a tool that has no identicon machinery at all. The grid now feeds
-    the arrangement as well as the pattern, and it was already in hand, so that
-    property survives the change.
-
-    See the module docstring for why the emoji go last rather than first, and
-    for the double-width behaviour that matters when laying several of these
-    out together.
+    Takes the 5x5 matrix and the colour, and nothing else.
     """
     lines = grid_lines(grid)
     lines[-1] = f"{lines[-1]} {emoji_triple(rgb, grid)}"
@@ -470,11 +386,10 @@ def selftest():
         assert named == 230, f"expected 230 BLOCK OCTANT characters, saw {named}"
 
     # Every canonical colour is three of its own square, with no special case.
-    # Three of a kind has one arrangement, so the grid cannot change it -- which
-    # is the point: the order channel spends nothing where there is nothing to
-    # spend it on.
+    # Three of a kind has one arrangement, so the grid cannot change it.
+    sample_grid = parse_grid(".#.#.,.#.#.,#...#,#.#.#,.#.#.")
     for index, (char, name, _, rgb) in enumerate(PALETTE):
-        detail = triple_detail(rgb, parse_grid(".#.#.,.#.#.,#...#,#.#.#,.#.#."))
+        detail = triple_detail(rgb, sample_grid)
         assert detail["indices"] == (index, index, index), (name, detail)
         assert detail["delta_e"] == 0.0, (name, detail["delta_e"])
         assert detail["emoji"] == char * 3, (name, detail["emoji"])
@@ -485,10 +400,8 @@ def selftest():
                                   (value >> 8) & 0xFF, value & 0xFF))
         assert len(set(indices)) <= 2, indices
 
-    # Arranging reorders and never substitutes. The multiset is what carries
-    # the colour, so if arrangement could change it, the mark would stop being
-    # a rendering of the colour at all.
-    sample_grid = parse_grid(".#.#.,.#.#.,#...#,#.#.#,.#.#.")
+    # Arranging reorders and never substitutes: the multiset is what carries
+    # the colour, so arrangement must not be able to change it.
     for value in range(0, 0x1000000, 0x3F1D7):
         rgb = ((value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF)
         indices = triple_indices(rgb)
@@ -496,9 +409,7 @@ def selftest():
         assert sorted(arranged) == sorted(indices), (rgb, indices, arranged)
         assert arrange(indices, sample_grid) == arranged, "not deterministic"
 
-    # The squares are a function of the colour; the order is a function of the
-    # grid. Both halves, because the whole point of the change is that they are
-    # two inputs and not one.
+    # The squares come from the colour alone, and the two sample grids differ.
     other = parse_grid("#####,.....,#####,.....,#####")
     assert (triple_indices((0x26, 0x92, 0xD9))
             == triple_indices(parse_hex("#2692d9")))
@@ -506,9 +417,8 @@ def selftest():
             == emoji_triple((0x26, 0x92, 0xD9), sample_grid))
     assert grid_bits(sample_grid) != grid_bits(other), "premise changed"
 
-    # Two projects landing on the same colour must not land on the same mark.
-    # This is what failed before: the order was hashed from the colour, so a
-    # shared colour forced a shared arrangement.
+    # Two projects landing on the same colour must not land on the same mark:
+    # hashing the order from the colour forced a shared arrangement.
     shared = parse_hex("#2692d9")
     marks = {emoji_triple(shared, g) for g in (sample_grid, other)}
     assert len(marks) == 2, (
@@ -524,12 +434,11 @@ def selftest():
             != emoji_triple(near_b, other)), (
         "adjacent colours collapsed to one triple again")
 
-    # This repository, pinned at TOP_PAD = 3.
+    # This repository's own mark, not a sample, pinned at TOP_PAD = 3.
     if TOP_PAD == 3:
         grid = parse_grid(".#.#.,.#.#.,#...#,#.#.#,.#.#.")
-        # The squares are unchanged -- green, blue, blue, chosen by fidelity --
-        # and the order is not, because it now comes from this repository's
-        # grid rather than from its colour.
+        # The squares are green, blue, blue by fidelity; the order comes from
+        # the grid.
         expected = ("\U0001CEA0\U0001CEA0  \n"
                     "\U0001CD86\U0001CD82\U0001FBE6 "
                     "\U0001F7E6\U0001F7E9\U0001F7E6")
@@ -537,11 +446,11 @@ def selftest():
         assert actual == expected, actual
 
     # The emoji terminate the mark: they are on the last line, not the first.
-    mark = text(parse_grid("#" * 25), parse_hex("#2692d9"))
+    full = parse_grid("#" * 25)
+    mark = text(full, parse_hex("#2692d9"))
     first, last = mark.split("\n")
     assert not any(p[0] in first for p in PALETTE), first
-    assert last.endswith(emoji_triple(parse_hex("#2692d9"),
-                                      parse_grid("#" * 25))), last
+    assert last.endswith(emoji_triple(parse_hex("#2692d9"), full)), last
 
     # Whatever the padding or the pattern, the mark is two lines of three
     # octant cells, and every line is the same number of columns wide -- which

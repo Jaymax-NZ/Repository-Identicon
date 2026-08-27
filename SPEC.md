@@ -100,13 +100,17 @@ unchanged key. Such a change MUST increment the mapping version an
 implementation seeds at, and MUST add vectors for the new version to
 `vectors.json` in the same commit.
 
-It MUST NOT remove the vectors for any earlier version. Those keys are still
-recorded in repositories, still hash to themselves, and must still draw what
-they always drew; the vectors are what stops that promise being broken by
+It MUST NOT remove the vectors for any version that reached a release. Those
+keys are recorded in repositories, still hash to themselves, and must still draw
+what they always drew; the vectors are what stops that promise being broken by
 accident.
 
-A change that cannot alter any mark — prose, renderings, tooling, new seeds
-added to the vectors — MUST NOT increment it.
+A version that never reached a release is a draft. It MAY be withdrawn, with its
+rule and its vectors, and repositories seeded from a draft build are expected to
+`remap`. This is the only circumstance in which vectors leave.
+
+A change that cannot alter any mark — prose, renderings, tooling, a new file in
+the artifact set, new seeds added to the vectors — MUST NOT increment it.
 
 Neither a rename nor a move is a bump. Those change the seed, which is the
 existing seed-drift path, and they change one repository rather than all of them.
@@ -222,17 +226,29 @@ drift apart:
 hue = hexval(h[-7:]) / 0xfffffff * 360      degrees, the last seven hex chars
 ```
 
-**The rule applied to that hue is chosen by the key's mapping version, and no
-rule ever retires.** A repository stamped at version 0 or 1 keeps the colour it
-has had since it was seeded, and one stamped at 2 keeps version 2's. An
-implementation MUST implement every version it may encounter, because the
-alternative makes the version stamp a comment rather than a guarantee.
+**No rule that reaches a release ever retires.** Once a version has shipped,
+repositories are seeded at it and it is theirs; an implementation MUST keep
+drawing it, and MUST keep its vectors.
 
-### Version 3
+**Before a release, a rule is a draft and may be withdrawn.** Versions 0 to 2
+were drafts — the reference's HSL, then Oklab without the warp — and no release
+carried them, so they are gone along with their vectors. An implementation MUST
+NOT reproduce them.
 
-Identical to version 2 in every respect except one: the drawn value is a
-position in the draw rather than an angle directly, and is warped before the
-version 2 rule is applied to it.
+**A key stamped at a version the implementation does not draw MUST be refused,
+not redrawn.** Drawing it with whatever rule is to hand moves a mark nobody
+asked to move, which is the one thing the stamp exists to prevent. The refusal
+should name `remap` as the way across.
+
+The current release state is in `VERSION` in the reference implementation. While
+it reads `0.0.*`, the mapping is a draft and only the current rule exists.
+
+### Version 3, the only rule
+
+Two steps: warp the drawn value into a hue, then build the colour at that hue.
+
+**Step one — the warp.** The value from the digest is a position in the draw,
+not an angle directly.
 
 ```
 centre, half, peak = 215, 50, 4          degrees of Oklab hue
@@ -245,9 +261,7 @@ total    = 360 + (peak - 1) * half
 hue      = 360 * (draw + (peak - 1) * bump(draw - centre)) / total
 ```
 
-`draw` is the value from the digest, in degrees, reduced to `[0, 360)`. `hue` is
-then used exactly as version 2 uses it — same lightness, same chroma cap, same
-conversion, same quantising.
+`draw` is the value from the digest, in degrees, reduced to `[0, 360)`.
 
 The function is monotonic and onto `[0, 360)`, so **every hue is still
 reachable**. What changes is how much of the draw each one gets: the hue
@@ -268,10 +282,9 @@ corner and no project sits on a discontinuity, and its integral is elementary �
 which is why the rule above is six lines rather than a spline nobody can
 reimplement from prose.
 
-### Version 2
-
-The hue is an angle in **Oklab**. Lightness is fixed. Chroma is the cap, or the
-most sRGB can carry at that hue, whichever is smaller:
+**Step two — the colour at that hue.** The hue is an angle in **Oklab**.
+Lightness is fixed. Chroma is the cap, or the most sRGB can carry at that hue,
+whichever is smaller:
 
 ```
 L      = 0.60
@@ -307,17 +320,6 @@ it fixes contrast, and one file serves both grounds.
 narrowest can manage costs about half the colour on the wheel to buy a
 uniformity nobody asked for. A cap lets the hues that can be vivid be vivid and
 bites only where sRGB has room to spare.
-
-### Version 0 and 1
-
-```
-saturation = 0.7
-lightness  = 0.5
-```
-
-Convert HSL to RGB by the reference's own formula, transliterated in the
-reference implementation. Retained unchanged for keys already stamped at these
-versions.
 
 ### Quantising
 
@@ -460,8 +462,19 @@ what the mark was made from; it is what the mark is made from.
 .identicon/repository-identicon-256.png        likewise
 .identicon/repository-identicon.svg            vector, same geometry
 .identicon/repository-identicon.colour         "#rrggbb\n", nothing else
+.identicon/repository-identicon.grid           five lines of "01010"
 .identicon/repository-identicon.key            the key, hashed exactly as it reads
 ```
+
+`.colour` and `.grid` are the whole identicon as text: the two values the text
+rendering takes, in the spelling `vectors.json` uses. Together they let a
+consumer with no PNG decoder, no SVG parser and no identicon machinery draw the
+mark. Rows of characters rather than JSON, so a shell can read either without a
+parser and a diff shows one line per changed row.
+
+Both are derived and regenerable. Neither belongs in the key file: that file is
+the source of truth, an implementation SHOULD leave it byte-for-byte alone, and
+a derived value inside it would go stale with nothing entitled to correct it.
 
 ### One file, both grounds
 

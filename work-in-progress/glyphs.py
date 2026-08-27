@@ -1,35 +1,37 @@
 #!/usr/bin/env python3
 """The emoji squares and circles as Noto paints them, as plain SVG paths.
 
-**A flat rectangle is not what the reader sees.** The sheets drew one colour per
-square, taken from the palette, and on a dark ground the black square vanished
-and on a light one the white square did. That is not what happens in a terminal
-or a chat window, because Noto Color Emoji does not paint a flat square: every
-glyph is three layers, a darker rim, the body, and a lighter highlight. `⬛` is
-not black at all -- it is `#575757` over `#424242` under `#787878` -- and `⬜`
-carries a `#bdbdbd` rim, which is exactly why both survive either ground.
+`svg(name, circle, x, y, size)` draws one; `defs` and `use` draw a sheet.
+Needs `fontTools` and the Noto COLRv1 font at `FONT`. `python3 glyphs.py` runs
+the selftest.
 
-So the sheets were lying about the one thing they exist to show. This reads the
-real outlines out of the font and emits them as ordinary SVG paths: no font
-embedding, no dependence on what the viewer has installed, and the same shapes
-the emoji font would have drawn.
+**A flat rectangle is not what the reader sees.** Noto Color Emoji paints every
+glyph as three layers -- a darker rim, the body, a lighter highlight. `⬛` is not
+black at all: it is `#575757` over `#424242` under `#787878`, and `⬜` carries a
+`#bdbdbd` rim, which is exactly why both survive either ground. A sheet drawing
+one flat palette colour per square lies about the thing it exists to show.
 
-The alternative was embedding a subset of the font, which is smaller to write
-and worse to rely on -- COLRv1 support varies by renderer, and a sheet that
-looks right here and wrong in a browser is the failure this is meant to end.
+Emitted as ordinary paths rather than as an embedded font subset: COLRv1 support
+varies by renderer, and a sheet that looks right here and wrong in a browser is
+the failure this is meant to end.
 """
 
 import pathlib
 
+# The only third-party dependency: `pip install fonttools`.
 from fontTools.ttLib import TTFont
 from fontTools.pens.svgPathPen import SVGPathPen
 from fontTools.pens.transformPen import TransformPen
 from fontTools.misc.transform import Transform
 
+# ---- The font and the glyph vocabulary ----
+
+# Fedora's package path; point this at your own Noto-COLRv1.ttf if it differs.
 FONT = pathlib.Path("/usr/share/fonts/google-noto-color-emoji-fonts/"
                     "Noto-COLRv1.ttf")
 
 # The nine squares and the seven circles, by name, matching the palette.
+# `shaped.py` lists the same set as characters; the two must stay in step.
 SQUARES = {"red": 0x1F7E5, "orange": 0x1F7E7, "yellow": 0x1F7E8,
            "green": 0x1F7E9, "blue": 0x1F7E6, "purple": 0x1F7EA,
            "brown": 0x1F7EB, "black": 0x2B1B, "white": 0x2B1C}
@@ -37,8 +39,11 @@ CIRCLES = {"red": 0x1F534, "orange": 0x1F7E0, "yellow": 0x1F7E1,
            "green": 0x1F7E2, "blue": 0x1F535, "purple": 0x1F7E3,
            "brown": 0x1F7E4}
 
+# ---- Reading the font ----
+
 _FONT = None
-_CACHE = {}
+_LAYERS = {}
+_BOUNDS = None
 
 
 def _font():
@@ -67,7 +72,6 @@ def _layers(codepoint):
     colr = font["COLR"].table
     records = {r.BaseGlyph: r
                for r in colr.BaseGlyphList.BaseGlyphPaintRecord}
-    glyphs = font.getGlyphSet()
     name = font.getBestCmap()[codepoint]
     out = []
 
@@ -96,10 +100,10 @@ def _layers(codepoint):
     return out
 
 
-def _cached(codepoint):
-    if codepoint not in _CACHE:
-        _CACHE[codepoint] = _layers(codepoint)
-    return _CACHE[codepoint]
+def _cached_layers(codepoint):
+    if codepoint not in _LAYERS:
+        _LAYERS[codepoint] = _layers(codepoint)
+    return _LAYERS[codepoint]
 
 
 def _bounds():
@@ -109,13 +113,14 @@ def _bounds():
     its own box would make the circles as wide as the squares, and they are
     drawn slightly smaller on purpose.
     """
+    global _BOUNDS
     from fontTools.pens.boundsPen import BoundsPen
-    if "bounds" not in _CACHE:
+    if _BOUNDS is None:
         glyphs = _font().getGlyphSet()
         lo = [1e9, 1e9]
         hi = [-1e9, -1e9]
         for cp in list(SQUARES.values()) + list(CIRCLES.values()):
-            for glyph, transform, _colour in _cached(cp):
+            for glyph, transform, _colour in _cached_layers(cp):
                 pen = BoundsPen(glyphs)
                 glyphs[glyph].draw(TransformPen(pen, transform))
                 if pen.bounds is None:
@@ -123,8 +128,21 @@ def _bounds():
                 x0, y0, x1, y1 = pen.bounds
                 lo[0], lo[1] = min(lo[0], x0), min(lo[1], y0)
                 hi[0], hi[1] = max(hi[0], x1), max(hi[1], y1)
-        _CACHE["bounds"] = (lo[0], lo[1], hi[0], hi[1])
-    return _CACHE["bounds"]
+        _BOUNDS = (lo[0], lo[1], hi[0], hi[1])
+    return _BOUNDS
+
+
+# ---- Emitting SVG ----
+
+
+def _paths(glyphset, layers):
+    """The layers as `<path>` elements, outermost first."""
+    out = []
+    for glyph, transform, colour in layers:
+        pen = SVGPathPen(glyphset)
+        glyphset[glyph].draw(TransformPen(pen, transform))
+        out.append(f'<path d="{pen.getCommands()}" fill="{colour}"/>')
+    return out
 
 
 def ident(name, circle):
@@ -136,19 +154,16 @@ def defs(palette=None):
     """Every glyph once, normalised into a unit box, for a `<defs>` block.
 
     A sheet draws twelve hundred of these and there are sixteen distinct ones,
-    so writing the outlines out each time made the file 1.8MB of repetition.
-    Defined once and referenced, it is a fiftieth of that and identical on the
+    so writing the outlines out each time made the file 1.8MB of repetition;
+    defined once and referenced it is a fiftieth of that and identical on the
     page.
 
-    With `palette` -- a mapping of square name to `#rrggbb` -- only the
-    silhouette is drawn, filled with the colour given. That is the honest way
-    to render the developer-weighted average from `emoji-square-colours.md`:
-    those values are one body colour per square, sampled from the middle of
-    each glyph across seven vendor sets. There is no averaged rim and no
-    averaged highlight, because the vendors do not agree on having them -- Noto
-    paints three layers, Twemoji paints a flat fill. Inventing a rim from
-    Noto's ratios would be drawing a seventh of the data as though it were all
-    of it.
+    With `palette` -- square name to `#rrggbb` -- only the silhouette is drawn,
+    filled with the colour given. That renders the developer-weighted average
+    from `emoji-square-colours.md`: one body colour per square, sampled across
+    seven vendor sets, with no rim or highlight to average because the vendors
+    do not agree on having them. Do not invent a rim from Noto's ratios -- that
+    is one vendor's seventh drawn as though it were all of it.
     """
     glyphset = _font().getGlyphSet()
     x0, y0, x1, y1 = _bounds()
@@ -161,13 +176,10 @@ def defs(palette=None):
                      f"scale({scale:.8f} {-scale:.8f})")
             parts.append(f'<g id="{ident(name, circle)}" '
                          f'transform="{shift}">')
-            layers = _cached(table[name])
+            layers = _cached_layers(table[name])
             if palette is not None:
                 layers = [(layers[0][0], layers[0][1], palette[name])]
-            for glyph, transform, colour in layers:
-                pen = SVGPathPen(glyphset)
-                glyphset[glyph].draw(TransformPen(pen, transform))
-                parts.append(f'<path d="{pen.getCommands()}" fill="{colour}"/>')
+            parts.extend(_paths(glyphset, layers))
             parts.append("</g>")
     return "<defs>" + "".join(parts) + "</defs>"
 
@@ -184,7 +196,7 @@ def svg(name, circle, x, y, size):
     Self-contained, for a caller drawing one. Use `defs` and `use` for a sheet.
     """
     table = CIRCLES if circle and name in CIRCLES else SQUARES
-    layers = _cached(table[name])
+    layers = _cached_layers(table[name])
     glyphs = _font().getGlyphSet()
     x0, y0, x1, y1 = _bounds()
     scale = size / max(x1 - x0, y1 - y0)
@@ -193,22 +205,22 @@ def svg(name, circle, x, y, size):
     shift = (f"translate({x - x0 * scale:.3f} {y + y1 * scale:.3f}) "
              f"scale({scale:.6f} {-scale:.6f})")
     parts = [f'<g transform="{shift}">']
-    for glyph, transform, colour in layers:
-        pen = SVGPathPen(glyphs)
-        glyphs[glyph].draw(TransformPen(pen, transform))
-        parts.append(f'<path d="{pen.getCommands()}" fill="{colour}"/>')
+    parts.extend(_paths(glyphs, layers))
     parts.append("</g>")
     return "".join(parts)
 
 
+# ---- Selftest ----
+
+
 def _selftest():
     for name in SQUARES:
-        layers = _cached(SQUARES[name])
+        layers = _cached_layers(SQUARES[name])
         assert layers, name
         print(f"  {name:<7} square  {len(layers)} layers  "
               f"{' '.join(c for _g, _t, c in layers)}")
     for name in CIRCLES:
-        layers = _cached(CIRCLES[name])
+        layers = _cached_layers(CIRCLES[name])
         print(f"  {name:<7} circle  {len(layers)} layers  "
               f"{' '.join(c for _g, _t, c in layers)}")
     print(f"common box {tuple(round(v) for v in _bounds())}")

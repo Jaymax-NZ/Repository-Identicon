@@ -39,6 +39,59 @@ The collision guard in `propose` stays although nothing trips it. It is what
 says so when an edit to the file overlaps two tiles, and a silently overlapping
 ring is the failure the whole flattening was done to avoid.
 
+## One mapping version, and a `.grid` artifact
+
+**Versions 0 to 2 are withdrawn.** Not retired -- withdrawn. The rule is that no
+rule reaching a *release* ever retires, and `VERSION` is `0.0.build`, so nothing
+had earned that protection. `SPEC.md`, `CONTRIBUTING.md`, the code and the tests
+all say it that way now; if `VERSION` ever leaves `0.0.*` this stops being
+available and every shipped rule has to stay.
+
+A key at any other version raises `UnknownMappingVersion` rather than being
+drawn with today's rule -- redrawing it would move a mark nobody asked to move.
+The CLI catches it and prints one line naming `remap`.
+
+**This repository is one of the stranded.** Its key reads
+`2:github.com/justin-maxwell/repository-identicon`, so `show` and `apply` refuse
+it. `apply --remap` keeps the seed and moves it to 3; the colour goes from
+`#00948c` to `#9f7a00`. Not done -- it is a deliberate identity change.
+
+**`.grid` joins the artifacts**: five lines of `01010`, the spelling
+`vectors.json` uses. With `.colour` beside it that is the whole mark as text,
+enough for a consumer with no PNG decoder and no SVG parser -- checked by
+feeding both back through `text-identicon.py`. It is not in the key file, and
+must not go there: that file is the source of truth and is left byte-for-byte
+alone, so a derived value inside it would go stale with nothing entitled to fix
+it.
+
+## The refactor pass
+
+6,152 lines to 5,816, all of it prose. Behaviour verified unchanged by loading
+each module beside its committed self and comparing outputs across every key,
+grid, block size and border -- zero differences -- plus a byte-identical wheel
+render. Module docstrings orient rather than argue; history is compressed to the
+imperative it implies; measured facts and traps kept.
+
+**`CONTRIBUTING.md` already stated the rule** -- comments explain the decision,
+not the mechanism, and "what was tried and failed" is explicitly sanctioned. The
+target is terseness, not deletion of rationale.
+
+## Diagrams
+
+`routines.drawio` is the real call graph: uncompressed draw.io XML, so it opens
+in the browser or the VS Code extension, and moving a box returns coordinates
+that can be read back. `flow-routines.svg` is the same thing rendered.
+
+Two earlier diagrams were deleted for drawing the proposal as though it shipped.
+**`in-use.tsv` and the circles are not in the product.** The shipped triple
+still comes from `triple_indices`, the fidelity search; `shaped.py` is the
+replacement and nothing imports it. Only the order-from-the-grid work landed.
+
+Also worth knowing, because it drives the shape of that graph: **there is no
+identicon value anywhere.** Nothing holds `(key, grid, colour)`, so every
+renderer re-derives from the key and `_digest` runs again each time. `_colour_for`
+is a half-fix for the colour half of it.
+
 ## The wheel is in the generator now
 
 **Mapping version 3** carries the blue-green compression into
@@ -276,6 +329,7 @@ eye that wrote it: three of the twelve were later sunk, `blue white white` among
 them -- required as "the light blues", refused as too light to carry a hue.
 
 `work-in-progress/` holds `wheel81.svg` and `wheel80.svg`, `coverage3.svg` for
-the warp-strength decision, and `sheet3`/`sheet4` with their dark pairs -- the
+the warp-strength decision, `routines.drawio` and `flow-routines.svg` for the
+call graph, and `sheet3`/`sheet4` with their dark pairs -- the
 400-project sheets in Noto's squares and in the weighted average. `next_path`
 takes max + 1, so the next wheel render is wheel82.
