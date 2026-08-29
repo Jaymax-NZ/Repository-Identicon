@@ -139,11 +139,15 @@ decoding and no resampling to argue about.
 
 ## Implementations vendor this; they do not depend on it
 
-Two consumers exist, and each carries its own copy of the derivation:
+Three consumers exist, and each carries its own copy of the derivation:
 
-- [`Claude-State-Panel`](../Claude-State-Panel) — Konsole tabs, panel glyphs, a
-  terminal banner. Its copy differs in one line, `ICON_PREFIX`, which the
-  specification explicitly leaves to the implementing tool.
+- [`Console-Colophon`](../Console-Colophon) — the XDG icon theme and Konsole
+  tabs. This half used to be in this repository; `SPEC.md` § Scope puts every
+  side effect out, so it left. Its copy is held to `vectors.json` by its own
+  test suite, and `validate` can check it from outside.
+- [`Claude-State-Panel`](../Claude-State-Panel) — panel glyphs and a terminal
+  banner. Its copy differs in one line, `ICON_PREFIX`, which the specification
+  explicitly leaves to the implementing tool.
 - [`Claude-Colophon`](../Claude-Colophon) — a Claude Code plugin. It *must*
   vendor, because a plugin is copied whole and has no dependency mechanism at
   all.

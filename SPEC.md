@@ -435,7 +435,9 @@ The project name is the last `/`-separated segment of the key, or the key itself
 if it contains no `/`.
 
 An icon theme name is `<tool-prefix>-<short id>`. The prefix belongs to the
-implementing tool; this repository uses `claude-state-identicon-`. The
+implementing tool: `Console-Colophon` uses `console-colophon`, `Claude-State-Panel`
+uses `claude-state-identicon`, and this repository's reference implementation
+forms the name under `repository-identicon` without installing anything. The
 specification fixes the short id, not the prefix, so two tools installing icons
 into the same theme do not collide.
 

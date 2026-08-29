@@ -7,10 +7,15 @@ can show. Run `python3 repository-identicon.py apply` inside a repository.
 
   repository  apply, show, render, validate, doctor
   hook        emit, hooks
-  desktop     install, list, uninstall, profile, badge, probe, sessions, demo
-              (the XDG icon theme, and Konsole over its session D-Bus)
 
-Standard library only. Every subprocess is invoked with an argument list.
+**Nothing here writes outside the repository it is run in.** Putting the mark
+on a desktop -- the XDG icon theme, a Konsole tab -- is a side effect, which
+SPEC.md's Scope section puts out of the specification; that half lives in
+Console-Colophon and is reached by vendoring this derivation, not by importing
+it. `work-in-progress/scope-split.md` records where each symbol went.
+
+Standard library only. The only subprocess is git, invoked with an argument
+list.
 """
 
 import argparse
@@ -21,7 +26,6 @@ import math
 import os
 import pathlib
 import re
-import shutil
 import struct
 import subprocess
 import sys
@@ -75,11 +79,10 @@ def large_geometry(canvas):
 
 # An icon *theme* namespace, not a filename. **This is the one value a
 # vendoring tool is expected to change**, so two tools installing icons for one
-# project do not collide. Claude-State-Panel's copy says
-# `claude-state-identicon`; changing it in a copy that has already installed
-# icons orphans every one of them.
+# project do not collide -- Console-Colophon's copy says `console-colophon` and
+# Claude-State-Panel's says `claude-state-identicon`. Nothing in this file
+# installs an icon; the prefix is here because SPEC.md fixes the name it forms.
 ICON_PREFIX = "repository-identicon"
-INSTALL_SIZES = (16, 22, 24, 32, 48, 64, 128, 256)
 
 
 # ---- Seed and key ----
@@ -567,28 +570,10 @@ def badge_label(key, limit=2):
     return name[:limit].upper()
 
 
-def profile_name(key):
-    """Display name of the generated profile, and what setProfile matches on."""
-    return f"{project_name(key)} [{short_hash(key, 6)}]"
-
-
-def profile_filename(key):
-    return f"{ICON_PREFIX}-{short_hash(key)}.profile"
-
-
-def profile_body(key, parent="FALLBACK/"):
-    """The .profile file contents.
-
-    Icon lives under [General], per Profile.cpp: {Icon, "Icon", GENERAL_GROUP}.
-    Nothing else is set, so the profile inherits everything from its parent and
-    the switch changes the icon alone.
-    """
-    return (
-        "[General]\n"
-        f"Name={profile_name(key)}\n"
-        f"Parent={parent}\n"
-        f"Icon={icon_name(key)}\n"
-    )
+# The Konsole profile names -- profile_name, profile_filename, profile_body --
+# were here and are now in Console-Colophon. SPEC.md fixes the short id, the
+# icon theme name and the badge label; it says nothing about how a terminal
+# emulator names a profile, and neither should this file.
 
 
 # ---- Rendering ----
@@ -752,14 +737,6 @@ def _fg(rgb, depth):
     if depth == TRUECOLOR:
         return "\033[38;2;{};{};{}m".format(*rgb)
     return f"\033[38;5;{_xterm256(rgb)}m"
-
-
-def _bg(rgb, depth):
-    if depth == NONE:
-        return ""
-    if depth == TRUECOLOR:
-        return "\033[48;2;{};{};{}m".format(*rgb)
-    return f"\033[48;5;{_xterm256(rgb)}m"
 
 
 RESET = "\033[0m"
@@ -1285,207 +1262,6 @@ def install_into_repo(path=None, seed=None, block=ARTIFACT_BLOCK, check=False,
     }
 
 
-# ---- Icon theme installation ----
-
-
-def icon_theme_root():
-    data_home = os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share")
-    return pathlib.Path(data_home) / "icons" / "hicolor"
-
-
-def konsole_profile_dir():
-    data_home = os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share")
-    return pathlib.Path(data_home) / "konsole"
-
-
-def install_icon(key, root=None, sizes=INSTALL_SIZES, **render_kwargs):
-    """Write one PNG per size into the user's hicolor tree. Returns the paths.
-
-    hicolor under XDG_DATA_HOME merges with the system theme, so no index.theme
-    of our own is needed for QIcon::fromTheme to find these.
-    """
-    root = pathlib.Path(root) if root else icon_theme_root()
-    name = icon_name(key)
-    written = []
-    for size in sizes:
-        directory = root / f"{size}x{size}" / "apps"
-        directory.mkdir(parents=True, exist_ok=True)
-        target = directory / f"{name}.png"
-        target.write_bytes(render_png(key, fit_block(size), edge=size,
-                                      **render_kwargs))
-        written.append(target)
-
-    scalable = root / "scalable" / "apps"
-    scalable.mkdir(parents=True, exist_ok=True)
-    target = scalable / f"{name}.svg"
-    target.write_text(render_svg(key, ARTIFACT_BLOCK, **render_kwargs))
-    written.append(target)
-    return written
-
-
-def installed_icons(root=None):
-    """Every identicon this tool has installed, as {icon name: [paths]}."""
-    root = pathlib.Path(root) if root else icon_theme_root()
-    found = {}
-    if not root.is_dir():
-        return found
-    for path in sorted(root.glob(f"*/apps/{ICON_PREFIX}-*")):
-        found.setdefault(path.stem, []).append(path)
-    return found
-
-
-def remove_icon(name, root=None):
-    root = pathlib.Path(root) if root else icon_theme_root()
-    removed = []
-    for path in sorted(root.glob(f"*/apps/{name}.*")):
-        path.unlink()
-        removed.append(path)
-    return removed
-
-
-def install_profile(key, directory=None, parent="FALLBACK/"):
-    directory = pathlib.Path(directory) if directory else konsole_profile_dir()
-    directory.mkdir(parents=True, exist_ok=True)
-    target = directory / profile_filename(key)
-    target.write_text(profile_body(key, parent))
-    return target
-
-
-def installed_profiles(directory=None):
-    directory = pathlib.Path(directory) if directory else konsole_profile_dir()
-    if not directory.is_dir():
-        return []
-    return sorted(directory.glob(f"{ICON_PREFIX}-*.profile"))
-
-
-# ---- D-Bus ----
-#
-# setProfile is Q_SCRIPTABLE and setIconName is not, so the tab-bar icon is
-# reachable only through a generated profile that carries Icon=.
-#
-# The third route -- an identicon on the session toolbar itself -- needs a C++
-# IKonsolePlugin. Konsole installs no plugin headers, so that one cannot be
-# built out of tree at all.
-
-SESSION_IFACE = "org.kde.konsole.Session"
-QDBUS_CANDIDATES = ("qdbus6", "qdbus-qt6", "qdbus")
-
-
-class DBusError(RuntimeError):
-    pass
-
-
-def find_qdbus():
-    for candidate in QDBUS_CANDIDATES:
-        found = shutil.which(candidate)
-        if found:
-            return found
-    return None
-
-
-def find_gdbus():
-    return shutil.which("gdbus")
-
-
-def _run(argv):
-    completed = subprocess.run(argv, capture_output=True, text=True)
-    if completed.returncode != 0:
-        raise DBusError((completed.stderr or completed.stdout).strip() or f"{argv[0]} failed")
-    return completed.stdout
-
-
-def dbus_call(service, path, method, args=(), qdbus=None):
-    """Call a method on a Konsole session. Argument list, never a shell string."""
-    qdbus = qdbus or find_qdbus()
-    if qdbus:
-        return _run([qdbus, service, path, f"{SESSION_IFACE}.{method}",
-                     *[str(a) for a in args]])
-    gdbus = find_gdbus()
-    if not gdbus:
-        raise DBusError("neither qdbus nor gdbus is on PATH")
-    argv = [gdbus, "call", "--session", "--dest", service, "--object-path", path,
-            "--method", f"{SESSION_IFACE}.{method}"]
-    argv += [str(a) for a in args]
-    return _run(argv)
-
-
-def dbus_members(service, path):
-    """Method names exposed on the object, for capability probing."""
-    qdbus = find_qdbus()
-    if qdbus:
-        listing = _run([qdbus, service, path])
-        names = set()
-        for line in listing.splitlines():
-            line = line.strip()
-            if not line:
-                continue
-            head = line.split("(")[0].split()[-1]
-            names.add(head.rsplit(".", 1)[-1])
-        return names
-    gdbus = find_gdbus()
-    if not gdbus:
-        raise DBusError("neither qdbus nor gdbus is on PATH")
-    xml = _run([gdbus, "introspect", "--session", "--dest", service,
-                "--object-path", path, "--xml"])
-    names = set()
-    for line in xml.splitlines():
-        line = line.strip()
-        if line.startswith("<method "):
-            names.add(line.split('name="', 1)[1].split('"', 1)[0])
-    return names
-
-
-def list_konsole_services():
-    qdbus = find_qdbus()
-    if qdbus:
-        return sorted(n for n in _run([qdbus]).split() if n.startswith("org.kde.konsole"))
-    gdbus = find_gdbus()
-    if not gdbus:
-        return []
-    out = _run([gdbus, "call", "--session", "--dest", "org.freedesktop.DBus",
-                "--object-path", "/org/freedesktop/DBus",
-                "--method", "org.freedesktop.DBus.ListNames"])
-    return sorted({tok.strip("'\", []()") for tok in out.split(",")
-                   if "org.kde.konsole" in tok})
-
-
-def list_sessions(service):
-    qdbus = find_qdbus()
-    if not qdbus:
-        return []
-    return sorted(line.strip() for line in _run([qdbus, service]).splitlines()
-                  if line.strip().startswith("/Sessions/"))
-
-
-def resolve_session(spec=None):
-    """Return (service, path) for the session to act on.
-
-    With no spec, use the KONSOLE_DBUS_SERVICE and KONSOLE_DBUS_SESSION that
-    Konsole exports into every session's environment, so running this inside
-    the tab you want marked just works.
-    """
-    if spec:
-        if ":" not in spec:
-            raise DBusError(f"session spec must be service:/Sessions/N, got {spec!r}")
-        service, path = spec.split(":", 1)
-        return service, path
-
-    service = os.environ.get("KONSOLE_DBUS_SERVICE")
-    path = os.environ.get("KONSOLE_DBUS_SESSION")
-    if service and path:
-        return service, path
-
-    services = list_konsole_services()
-    if len(services) == 1:
-        sessions = list_sessions(services[0])
-        if len(sessions) == 1:
-            return services[0], sessions[0]
-    raise DBusError(
-        "not running inside Konsole and could not pick a session unambiguously; "
-        "pass --session service:/Sessions/N (see the `sessions` command)"
-    )
-
-
 # ---- Commands ----
 
 
@@ -1530,7 +1306,6 @@ def cmd_show(args):
     print(f"source    {source}" + (f"  ({note})" if note else ""))
     print(f"project   {project_name(key)}")
     print(f"icon      {icon_name(key)}")
-    print(f"profile   {profile_name(key)}")
     print(f"badge     {badge_label(key)}")
     print(f"colour    {hex_colour(identicon_colour(key, args.chroma, args.lightness))}")
     print()
@@ -1609,172 +1384,6 @@ def cmd_apply(args):
               "decides it should: run `apply --remap`, and the changed line "
               "in the key file is the record of that decision.")
     return 0 if result["current"] or not args.check else 1
-
-
-def cmd_install(args):
-    key = _key_from_args(args)
-    written = install_icon(key, **_render_kwargs(args))
-    print(f"icon {icon_name(key)}")
-    for path in written:
-        print(f"  {path}")
-    print()
-    print("Konsole reads profile icons through QIcon::fromTheme, which caches. A")
-    print("running Konsole may not show a brand new icon until it restarts.")
-    return 0
-
-
-def cmd_list(args):
-    icons = installed_icons()
-    profiles = installed_profiles()
-    if not icons and not profiles:
-        print("nothing installed")
-        return 0
-    for name, paths in icons.items():
-        print(f"{name}  ({len(paths)} files)")
-    for path in profiles:
-        print(f"{path.name}  ->  {path}")
-    return 0
-
-
-def cmd_uninstall(args):
-    if args.all:
-        names = list(installed_icons())
-        profiles = installed_profiles()
-    else:
-        key = _key_from_args(args)
-        names = [icon_name(key)]
-        candidate = konsole_profile_dir() / profile_filename(key)
-        profiles = [candidate] if candidate.exists() else []
-
-    removed = 0
-    for name in names:
-        for path in remove_icon(name):
-            print(f"removed {path}")
-            removed += 1
-    for path in profiles:
-        path.unlink()
-        print(f"removed {path}")
-        removed += 1
-    if not removed:
-        print("nothing to remove")
-    return 0
-
-
-def cmd_sessions(args):
-    services = list_konsole_services()
-    if not services:
-        print("no Konsole instance is on the session bus")
-        return 1
-    for service in services:
-        print(service)
-        for path in list_sessions(service):
-            print(f"  {service}:{path}")
-    return 0
-
-
-BADGE_METHODS = (
-    "setBadgeEnabled",
-    "setBadgeText",
-    "setBadgeColor",
-    "setBadgeTextOnly",
-    "setBadgeTransparency",
-    "setBadgeFontFamily",
-    "setBadgeFontSize",
-)
-
-
-def cmd_probe(args):
-    """Report which of the two routes this Konsole build actually offers.
-
-    setBadgeColor takes a QColor, which is not a basic D-Bus type. Konsole
-    registers no metatype for it, so it may be absent from introspection even
-    though the header marks it Q_SCRIPTABLE. That is exactly what this checks.
-    """
-    service, path = resolve_session(args.session)
-    print(f"session   {service}:{path}")
-    members = dbus_members(service, path)
-    print(f"members   {len(members)}")
-    print()
-    print("badge route")
-    for method in BADGE_METHODS:
-        print(f"  {'yes' if method in members else 'NO '}  {method}")
-    print()
-    print("profile route")
-    for method in ("setProfile", "profile"):
-        print(f"  {'yes' if method in members else 'NO '}  {method}")
-    print()
-    print("not scriptable, hence no direct tab-icon route")
-    print("  NO   setIconName")
-    return 0
-
-
-def cmd_badge(args):
-    key = _key_from_args(args)
-    service, path = resolve_session(args.session)
-    members = dbus_members(service, path)
-
-    if args.clear:
-        dbus_call(service, path, "setBadgeEnabled", ["false"])
-        print(f"badge cleared on {service}:{path}")
-        return 0
-
-    label = args.label or badge_label(key)
-    dbus_call(service, path, "setBadgeText", [label])
-    dbus_call(service, path, "setBadgeEnabled", ["true"])
-    print(f"badge text  {label}")
-
-    colour = hex_colour(identicon_colour(key, args.chroma, args.lightness))
-    if "setBadgeColor" in members:
-        dbus_call(service, path, "setBadgeColor", [colour])
-        print(f"badge colour {colour}")
-    else:
-        print(f"badge colour {colour} NOT APPLIED - setBadgeColor absent from introspection")
-        print("             QColor has no D-Bus metatype registered in Konsole")
-    return 0
-
-
-def cmd_profile(args):
-    key = _key_from_args(args)
-    install_icon(key, **_render_kwargs(args))
-    target = install_profile(key, parent=args.parent)
-    name = profile_name(key)
-    print(f"icon     {icon_name(key)}")
-    print(f"profile  {name}")
-    print(f"         {target}")
-
-    if not args.apply:
-        print()
-        print("re-run with --apply to switch the current tab to it")
-        return 0
-
-    service, path = resolve_session(args.session)
-    dbus_call(service, path, "setProfile", [name])
-    active = dbus_call(service, path, "profile").strip()
-    print(f"applied  {service}:{path}")
-    print(f"now on   {active or '(empty)'}")
-    if active != name:
-        print()
-        print("setProfile matches against already-loaded profiles and no-ops on a")
-        print("miss. A profile written after Konsole started is not loaded yet;")
-        print("open Settings, Manage Profiles, or restart Konsole, then retry.")
-        return 1
-    return 0
-
-
-def cmd_demo(args):
-    key = _key_from_args(args)
-    print(f"=== {key} ===")
-    print(render_ansi(key))
-    print()
-    for step, handler in (("probe", cmd_probe), ("badge", cmd_badge),
-                          ("profile", cmd_profile)):
-        print(f"--- {step} ---")
-        try:
-            handler(args)
-        except DBusError as error:
-            print(f"skipped: {error}")
-        print()
-    return 0
 
 
 # Hook events at which control comes back to the human. Notification is left
@@ -2040,24 +1649,21 @@ def cmd_validate(args):
 
 
 def cmd_doctor(args):
+    """Report what this tool depends on that is not in this file.
+
+    Short, because there is little left to depend on: the sibling module and
+    the vectors. Anything about a desktop belongs to Console-Colophon, which
+    has a `doctor` of its own.
+    """
     sibling = text_module_path()
-    found = (str(sibling) if sibling.is_file()
-             else "NOT FOUND - text styles will print nothing")
-    print(f"{TEXT_MODULE:16} {found}")
-    print(f"qdbus            {find_qdbus() or 'NOT FOUND'}")
-    print(f"gdbus            {find_gdbus() or 'NOT FOUND'}")
-    print(f"icon theme root  {icon_theme_root()}")
-    print(f"profile dir      {konsole_profile_dir()}")
-    print(f"in Konsole       {'yes' if os.environ.get('KONSOLE_DBUS_SESSION') else 'no'}")
-    for variable in ("KONSOLE_DBUS_SERVICE", "KONSOLE_DBUS_SESSION", "KONSOLE_VERSION"):
-        print(f"  {variable}={os.environ.get(variable, '')}")
-    print(f"icons installed  {len(installed_icons())}")
-    print(f"profiles written {len(installed_profiles())}")
-    try:
-        services = list_konsole_services()
-        print(f"konsole services {', '.join(services) if services else 'none'}")
-    except DBusError as error:
-        print(f"konsole services unavailable: {error}")
+    print(f"{TEXT_MODULE:16} " + (str(sibling) if sibling.is_file()
+                                  else "NOT FOUND - text styles will print nothing"))
+    vectors = vectors_path()
+    print(f"{VECTORS_NAME:16} " + (str(vectors) if vectors.is_file()
+                                   else "NOT FOUND - validate cannot run"))
+    print(f"{'mapping version':16} {MAPPING_VERSION}")
+    key, source = resolve_key_for(getattr(args, "path", None))
+    print(f"{'key here':16} {key}  ({source})")
     return 0
 
 
@@ -2067,8 +1673,10 @@ def cmd_doctor(args):
 def build_parser():
     parser = argparse.ArgumentParser(
         prog="repository-identicon",
-        description="Per-project identicons for Konsole tabs, over the session "
-                    "D-Bus interface.",
+        description="A deterministic visual identity for a software project, "
+                    "derived from the project and from nothing else. This is "
+                    "the reference implementation of the specification in "
+                    "SPEC.md; `apply` is the command you want.",
     )
     # Both numbers, because the one people need is usually the other one: a bug
     # report about a colour is about the mapping version, not the release.
@@ -2077,7 +1685,7 @@ def build_parser():
                                 f"(mapping version {MAPPING_VERSION})")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    def add_common(target, *, path=True, render=False, session=False):
+    def add_common(target, *, path=True, render=False):
         if path:
             target.add_argument("path", nargs="?", help="project path (default: cwd)")
             # `--key` was the published name for this before the key and the
@@ -2093,12 +1701,6 @@ def build_parser():
             target.add_argument("--background", help="six digit hex; default transparent")
         else:
             target.set_defaults(chroma=MARK_CHROMA, lightness=MARK_LIGHTNESS, background=None)
-        if session:
-            target.add_argument("--session",
-                                help="service:/Sessions/N; default from the "
-                                     "environment")
-        else:
-            target.set_defaults(session=None)
 
     apply_cmd = sub.add_parser(
         "apply", help="create or update the identicon files in a repository")
@@ -2136,46 +1738,6 @@ def build_parser():
     render.add_argument("--out", default="-", help="output file, or - for stdout")
     render.set_defaults(func=cmd_render)
 
-    install = sub.add_parser("install", help="install the identicon into the user icon theme")
-    add_common(install, render=True)
-    install.set_defaults(func=cmd_install)
-
-    listing = sub.add_parser("list", help="list installed identicons and profiles")
-    add_common(listing, path=False)
-    listing.set_defaults(func=cmd_list)
-
-    uninstall = sub.add_parser("uninstall", help="remove installed identicons and profiles")
-    add_common(uninstall)
-    uninstall.add_argument("--all", action="store_true")
-    uninstall.set_defaults(func=cmd_uninstall)
-
-    sessions = sub.add_parser("sessions", help="list Konsole sessions on the bus")
-    add_common(sessions, path=False)
-    sessions.set_defaults(func=cmd_sessions)
-
-    probe = sub.add_parser("probe", help="report which D-Bus methods this Konsole exposes")
-    add_common(probe, path=False, session=True)
-    probe.set_defaults(func=cmd_probe)
-
-    badge = sub.add_parser("badge", help="route one: set the session badge")
-    add_common(badge, render=True, session=True)
-    badge.add_argument("--label", help="override the derived one or two character label")
-    badge.add_argument("--clear", action="store_true", help="disable the badge instead")
-    badge.set_defaults(func=cmd_badge)
-
-    profile = sub.add_parser(
-        "profile", help="route two: generate a profile carrying the icon")
-    add_common(profile, render=True, session=True)
-    profile.add_argument("--parent", default="FALLBACK/", help="profile to inherit from")
-    profile.add_argument("--apply", action="store_true", help="switch the session to it")
-    profile.set_defaults(func=cmd_profile)
-
-    demo = sub.add_parser("demo", help="probe, then exercise both routes on one session")
-    add_common(demo, render=True, session=True)
-    demo.add_argument("--label", default=None)
-    demo.add_argument("--parent", default="FALLBACK/")
-    demo.set_defaults(func=cmd_demo, clear=False, apply=True)
-
     emit = sub.add_parser(
         "emit",
         help="print the identicon; for a return-of-control hook",
@@ -2209,7 +1771,7 @@ def build_parser():
     validate.set_defaults(func=cmd_validate)
 
     doctor = sub.add_parser("doctor", help="environment report")
-    add_common(doctor, path=False)
+    add_common(doctor)
     doctor.set_defaults(func=cmd_doctor)
 
     return parser
@@ -2219,9 +1781,6 @@ def main(argv=None):
     args = build_parser().parse_args(argv)
     try:
         return args.func(args)
-    except DBusError as error:
-        print(f"error: {error}", file=sys.stderr)
-        return 1
     except UnknownMappingVersion as error:
         # A stranded repository is an ordinary situation with a known answer,
         # not a crash. Say the answer rather than printing a traceback at it.

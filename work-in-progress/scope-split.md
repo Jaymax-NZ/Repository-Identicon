@@ -1,7 +1,15 @@
 # Splitting the delivery layers out of `repository-identicon.py`
 
-Status: step 1 done. `Console-Colophon` now holds the Konsole and D-Bus half,
-vendored and checked; nothing has been removed from this repository yet.
+**Status: the Konsole split is done.** `Console-Colophon` holds the icon theme
+and the D-Bus half, with the derivation vendored and held to `vectors.json` by
+its own suite; `repository-identicon.py` has lost all thirty of those symbols,
+the eight subcommands that drove them, and `_bg`. `PERMISSIONS.md`, the README
+command list and `SPEC.md` § Derived names are reconciled.
+
+**Step 2 is still open**: `Claude-Colophon` has not taken `emit` and `hooks`.
+That repository exists and vendors the derivation, but carries neither, so
+those five symbols stay here until it does.
+
 Written because the file had grown three jobs and only one of them is this
 repository's.
 
@@ -71,6 +79,23 @@ a cost — the README's whole argument is that implementations vendor and are he
 to `vectors.json` by test, not by an import. The new repository needs the same
 conformance test against the same pinned vectors, or it is not a consumer of
 this specification, just a fork of it.
+
+## What actually happened, against the plan
+
+`profile_name` went with the profile code and `show` stopped printing it, which
+is the judgement call below resolved in the direction this document suggested.
+`icon_name` stayed: `SPEC.md` § Derived names defines it, so it is the
+specification's and not a delivery detail. `ICON_PREFIX` stayed with it, unused
+by anything here, because the name it forms is specified.
+
+`doctor` was split as loose end 1 proposed. This repository's now reports the
+sibling module, `vectors.json`, the mapping version and the key that resolves
+here; `Console-Colophon`'s reports qdbus, gdbus, the theme root, the profile
+directory, the `KONSOLE_*` variables and the installed counts.
+
+The receiving repository takes `INSTALL_SIZES` with the installer. The test that
+used it here to check a fixed canvas now writes the sizes out itself, because
+what it is testing is `edge`, not an icon theme.
 
 ## Three loose ends
 
