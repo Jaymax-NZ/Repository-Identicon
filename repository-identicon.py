@@ -1,84 +1,111 @@
 #!/usr/bin/env python3
-"""Per-project identicons for Konsole tabs.
+"""Reference implementation of the repository identicon specification.
 
-A testbed for the two compile-free routes to a per-tab project marker, both
-reached over Konsole's session D-Bus interface:
+A key -- `<mapping version>:host/owner/repo` -- becomes a 5x5 grid and one
+colour, plus the artifacts a repository commits and the renderings a terminal
+can show. Run `python3 repository-identicon.py apply` inside a repository.
 
-  badge    org.kde.konsole.Session exposes setBadgeText, setBadgeColor and
-           friends as Q_SCRIPTABLE. Paints over the terminal view.
-  profile  setProfile is Q_SCRIPTABLE while setIconName is not, so the tab-bar
-           icon is reachable only by generating a profile that carries Icon=.
+  repository  apply, show, render, validate, doctor
+  hook        emit, hooks
 
-The third route, an identicon on the session toolbar itself, needs a C++
-IKonsolePlugin. Konsole installs no plugin headers, so that one cannot be built
-out of tree at all. See docs/konsole-identicons.md.
+**Nothing here writes outside the repository it is run in.** Putting the mark
+on a desktop -- the XDG icon theme, a Konsole tab -- is a side effect, which
+SPEC.md's Scope section puts out of the specification; that half lives in
+Console-Colophon and is reached by vendoring this derivation, not by importing
+it. `work-in-progress/scope-split.md` records where each symbol went.
 
-Standard library only. Every subprocess is invoked with an argument list.
+Standard library only. The only subprocess is git, invoked with an argument
+list.
 """
 
 import argparse
 import base64
 import hashlib
 import json
+import math
 import os
 import pathlib
 import re
-import shutil
 import struct
 import subprocess
 import sys
 import zlib
 
-# ---------------------------------------------------------------------------
-# Identicon derivation
+# ---- Identicon derivation ----
 #
 # GitHub-style: a 5x5 grid, left three columns drawn from the digest and
 # mirrored onto the right two, so every identicon is vertically symmetric.
 # The rule below is ours and is pinned by the test suite; it is not claimed to
 # reproduce GitHub's output byte for byte.
-# ---------------------------------------------------------------------------
 
 GRID = 5
 
-# The reference fixes both rather than deriving them from the digest. Named
-# once because they were previously written out at nine call sites, which is
-# how a default drifts from the specification without anyone editing the rule.
-SATURATION = 0.7
-LIGHTNESS = 0.5
-# An icon *theme* namespace, not a filename: it prefixes every PNG installed
-# into the user's theme and every Konsole profile written.
+# The block sizes `--block` accepts. The canvas follows from the block, never
+# the other way round; see `canvas_edge`.
+BLOCKS = (1, 2, 3, 4, 5)
+BORDER = 1
+ARTIFACT_BLOCK = 5
+
+# The 4x artifact multiplies the block by four and the border by two. The
+# border is chrome rather than content, so quadrupling it would spend the new
+# pixels on empty edge instead of on the mark.
+ARTIFACT_SCALE = 4
+SCALED_BORDER = 2
+
+# **Canvases a consumer fixes rather than derives.** They need no fitting and
+# no heuristic, because they come out of the same rule as everything else. For
+# any canvas that is a multiple of 32,
 #
-# **This is the one value a vendoring tool is expected to change.** The
-# specification fixes the short id and leaves the prefix to the implementing
-# tool, precisely so two tools installing icons for one project do not collide.
-# Claude-State-Panel's copy says `claude-state-identicon`, and changing it there
-# would orphan every icon already installed under that name. Conformance between
-# copies is established by `vectors.json`, which is about the derivation; this
-# line is not part of it.
+#     block = 3 * canvas / 16      border = canvas / 32
+#
+# is exact, and the border is 3.1% of the canvas at every size -- near enough
+# the 3.7% at block 5 that the mark reads the same across the whole range.
+#
+# 16 and 48 are deliberately absent. The block must match the canvas in parity,
+# so the thinnest border they can carry is 18.8% and 8.3% -- several times the
+# family ratio, which would make them look like different marks. Anything that
+# needs those should take the SVG or downscale one of these.
+LARGE_CANVASES = (128, 256)
+
+
+def large_geometry(canvas):
+    """The (block, border) for a canvas somebody else fixed. Exact or nothing."""
+    block, border = 3 * canvas // 16, canvas // 32
+    if GRID * block + 2 * border != canvas:
+        raise ValueError(f"{canvas} is not a multiple of 32 and has no exact "
+                         f"block and border on a {GRID}x{GRID} grid")
+    return block, border
+
+
+# An icon *theme* namespace, not a filename. **This is the one value a
+# vendoring tool is expected to change**, so two tools installing icons for one
+# project do not collide -- Console-Colophon's copy says `console-colophon` and
+# Claude-State-Panel's says `claude-state-identicon`. Nothing in this file
+# installs an icon; the prefix is here because SPEC.md fixes the name it forms.
 ICON_PREFIX = "repository-identicon"
-INSTALL_SIZES = (16, 22, 24, 32, 48, 64, 128, 256)
+
+
+# ---- Seed and key ----
 
 # An optional one-line seed at the repository top level, overriding the derived
 # key. Committing it makes a project's identicon travel with the repository.
 #
-# Renamed away from `.claude-state-identicon`, which named one consumer of a
-# specification that has several and none of which is Claude. The old name is
-# still honoured on read: it is a file committed into other people's
-# repositories, so dropping it would silently change their identicon, which is
-# the one thing an override exists to prevent.
+# `.claude-state-identicon` is still honoured on read: it is committed into
+# other people's repositories, so dropping it would silently change their
+# identicon, which is the one thing an override exists to prevent.
 OVERRIDE_FILENAME = ".repository-identicon"
 LEGACY_OVERRIDE_FILENAMES = (".claude-state-identicon",)
 
 
-def normalise_key(path):
+def normalise_seed(path):
     """Reduce a filesystem path to a stable string.
 
     Expanded, made absolute, and stripped of any trailing separator, so that
     `~/src/foo`, `~/src/foo/` and a relative path to the same place all agree.
 
-    This is the *fallback* key. Prefer resolve_key, which reaches the repository
-    identity first — a path is not stable across machines, containers, or the
-    per-session git worktrees the desktop app creates.
+    This is the *fallback* seed. Prefer resolve_seed, which reaches the
+    repository identity first — a path is not stable across machines,
+    containers, or the per-session git worktrees the desktop app creates.
     """
     expanded = os.path.expanduser(str(path))
     absolute = os.path.abspath(expanded)
@@ -134,12 +161,9 @@ def normalise_remote_url(url):
 def _git(args, cwd=None):
     """Run a git command, returning stripped stdout or None if it fails.
 
-    `cwd` of None means the current directory. It used to be interpolated
-    straight into `git -C`, so a caller that passed None ran `git -C None`,
-    which fails and comes back indistinguishable from "not a repository" --
-    silent, and wrong in the direction that looks like a valid answer.
-    `resolve_key` never hit it because it normalises the path first; anything
-    calling these helpers directly did.
+    `cwd` of None means the current directory, and must never reach `git -C`
+    as None: that fails, and the failure is indistinguishable from "not a
+    repository".
     """
     try:
         completed = subprocess.run(
@@ -173,7 +197,7 @@ def repo_remote_url(path):
     return _git(["remote", "get-url", remotes.splitlines()[0].strip()], path)
 
 
-def override_key(directory):
+def override_seed(directory):
     """The committed seed at `directory`, if there is a usable one.
 
     The current name wins; a legacy name is honoured only when the current one
@@ -193,8 +217,12 @@ def override_key(directory):
     return None
 
 
-def resolve_key(path=None, explicit=None):
-    """Return (key, source) for a project directory.
+def resolve_seed(path=None, explicit=None):
+    """Return (seed, source) for a project directory.
+
+    The seed is the identity -- `github.com/owner/repo`. It is not the key:
+    `stamp_key` adds the mapping version to make one, and once a repository is
+    seeded the recorded key outranks anything derived here.
 
     Precedence, most specific first:
 
@@ -207,13 +235,13 @@ def resolve_key(path=None, explicit=None):
     Only `remote` and `override` survive being cloned somewhere else. The two
     path-shaped sources are honest fallbacks, not equivalents.
     """
-    directory = normalise_key(path if path else os.getcwd())
+    directory = normalise_seed(path if path else os.getcwd())
     if explicit:
         return explicit, "explicit"
 
     toplevel = repo_toplevel(directory)
 
-    committed = override_key(toplevel or directory)
+    committed = override_seed(toplevel or directory)
     if committed:
         return committed, "override"
 
@@ -221,18 +249,66 @@ def resolve_key(path=None, explicit=None):
         remote = normalise_remote_url(repo_remote_url(directory))
         if remote:
             return remote, "remote"
-        return normalise_key(toplevel), "toplevel"
+        return normalise_seed(toplevel), "toplevel"
 
     return directory, "path"
 
 
+# **The mapping version lives in the key file, and the file wins.** It is
+# written *into* the key -- `<version>:github.com/owner/repo` -- and the key is
+# hashed verbatim, so a mark cannot move unless that tracked line moves. This
+# constant only says what a *newly seeded* repository is stamped with;
+# `apply --remap` is the only thing that moves an existing one. The version
+# sits outside the seed, so drift is compared on seeds and a remap never reads
+# as a rename. An unstamped key is version 0 and still draws what it always
+# drew. Conformance is unaffected: the reference consumes a digest, and only
+# the string being digested changed.
+MAPPING_VERSION = 3
+
+# **Three version numbers, and they count different things.**
+#
+#   VERSION          this tool, as a release. Nothing is released.
+#   MAPPING_VERSION  the colour rule, stamped into every key. An integer,
+#                    because the key format is `<digits>:seed`.
+#   wheel version    which tricolours stand over the gamut, in
+#                    `work-in-progress/wheel.tsv`. Currently 0.3, and not read
+#                    by this file at all.
+VERSION = "0.0.build"
+
+# `<digits>:` and nothing else, anchored, so a seed that happens to contain a
+# colon -- a scheme, a Windows path -- is never mistaken for a stamped key.
+KEY_STAMP = re.compile(r"^([0-9]+):(.*)$", re.DOTALL)
+
+
+def stamp_key(seed, version=None):
+    """The key a freshly seeded repository records: version, colon, seed.
+
+    The default is read at call time rather than bound to the signature, so
+    there is exactly one place the current version lives.
+    """
+    if version is None:
+        version = MAPPING_VERSION
+    return f"{version}:{seed}"
+
+
+def parse_key(key):
+    """Split a key into (mapping_version, seed).
+
+    An unstamped key is version 0 -- the mapping that existed before the
+    version did -- and is its own seed.
+    """
+    match = KEY_STAMP.match(key)
+    if not match:
+        return 0, key
+    return int(match.group(1)), match.group(2)
+
+
 def _digest(key):
-    """MD5 as lowercase hex.
+    """MD5 of the key as lowercase hex. Nothing is prepended here.
 
     Hex rather than bytes because the reference consumes the digest as *hex
     characters* -- one nibble per grid cell, and the last seven characters as
-    the hue. Working in hex keeps this readable next to the reference instead
-    of turning every rule into shifts and masks.
+    the hue.
     """
     return hashlib.md5(key.encode("utf-8")).hexdigest()
 
@@ -259,6 +335,17 @@ def identicon_grid(key):
     return grid
 
 
+def grid_text(grid):
+    """The grid as five lines of `01010`, the spelling `vectors.json` uses.
+
+    Rows of characters rather than JSON, to match the `.colour` artifact beside
+    it: both are a bare value a reader can take in at a glance and a shell can
+    handle without a parser.
+    """
+    return "\n".join("".join("1" if cell else "0" for cell in row)
+                     for row in grid)
+
+
 def identicon_hue(key):
     """Hue as a fraction of a turn, from the last seven hex characters.
 
@@ -278,49 +365,175 @@ def _quantise(value):
     return int(value * 255 + 0.5)
 
 
-def _hsl_to_rgb(hue, saturation, lightness):
-    """The reference's own HSL conversion, transliterated.
+# ---- The colour ----
+#
+# **One brightness for every hue, which is what lets one file serve both a
+# light page and a dark one.** HSL lightness does not control brightness: at
+# the reference's 0.5, yellow carries several times the light of blue. 34 of 72
+# sampled hues fell below 3:1 against white, and 10 fell below it against
+# GitHub's dark canvas.
+#
+# Oklab lightness does control brightness, so holding it fixed holds contrast
+# fixed. Every hue then sits at 3.6:1 or better against white and 4.0:1 or
+# better against near-black, from one file.
+#
+# The chroma is capped rather than flattened. Flattening -- every hue held to
+# what the narrowest can manage -- costs about half the colour on the wheel to
+# buy a uniformity nobody asked for.
+#
+# The hue draw is unchanged: the same 28 bits from the same digest, read as an
+# angle in Oklab rather than in HSL. That also removes the crowding the old
+# mapping had, where a fifth of all projects landed in a band of green worth
+# about six perceptual degrees.
 
-    Not `colorsys.hls_to_rgb`. The reference mutates `s` and `b` while building
-    the sector table, and indexes it with `h|16` and `h|8` -- an integer trick
-    for the six-sector rotation. Standard library conversion agrees on most
-    inputs but this is a conformance target, so the arithmetic is reproduced
-    rather than approximated. Verified against the library's own output for
-    every key in vectors.json.
+MARK_LIGHTNESS = 0.60
+MARK_CHROMA = 0.26
+
+# ---- The hue draw, compressed around blue-green ----
+#
+# **Every hue still exists; what changes is how many projects land on one.** The
+# draw off the digest is uniform over the circle, but the emoji-square
+# vocabulary has nothing between green and blue, so every mixture of the two
+# reads at essentially one hue. That is a fact about the palette, not about the
+# colour, and it cannot be fixed by placement -- see
+# `work-in-progress/README.md`.
+#
+# So that arc is given less of the draw than its width suggests. The hue advances
+# faster through it, and the projects saved land where the vocabulary can tell
+# them apart.
+#
+# The speed function is a raised cosine -- one full cosine period, centred, with
+# zero derivative at both ends -- so no project sits on a discontinuity. Its
+# integral is elementary, and that matters more than it looks: this has to be
+# reimplementable, and a closed form with one sine in it is a paragraph of
+# specification where a spline would be a page.
+#
+# (centre, half-width, peak) in degrees of Oklab hue. `peak` is how much faster
+# the hue advances at the centre, so the share landing there falls by roughly
+# that factor. These are the values the wheel was solved against.
+HUE_WARP = (215.0, 50.0, 4.0)
+
+
+def _warp_bump(turned, half):
+    """The integral of the raised-cosine bump, from its start to `turned`.
+
+    Flat at zero before the bump begins and flat at `half` after it ends, which
+    is what makes `warp_hue` monotonic with continuous ends.
     """
-    hue *= 6.0
-    fraction = hue % 1
-
-    spread = saturation * (lightness if lightness < 0.5 else 1 - lightness)
-    high = lightness + spread
-    doubled = spread * 2
-    low = high - doubled
-
-    sectors = [
-        high,
-        high - fraction * spread * 2,
-        low,
-        low,
-        low + fraction * doubled,
-        low + doubled,
-    ]
-
-    sector = int(hue)
-    return (sectors[sector % 6],
-            sectors[(sector | 16) % 6],
-            sectors[(sector | 8) % 6])
+    if turned <= -half:
+        return 0.0
+    if turned >= half:
+        return half
+    return (0.5 * (turned + half)
+            + (half / (2 * math.pi)) * math.sin(math.pi * turned / half))
 
 
-def identicon_colour(key, saturation=0.7, lightness=0.5):
+def warp_hue(degrees, warp=HUE_WARP):
+    """A uniform draw in degrees, to the hue it names. Monotonic, onto [0, 360).
+
+    `None` for `warp` is the uniform draw, which is what mapping versions
+    before 3 use.
+    """
+    if warp is None:
+        return degrees % 360.0
+    centre, half, peak = warp
+    degrees %= 360.0
+    total = 360.0 + (peak - 1.0) * half
+    return 360.0 * (degrees
+                    + (peak - 1.0) * _warp_bump(degrees - centre, half)) / total
+
+
+# The bisection that finds how much chroma a hue can take. Fixed bounds and a
+# fixed iteration count, because "search until it converges" is not a
+# specification -- two implementations would stop in different places. The
+# result is rounded to four decimals so that a port whose cube roots differ in
+# the last bits still lands on the same number.
+GAMUT_STEPS = 30
+GAMUT_CEILING = 0.4
+
+
+def _oklch_to_linear(lightness, chroma, degrees):
+    """OkLCh to linear-light RGB, unclamped so the caller can test the range."""
+    radians = math.radians(degrees)
+    a = chroma * math.cos(radians)
+    b = chroma * math.sin(radians)
+    long_ = (lightness + 0.3963377774 * a + 0.2158037573 * b) ** 3
+    medium = (lightness - 0.1055613458 * a - 0.0638541728 * b) ** 3
+    short = (lightness - 0.0894841775 * a - 1.2914855480 * b) ** 3
+    return (4.0767416621 * long_ - 3.3077115913 * medium + 0.2309699292 * short,
+            -1.2684380046 * long_ + 2.6097574011 * medium - 0.3413193965 * short,
+            -0.0041960863 * long_ - 0.7034186147 * medium + 1.7076147010 * short)
+
+
+def _in_gamut(linear):
+    return all(-1e-4 <= channel <= 1 + 1e-4 for channel in linear)
+
+
+def gamut_chroma(degrees, lightness=MARK_LIGHTNESS, cap=MARK_CHROMA):
+    """The chroma this hue actually gets: the cap, or the most sRGB allows."""
+    if _in_gamut(_oklch_to_linear(lightness, cap, degrees)):
+        return cap
+    low, high = 0.0, GAMUT_CEILING
+    for _ in range(GAMUT_STEPS):
+        middle = (low + high) / 2
+        if _in_gamut(_oklch_to_linear(lightness, middle, degrees)):
+            low = middle
+        else:
+            high = middle
+    return min(cap, int(low * 10000) / 10000)
+
+
+def _encode(channel):
+    """Linear light to an sRGB component, 0-255, rounded half up."""
+    channel = max(0.0, min(1.0, channel))
+    encoded = (1.055 * channel ** (1 / 2.4) - 0.055
+               if channel > 0.0031308 else 12.92 * channel)
+    return _quantise(encoded)
+
+
+class UnknownMappingVersion(ValueError):
+    """A key stamped at a version this build does not implement."""
+
+
+def identicon_colour(key, chroma=MARK_CHROMA, lightness=MARK_LIGHTNESS):
     """Return the foreground colour as an (r, g, b) triple of 0-255 ints.
 
-    Defaults are the reference's: 70% saturation, 50% lightness, both fixed
-    rather than derived. dgraham/identicon derives them from two further digest
-    bytes; that variant was evaluated and not taken, because mixing two
-    references would have produced a specification neither of them implements.
+    The angle from the digest, warped, then Oklab at one lightness with the
+    chroma capped.
+
+    **No rule that reaches a release retires; a draft may be withdrawn.**
+    Versions 0 to 2 were drafts -- HSL, then Oklab without the warp -- and no
+    release carried them, so they are gone. Once `VERSION` leaves `0.0.*` this
+    stops being true and every shipped rule has to stay.
+
+    A key stamped at a version this build does not draw is refused rather than
+    redrawn: drawing it with today's rule would move a mark without anyone
+    asking, which is what the stamp exists to prevent. `remap` moves such a
+    repository across deliberately.
     """
-    red, green, blue = _hsl_to_rgb(identicon_hue(key), saturation, lightness)
-    return (_quantise(red), _quantise(green), _quantise(blue))
+    version, _ = parse_key(key)
+    if version != MAPPING_VERSION:
+        raise UnknownMappingVersion(
+            f"key is stamped at mapping version {version}; this build "
+            f"implements {MAPPING_VERSION} only. Use `remap` to move it.")
+
+    degrees = warp_hue(identicon_hue(key) * 360.0)
+    return tuple(_encode(channel) for channel in
+                 _oklch_to_linear(lightness, gamut_chroma(degrees, lightness,
+                                                          chroma), degrees))
+
+
+def _colour_for(key, kwargs):
+    """`identicon_colour` with chroma and lightness taken from render kwargs.
+
+    `.get` with the defaults, never `kwargs["chroma"]`: the callers are handed
+    kwargs that may carry neither.
+    """
+    return identicon_colour(key, kwargs.get("chroma", MARK_CHROMA),
+                            kwargs.get("lightness", MARK_LIGHTNESS))
+
+
+# ---- Names derived from the key ----
 
 
 def hex_colour(rgb):
@@ -357,53 +570,53 @@ def badge_label(key, limit=2):
     return name[:limit].upper()
 
 
-def profile_name(key):
-    """Display name of the generated profile, and what setProfile matches on."""
-    return f"{project_name(key)} [{short_hash(key, 6)}]"
+# The Konsole profile names -- profile_name, profile_filename, profile_body --
+# were here and are now in Console-Colophon. SPEC.md fixes the short id, the
+# icon theme name and the badge label; it says nothing about how a terminal
+# emulator names a profile, and neither should this file.
 
 
-def profile_filename(key):
-    return f"{ICON_PREFIX}-{short_hash(key)}.profile"
+# ---- Rendering ----
 
 
-def profile_body(key, parent="FALLBACK/"):
-    """The .profile file contents.
+def canvas_edge(block, border):
+    """The square canvas a block and a border imply: GRID blocks plus a border.
 
-    Icon lives under [General], per Profile.cpp: {Icon, "Icon", GENERAL_GROUP}.
-    Nothing else is set, so the profile inherits everything from its parent and
-    the switch changes the icon alone.
+    The block is the specified thing and the canvas is derived, never the other
+    way round. Deriving the block from a canvas needs a heuristic, a heuristic
+    does not scale linearly, and a mark that lands on a different block at a
+    different scale is two drawings rather than one.
     """
-    return (
-        "[General]\n"
-        f"Name={profile_name(key)}\n"
-        f"Parent={parent}\n"
-        f"Icon={icon_name(key)}\n"
-    )
+    return GRID * block + 2 * border
 
 
-# ---------------------------------------------------------------------------
-# Rendering
-# ---------------------------------------------------------------------------
+def fit_block(edge, border=1):
+    """The largest block that fits a canvas somebody else fixed.
 
-
-def _geometry(size):
-    """Cell size and margin for a square canvas.
-
-    Cells are deliberately generous relative to the canvas so a 16px icon still
-    reads as a pattern rather than a smudge.
+    For the XDG icon theme, where the file at `48x48/apps/` has to be 48 pixels
+    whatever that divides into, and for a terminal handed a pixel budget.
     """
-    cell = max(1, round(size / 5.5))
-    if cell * GRID > size:
-        cell = max(1, size // GRID)
-    margin = (size - cell * GRID) // 2
-    return cell, margin
+    block = (edge - 2 * border) // GRID
+    if block < 1:
+        block = max(1, edge // GRID)
+    return block
 
 
-def render_rgba(key, size, saturation=SATURATION, lightness=LIGHTNESS, background=None):
-    """Return raw RGBA bytes for a square identicon of the given size."""
+def render_rgba(key, block, border=BORDER, chroma=MARK_CHROMA,
+                lightness=MARK_LIGHTNESS, background=None, edge=None):
+    """Return raw RGBA bytes for a square identicon of `block`-pixel blocks.
+
+    `edge` is for the callers who do not get to choose their canvas -- the icon
+    theme, a terminal -- and pads the grid into a fixed square. Left alone the
+    canvas is derived from the block and the border, which is the normal case
+    and the only one the artifacts use.
+    """
     grid = identicon_grid(key)
-    red, green, blue = identicon_colour(key, saturation, lightness)
-    cell, margin = _geometry(size)
+    red, green, blue = identicon_colour(key, chroma, lightness)
+    if edge is None:
+        edge, margin = canvas_edge(block, border), border
+    else:
+        margin = (edge - block * GRID) // 2
 
     if background is None:
         back = bytes((0, 0, 0, 0))
@@ -412,13 +625,13 @@ def render_rgba(key, size, saturation=SATURATION, lightness=LIGHTNESS, backgroun
     fore = bytes((red, green, blue, 255))
 
     rows = []
-    for y in range(size):
+    for y in range(edge):
         row = bytearray()
-        grid_y = (y - margin) // cell if cell else -1
-        inside_y = margin <= y < margin + cell * GRID
-        for x in range(size):
-            grid_x = (x - margin) // cell if cell else -1
-            inside_x = margin <= x < margin + cell * GRID
+        grid_y = (y - margin) // block if block else -1
+        inside_y = margin <= y < margin + block * GRID
+        for x in range(edge):
+            grid_x = (x - margin) // block if block else -1
+            inside_x = margin <= x < margin + block * GRID
             if inside_x and inside_y and grid[grid_y][grid_x]:
                 row += fore
             else:
@@ -449,14 +662,16 @@ def encode_png(rgba, width, height):
     )
 
 
-def render_png(key, size, **kwargs):
-    return encode_png(render_rgba(key, size, **kwargs), size, size)
+def render_png(key, block, **kwargs):
+    edge = kwargs.get("edge") or canvas_edge(block, kwargs.get("border", BORDER))
+    return encode_png(render_rgba(key, block, **kwargs), edge, edge)
 
 
-def render_svg(key, size=256, saturation=SATURATION, lightness=LIGHTNESS, background=None):
+def render_svg(key, block=ARTIFACT_BLOCK, border=BORDER, chroma=MARK_CHROMA,
+               lightness=MARK_LIGHTNESS, background=None):
     grid = identicon_grid(key)
-    colour = hex_colour(identicon_colour(key, saturation, lightness))
-    cell, margin = _geometry(size)
+    colour = hex_colour(identicon_colour(key, chroma, lightness))
+    size = canvas_edge(block, border)
 
     parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size}" '
@@ -468,10 +683,10 @@ def render_svg(key, size=256, saturation=SATURATION, lightness=LIGHTNESS, backgr
     for row in range(GRID):
         for column in range(GRID):
             if grid[row][column]:
-                x = margin + column * cell
-                y = margin + row * cell
+                x = border + column * block
+                y = border + row * block
                 parts.append(
-                    f'<rect x="{x}" y="{y}" width="{cell}" height="{cell}" fill="{colour}"/>'
+                    f'<rect x="{x}" y="{y}" width="{block}" height="{block}" fill="{colour}"/>'
                 )
     parts.append("</svg>")
     return "\n".join(parts) + "\n"
@@ -490,7 +705,7 @@ def render_ansi(key):
     return "\n".join(lines)
 
 
-# --- Terminal colour --------------------------------------------------------
+# ---- Terminal colour ----
 
 TRUECOLOR = "truecolor"
 INDEXED = "256"
@@ -524,14 +739,6 @@ def _fg(rgb, depth):
     return f"\033[38;5;{_xterm256(rgb)}m"
 
 
-def _bg(rgb, depth):
-    if depth == NONE:
-        return ""
-    if depth == TRUECOLOR:
-        return "\033[48;2;{};{};{}m".format(*rgb)
-    return f"\033[48;5;{_xterm256(rgb)}m"
-
-
 RESET = "\033[0m"
 
 CHIP = "█"
@@ -539,11 +746,9 @@ CHIP = "█"
 # The text rendering lives in text-identicon.py, which takes a grid and a colour
 # and nothing else. Loaded by path because the file name carries a hyphen.
 #
-# **These two files are a pair and must be deployed together.** This one was
-# self-contained until the half-block grid was removed; the octant table and the
-# emoji palette live next door, and duplicating either to keep one file would
-# guarantee they diverge. `doctor` reports whether the sibling is present,
-# because the alternative is a hook that prints nothing and exits 0.
+# **These two files are a pair and must be deployed together**: the octant table
+# and the emoji palette live next door. `doctor` reports whether the sibling is
+# present, because `emit` swallows every error and exits 0.
 TEXT_MODULE = "text-identicon.py"
 _TEXT = None
 
@@ -567,28 +772,23 @@ def _text_module():
     return _TEXT
 
 
-def render_text(key, saturation=SATURATION, lightness=LIGHTNESS):
-    """The identicon as two lines: the octant grid, then the emoji triple.
+def render_text(key, chroma=MARK_CHROMA, lightness=MARK_LIGHTNESS):
+    """The identicon as two lines of three characters: the octant grid, then
+    the emoji triple.
 
-    **The half-block grid this replaced is gone.** It packed two grid rows into
-    one text row with an upper half block, three rows of five characters, and
-    coloured them with escape sequences -- which made it five columns wide and
-    three tall for a five-by-five grid, and unusable at that size. The octants
-    carry four cells per character instead: the same twenty-five cells in two
-    lines of three, with the colour in the squares rather than in an escape
-    sequence, because one glyph covering four cells cannot be coloured per cell.
+    One glyph covers four cells, so the colour lives in the emoji squares
+    rather than in an escape sequence.
     """
     grid = identicon_grid(key)
-    colour = identicon_colour(key, saturation, lightness)
+    colour = identicon_colour(key, chroma, lightness)
     return _text_module().text(grid, colour).split("\n")
 
 
 def render_banner(key, source=None, depth=TRUECOLOR, **kwargs):
     """The identicon with the project name beside it."""
-    rows = render_text(key, kwargs.get("saturation", SATURATION),
-                       kwargs.get("lightness", LIGHTNESS))
-    colour = identicon_colour(key, kwargs.get("saturation", SATURATION),
-                              kwargs.get("lightness", LIGHTNESS))
+    rows = render_text(key, kwargs.get("chroma", MARK_CHROMA),
+                       kwargs.get("lightness", MARK_LIGHTNESS))
+    colour = _colour_for(key, kwargs)
     name = project_name(key)
     if depth != NONE:
         name = f"{_fg(colour, depth)}{name}{RESET}"
@@ -604,14 +804,13 @@ def render_line(key, depth=TRUECOLOR, **kwargs):
     single line loses the pattern and keeps only the colour. A coloured chip
     where escape sequences work, the emoji triple where they do not.
     """
-    colour = identicon_colour(key, kwargs.get("saturation", SATURATION),
-                              kwargs.get("lightness", LIGHTNESS))
+    colour = _colour_for(key, kwargs)
     mark = (f"{_fg(colour, depth)}{CHIP}{RESET}" if depth != NONE
             else _text_module().emoji_triple(colour))
     return [f"{mark} {project_name(key)}"]
 
 
-# --- Inline images ----------------------------------------------------------
+# ---- Inline images ----
 #
 # The blocks above are an approximation. Where the terminal can take a real
 # image, send the PNG itself, base64 in an escape sequence.
@@ -680,8 +879,21 @@ def render_inline(key, protocol, size=INLINE_SIZE, **kwargs):
     """The identicon as a real image, or None if the protocol cannot carry one."""
     if protocol not in (ITERM2, KITTY):
         return None
-    png = render_png(key, size, **kwargs)
+    png = render_png(key, fit_block(size), edge=size, **kwargs)
     return iterm2_image(png) if protocol == ITERM2 else kitty_image(png)
+
+
+# The lambdas normalise the signatures: `render` hands every style `source` and
+# `depth`, and only `banner` wants both.
+_TEXT_STYLES = {
+    TEXT: lambda key, source=None, depth=TRUECOLOR, **kw: render_text(
+        key, kw.get("chroma", MARK_CHROMA), kw.get("lightness", MARK_LIGHTNESS)),
+    "full": lambda key, source=None, depth=TRUECOLOR, **kw: render_ansi(key).splitlines(),
+    "banner": render_banner,
+    "line": lambda key, source=None, depth=TRUECOLOR, **kw: render_line(key, depth, **kw),
+}
+
+STYLES = ("icon", "image", TEXT, "full", "banner", "line")
 
 
 def render(key, style="icon", source=None, depth=TRUECOLOR, protocol=TEXT,
@@ -706,34 +918,7 @@ def render(key, style="icon", source=None, depth=TRUECOLOR, protocol=TEXT,
     return "".join(line + "\n" for line in lines)
 
 
-_TEXT_STYLES = {
-    TEXT: lambda key, source=None, depth=TRUECOLOR, **kw: render_text(
-        key, kw.get("saturation", SATURATION), kw.get("lightness", LIGHTNESS)),
-    "full": lambda key, source=None, depth=TRUECOLOR, **kw: render_ansi(key).splitlines(),
-    "banner": render_banner,
-    "line": lambda key, source=None, depth=TRUECOLOR, **kw: render_line(key, depth, **kw),
-}
-
-STYLES = ("icon", "image", TEXT, "full", "banner", "line")
-
-
-# ---------------------------------------------------------------------------
-# Icon theme installation
-# ---------------------------------------------------------------------------
-
-
-def icon_theme_root():
-    data_home = os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share")
-    return pathlib.Path(data_home) / "icons" / "hicolor"
-
-
-def konsole_profile_dir():
-    data_home = os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share")
-    return pathlib.Path(data_home) / "konsole"
-
-
-# ---------------------------------------------------------------------------
-# Installing the identicon into a repository
+# ---- Installing the identicon into a repository ----
 #
 # This is what the project is for. Everything above derives a mark; this puts
 # it in the repository it belongs to, in forms a consumer that knows nothing
@@ -742,15 +927,9 @@ def konsole_profile_dir():
 # The mark is a constant for a repository -- derived from the remote, not
 # stored anywhere -- so these files are a cache, not a source. They exist
 # because a README, a shell prompt or a forge cannot run a derivation.
-# ---------------------------------------------------------------------------
 
 IDENTICON_DIR = ".identicon"
 ARTIFACT_STEM = "repository-identicon"
-
-# 256 is a compromise with a reason on each side: crisp on a HiDPI README at
-# any inline size, and still a couple of kilobytes because the image is five
-# by five cells of flat colour.
-ARTIFACT_SIZE = 256
 
 # **Each filename repeats the directory deliberately.** The directory is
 # context, and context is what does not travel: copied out, fetched from a raw
@@ -759,36 +938,43 @@ ARTIFACT_SIZE = 256
 # point the unqualified name is the ambiguous one.
 
 
+def artifact_names():
+    """Every artifact as (key, filename).
+
+    One list, walked by both the path builder and the byte builder, so a file
+    that exists in one and not the other cannot happen.
+    """
+    yield "png", f"{ARTIFACT_STEM}.png"
+    yield "png4x", f"{ARTIFACT_STEM}@{ARTIFACT_SCALE}x.png"
+    for canvas in LARGE_CANVASES:
+        yield f"png{canvas}", f"{ARTIFACT_STEM}-{canvas}.png"
+    yield "svg", f"{ARTIFACT_STEM}.svg"
+    yield "colour", f"{ARTIFACT_STEM}.colour"
+    yield "grid", f"{ARTIFACT_STEM}.grid"
+    yield "txt", f"{ARTIFACT_STEM}.txt"
+
+
 def artifact_paths(root):
-    root = pathlib.Path(root)
-    directory = root / IDENTICON_DIR
-    return {
-        "png": directory / f"{ARTIFACT_STEM}.png",
-        "svg": directory / f"{ARTIFACT_STEM}.svg",
-        "colour": directory / f"{ARTIFACT_STEM}.colour",
-        "txt": directory / f"{ARTIFACT_STEM}.txt",
-    }
+    directory = pathlib.Path(root) / IDENTICON_DIR
+    return {name: directory / filename for name, filename in artifact_names()}
 
 
-# **The seed is recorded, and changing it is a positive act.**
-#
-# The key was re-derived from the remote on every run, which made a rename
-# silently change a repository's identity -- the one thing an identity is for
-# is not doing that. It also conflated two unrelated reasons to re-run:
-# wanting newer artifacts, and wanting a different mark. Those are now
-# separate. `apply` refreshes the artifacts from the recorded seed, so an
-# improved renderer or a different size reaches every repository without
-# touching anybody's identity; `--reseed` is the only thing that changes what
-# the mark is derived from.
-#
-# This file is a record, not a decision: it says what these artifacts were
-# built from. `.repository-identicon` is the decision, is hand-written, and
-# still outranks it.
-SEED_NAME = f"{ARTIFACT_STEM}.key"
+# The whole key, mapping version included, hashed verbatim: this file is not a
+# record of what the mark was built from, it *is* what the mark is built from.
+KEY_NAME = f"{ARTIFACT_STEM}.key"
+
+# Written once, at seeding. The payload line is the key; everything above it is
+# for whoever opens the file wondering what they are looking at.
+KEY_FILE_TEMPLATE = (
+    "# This repository's identicon is derived from the line below, hashed\n"
+    "# exactly as it reads. `<version>:<seed>` -- the mapping version, then\n"
+    "# the identity. Nothing changes this mark except changing this line.\n"
+    "{key}\n"
+)
 
 
-def seed_path(root):
-    return pathlib.Path(root) / IDENTICON_DIR / SEED_NAME
+def key_path(root):
+    return pathlib.Path(root) / IDENTICON_DIR / KEY_NAME
 
 
 def prior_path(target):
@@ -813,9 +999,9 @@ def keep_prior(target, current):
     return keep
 
 
-def recorded_seed(root):
-    """The key these artifacts were built from, or None if never seeded."""
-    path = seed_path(root)
+def recorded_key(root):
+    """The recorded key, verbatim, or None if this repository is not seeded."""
+    path = key_path(root)
     if not path.is_file():
         return None
     for line in path.read_text(errors="replace").splitlines():
@@ -825,30 +1011,49 @@ def recorded_seed(root):
     return None
 
 
-def artifact_bytes(key, size=ARTIFACT_SIZE, **render_kwargs):
+def resolve_key_for(path=None, explicit=None):
+    """Return (key, source) for a directory: what it actually draws with.
+
+    A seeded repository's recorded key outranks any re-derivation, here as in
+    `apply`, so `show`, `render` and the hook cannot disagree with what is on
+    disk -- including about which mapping version drew it.
+    """
+    seed, source = resolve_seed(path, explicit)
+    if not explicit:
+        recorded = recorded_key(repo_toplevel(path) or (path or os.getcwd()))
+        if recorded is not None:
+            return recorded, "key"
+    return stamp_key(seed), source
+
+
+def artifact_bytes(key, block=ARTIFACT_BLOCK, **render_kwargs):
     """What each artifact should contain for this key.
 
-    Four files rather than one. A combined file would be readable by every
-    tool that knows the format, which is one tool; a README cannot address a
-    fragment inside a blob, and `$(cat …/*.colour)` is a whole parser.
+    Separate files rather than one blob: a README cannot address a fragment
+    inside a blob, and `$(cat …/*.colour)` has to stay a cat.
 
-    **`.txt` is the mark for a medium that will take neither an image nor an
-    escape sequence** -- two lines of octants with the emoji triple carrying
-    the colour. `text-identicon.py` is named for this artifact rather than for
-    its technique, and then nothing wrote it: the installer was built around
-    the three files that already existed, so the module and the directory
-    disagreed about what the set was.
+    `.txt` is the text rendering, for a medium that will take neither an image
+    nor an escape sequence. `text-identicon.py` is named for this artifact
+    rather than for its technique, and then nothing wrote it: the installer was
+    built around the three files that already existed, so the module and the
+    directory disagreed about what the set was.
     """
-    colour = identicon_colour(key,
-                              render_kwargs.get("saturation", SATURATION),
-                              render_kwargs.get("lightness", LIGHTNESS))
-    grid = identicon_grid(key)
-    return {
-        "png": render_png(key, size, **render_kwargs),
-        "svg": render_svg(key, size, **render_kwargs).encode("utf-8"),
-        "colour": (hex_colour(colour) + "\n").encode("utf-8"),
-        "txt": (_text_module().text(grid, colour) + "\n").encode("utf-8"),
+    wanted = {
+        "png": render_png(key, block, **render_kwargs),
+        "png4x": render_png(key, block * ARTIFACT_SCALE, border=SCALED_BORDER,
+                            **render_kwargs),
+        "svg": render_svg(key, block, **render_kwargs).encode("utf-8"),
     }
+    for canvas in LARGE_CANVASES:
+        large_block, large_border = large_geometry(canvas)
+        wanted[f"png{canvas}"] = render_png(key, large_block,
+                                            border=large_border, **render_kwargs)
+    colour = _colour_for(key, render_kwargs)
+    grid = identicon_grid(key)
+    wanted["colour"] = (hex_colour(colour) + "\n").encode("utf-8")
+    wanted["grid"] = (grid_text(grid) + "\n").encode("utf-8")
+    wanted["txt"] = (_text_module().text(grid, colour) + "\n").encode("utf-8")
+    return wanted
 
 
 # The artifacts are inert until something points at them, and the one thing
@@ -857,16 +1062,15 @@ def artifact_bytes(key, size=ARTIFACT_SIZE, **render_kwargs):
 # nobody put on the page is an identicon nobody sees.
 README_MARK = f"![]({IDENTICON_DIR}/{ARTIFACT_STEM}.svg)"
 
-# **What counts as the mark already being there, twice corrected by
-# dogfooding.** Matching the bare path anywhere was wrong: a README that
-# *documents* these paths reads as one that displays them, so exactly the
-# projects integrating with this would never get a mark. Requiring an image
-# reference was still wrong, because this repository's own README shows the
-# markdown in a fenced block as an example. So: strip fenced code first, then
-# look for an image. A mark inside a code fence is a mark being talked about.
+# **What counts as the mark already being there.** Strip fenced code first,
+# then look for an image reference: a README that *documents* these paths is
+# not one that displays them, and a mark inside a code fence is a mark being
+# talked about. No trailing dot on the path, so a mark somebody pointed at one
+# of the sized rasters, or at a variant from an older version of this tool,
+# still counts and is not duplicated.
 README_NEEDLE = re.compile(
     r"!\[[^\]]*\]\([^)]*{path}|<img[^>]+src\s*=\s*[\"'][^\"']*{path}".format(
-        path=re.escape(f"{IDENTICON_DIR}/{ARTIFACT_STEM}.")))
+        path=re.escape(f"{IDENTICON_DIR}/{ARTIFACT_STEM}")))
 README_FENCE = re.compile(r"^(```|~~~)", re.MULTILINE)
 
 
@@ -908,10 +1112,9 @@ def readme_state(root, check=False):
     """Put the mark in the README, once, and report what happened.
 
     Inserted after the first heading rather than above it, so the file still
-    opens with what the project is called. Recognised on the way back in by
-    the artifact path, which never changes -- so a line an author has moved,
-    resized with an <img> tag, or pointed at the PNG instead is left exactly
-    where they put it. This writes once and then keeps out of the way.
+    opens with what the project is called. A line an author has moved, resized
+    with an <img> tag, or pointed at another artifact is left where they put
+    it: this writes once and then keeps out of the way.
     """
     readme = find_readme(root)
     if readme is None:
@@ -940,43 +1143,60 @@ def readme_state(root, check=False):
     return "updated", readme
 
 
-def install_into_repo(path=None, key=None, size=ARTIFACT_SIZE, check=False,
-                      reseed=False, readme=True, **render_kwargs):
+def install_into_repo(path=None, seed=None, block=ARTIFACT_BLOCK, check=False,
+                      reseed=False, remap=False, readme=True, **render_kwargs):
     """Create or update the identicon artifacts in one repository.
 
-    **Two things you might want from a re-run, and they are separate.**
-    Refreshing the artifacts -- a better renderer, a different size, a new
-    file in the set -- must reach every repository without disturbing any
-    identity. Changing what the mark is derived from must not happen by
-    accident. So the seed is recorded on the first run and reused on every
-    run after it, and `reseed` is the only thing that replaces it.
+    **Two things you might want from a re-run, and they are separate.** The key
+    is recorded on the first run and reused verbatim on every run after it, so
+    refreshing the artifacts reaches every repository without disturbing any
+    identity. `reseed` adopts today's seed at today's mapping version; `remap`
+    keeps the recorded seed and moves it to today's mapping.
 
-    Once seeded, the mark is stable against anything: renaming the repository,
-    moving it between forges, cloning it to a path that would resolve
-    differently. Those change what the key *would* be, which is reported as
-    `seed_drift`, and nothing more. Acting on it is somebody's decision.
+    Renaming the repository, moving forges, cloning to a path that would
+    resolve differently, or a new mapping version shipping here all change what
+    the key *would* be; that is reported as `seed_drift`/`mapping_drift` and
+    never acted on.
 
-    For a fixed seed this writes identical bytes on every run and reports
-    nothing changed.
-
-    `check` reports what *would* change and writes nothing, which is what a
-    dependent tool or a CI job should call.
+    For a fixed key this writes identical bytes on every run and reports
+    nothing changed. `check` writes nothing at all.
 
     Returns a dict describing what happened, suitable for --json.
     """
     root = repo_toplevel(path) or (path or os.getcwd())
-    derived_key, derived_source = resolve_key(path, key)
+    derived_seed, derived_source = resolve_seed(path, seed)
 
-    recorded = None if key else recorded_seed(root)
-    if key or reseed or recorded is None:
-        resolved_key, source = derived_key, derived_source
+    recorded = None if seed else recorded_key(root)
+    if seed or reseed or recorded is None:
+        # Nothing recorded, or something asked for today's seed: stamp it with
+        # the version this implementation seeds at.
+        key, source = stamp_key(derived_seed), derived_source
+    elif remap:
+        # The identity stands; only the mapping moves.
+        key, source = stamp_key(parse_key(recorded)[1]), "remap"
     else:
-        resolved_key, source = recorded, "seed"
+        # The file wins, prefix and all.
+        key, source = recorded, "key"
 
+    mapping_version, resolved_seed = parse_key(key)
 
-    # What the key would be if this were seeded today. Reported, never acted
-    # on: an identity that changes itself is not one.
-    seed_drift = derived_key if derived_key != resolved_key else None
+    # **A withdrawn mapping stops here, with the way out named.** Drawing the
+    # repository with today's rule would move its mark without anyone asking.
+    # Only drafts are ever withdrawn, so this strands only repositories seeded
+    # from a pre-release build -- after a release the old rule stays and this
+    # branch becomes unreachable for that version.
+    if mapping_version != MAPPING_VERSION:
+        raise UnknownMappingVersion(
+            f"{root} is recorded at mapping version {mapping_version} and this "
+            f"build draws {MAPPING_VERSION} only. `remap` keeps the seed and "
+            f"moves it; nothing else will.")
+
+    # What this repository would derive today, reported and never acted on: an
+    # identity that changes itself is not one, and neither is a mark that
+    # redraws itself because a constant moved somewhere else.
+    seed_drift = derived_seed if derived_seed != resolved_seed else None
+    mapping_drift = (MAPPING_VERSION if mapping_version != MAPPING_VERSION
+                     else None)
 
     # An override outranks the remote, which is the point of it. Where one is
     # in force and the remote disagrees, say so rather than resolve it -- the
@@ -984,12 +1204,12 @@ def install_into_repo(path=None, key=None, size=ARTIFACT_SIZE, check=False,
     masking = None
     if derived_source == "override":
         url = repo_remote_url(path)
-        remote_key = normalise_remote_url(url) if url else None
-        if remote_key and remote_key != derived_key:
-            masking = remote_key
+        remote_seed = normalise_remote_url(url) if url else None
+        if remote_seed and remote_seed != derived_seed:
+            masking = remote_seed
 
     paths = artifact_paths(root)
-    wanted = artifact_bytes(resolved_key, size, **render_kwargs)
+    wanted = artifact_bytes(key, block, **render_kwargs)
 
     changes = {}
     for name, target in paths.items():
@@ -1003,26 +1223,27 @@ def install_into_repo(path=None, key=None, size=ARTIFACT_SIZE, check=False,
                 keep_prior(target, current)
                 target.write_bytes(wanted[name])
 
-    # The seed is written last and only when the artifacts it describes are
+    # The key is written last and only when the artifacts it describes are
     # there, so a half-written directory never claims to be seeded.
-    seed_file = seed_path(root)
-    seed_wanted = (f"# What this repository's identicon is derived from.\n"
-                   f"# Recorded on the first run and reused thereafter; "
-                   f"`apply --reseed` is the only thing that changes it.\n"
-                   f"{resolved_key}\n").encode("utf-8")
-    seed_state = "unchanged"
-    if seed_file.read_bytes() if seed_file.is_file() else None:
-        seed_state = ("unchanged" if seed_file.read_bytes() == seed_wanted
-                      else "updated")
+    #
+    # An already-seeded repository is left byte-for-byte alone, comment lines
+    # included. Rewriting the preamble under somebody would make every run a
+    # diff, and this file's whole job is to be the thing that does not move.
+    key_file = key_path(root)
+    current_key_bytes = key_file.read_bytes() if key_file.is_file() else None
+    if current_key_bytes is not None and recorded == key:
+        key_state = "unchanged"
     else:
-        seed_state = "created"
-    if seed_state != "unchanged" and not check:
-        seed_file.parent.mkdir(parents=True, exist_ok=True)
-        keep_prior(seed_file,
-                   seed_file.read_bytes() if seed_file.is_file() else None)
-        seed_file.write_bytes(seed_wanted)
-    changes["key"] = seed_state
-    paths["key"] = seed_file
+        key_wanted = KEY_FILE_TEMPLATE.format(key=key).encode("utf-8")
+        key_state = ("created" if current_key_bytes is None
+                     else "unchanged" if current_key_bytes == key_wanted
+                     else "updated")
+        if key_state != "unchanged" and not check:
+            key_file.parent.mkdir(parents=True, exist_ok=True)
+            keep_prior(key_file, current_key_bytes)
+            key_file.write_bytes(key_wanted)
+    changes["key"] = key_state
+    paths["key"] = key_file
 
     if readme:
         state, readme_file = readme_state(root, check)
@@ -1030,11 +1251,11 @@ def install_into_repo(path=None, key=None, size=ARTIFACT_SIZE, check=False,
             changes["readme"] = state
             paths["readme"] = readme_file
 
-    colour = identicon_colour(resolved_key,
-                              render_kwargs.get("saturation", SATURATION),
-                              render_kwargs.get("lightness", LIGHTNESS))
+    colour = _colour_for(key, render_kwargs)
     return {
-        "key": resolved_key,
+        "key": key,
+        "seed": resolved_seed,
+        "mapping_version": mapping_version,
         "source": source,
         "root": str(root),
         "colour": hex_colour(colour),
@@ -1044,199 +1265,18 @@ def install_into_repo(path=None, key=None, size=ARTIFACT_SIZE, check=False,
         "checked": bool(check),
         "masking": masking,
         "seed_drift": seed_drift,
+        "mapping_drift": mapping_drift,
         "reseeded": bool(reseed),
+        "remapped": bool(remap),
     }
 
 
-def install_icon(key, root=None, sizes=INSTALL_SIZES, **render_kwargs):
-    """Write one PNG per size into the user's hicolor tree. Returns the paths.
-
-    hicolor under XDG_DATA_HOME merges with the system theme, so no index.theme
-    of our own is needed for QIcon::fromTheme to find these.
-    """
-    root = pathlib.Path(root) if root else icon_theme_root()
-    name = icon_name(key)
-    written = []
-    for size in sizes:
-        directory = root / f"{size}x{size}" / "apps"
-        directory.mkdir(parents=True, exist_ok=True)
-        target = directory / f"{name}.png"
-        target.write_bytes(render_png(key, size, **render_kwargs))
-        written.append(target)
-
-    scalable = root / "scalable" / "apps"
-    scalable.mkdir(parents=True, exist_ok=True)
-    target = scalable / f"{name}.svg"
-    target.write_text(render_svg(key, 256, **render_kwargs))
-    written.append(target)
-    return written
-
-
-def installed_icons(root=None):
-    """Every identicon this tool has installed, as {icon name: [paths]}."""
-    root = pathlib.Path(root) if root else icon_theme_root()
-    found = {}
-    if not root.is_dir():
-        return found
-    for path in sorted(root.glob(f"*/apps/{ICON_PREFIX}-*")):
-        found.setdefault(path.stem, []).append(path)
-    return found
-
-
-def remove_icon(name, root=None):
-    root = pathlib.Path(root) if root else icon_theme_root()
-    removed = []
-    for path in sorted(root.glob(f"*/apps/{name}.*")):
-        path.unlink()
-        removed.append(path)
-    return removed
-
-
-def install_profile(key, directory=None, parent="FALLBACK/"):
-    directory = pathlib.Path(directory) if directory else konsole_profile_dir()
-    directory.mkdir(parents=True, exist_ok=True)
-    target = directory / profile_filename(key)
-    target.write_text(profile_body(key, parent))
-    return target
-
-
-def installed_profiles(directory=None):
-    directory = pathlib.Path(directory) if directory else konsole_profile_dir()
-    if not directory.is_dir():
-        return []
-    return sorted(directory.glob(f"{ICON_PREFIX}-*.profile"))
-
-
-# ---------------------------------------------------------------------------
-# D-Bus
-# ---------------------------------------------------------------------------
-
-SESSION_IFACE = "org.kde.konsole.Session"
-QDBUS_CANDIDATES = ("qdbus6", "qdbus-qt6", "qdbus")
-
-
-class DBusError(RuntimeError):
-    pass
-
-
-def find_qdbus():
-    for candidate in QDBUS_CANDIDATES:
-        found = shutil.which(candidate)
-        if found:
-            return found
-    return None
-
-
-def find_gdbus():
-    return shutil.which("gdbus")
-
-
-def _run(argv):
-    completed = subprocess.run(argv, capture_output=True, text=True)
-    if completed.returncode != 0:
-        raise DBusError((completed.stderr or completed.stdout).strip() or f"{argv[0]} failed")
-    return completed.stdout
-
-
-def dbus_call(service, path, method, args=(), qdbus=None):
-    """Call a method on a Konsole session. Argument list, never a shell string."""
-    qdbus = qdbus or find_qdbus()
-    if qdbus:
-        return _run([qdbus, service, path, f"{SESSION_IFACE}.{method}",
-                     *[str(a) for a in args]])
-    gdbus = find_gdbus()
-    if not gdbus:
-        raise DBusError("neither qdbus nor gdbus is on PATH")
-    argv = [gdbus, "call", "--session", "--dest", service, "--object-path", path,
-            "--method", f"{SESSION_IFACE}.{method}"]
-    argv += [str(a) for a in args]
-    return _run(argv)
-
-
-def dbus_members(service, path):
-    """Method names exposed on the object, for capability probing."""
-    qdbus = find_qdbus()
-    if qdbus:
-        listing = _run([qdbus, service, path])
-        names = set()
-        for line in listing.splitlines():
-            line = line.strip()
-            if not line:
-                continue
-            head = line.split("(")[0].split()[-1]
-            names.add(head.rsplit(".", 1)[-1])
-        return names
-    gdbus = find_gdbus()
-    if not gdbus:
-        raise DBusError("neither qdbus nor gdbus is on PATH")
-    xml = _run([gdbus, "introspect", "--session", "--dest", service,
-                "--object-path", path, "--xml"])
-    names = set()
-    for line in xml.splitlines():
-        line = line.strip()
-        if line.startswith("<method "):
-            names.add(line.split('name="', 1)[1].split('"', 1)[0])
-    return names
-
-
-def list_konsole_services():
-    qdbus = find_qdbus()
-    if qdbus:
-        return sorted(n for n in _run([qdbus]).split() if n.startswith("org.kde.konsole"))
-    gdbus = find_gdbus()
-    if not gdbus:
-        return []
-    out = _run([gdbus, "call", "--session", "--dest", "org.freedesktop.DBus",
-                "--object-path", "/org/freedesktop/DBus",
-                "--method", "org.freedesktop.DBus.ListNames"])
-    return sorted({tok.strip("'\", []()") for tok in out.split(",")
-                   if "org.kde.konsole" in tok})
-
-
-def list_sessions(service):
-    qdbus = find_qdbus()
-    if not qdbus:
-        return []
-    return sorted(line.strip() for line in _run([qdbus, service]).splitlines()
-                  if line.strip().startswith("/Sessions/"))
-
-
-def resolve_session(spec=None):
-    """Return (service, path) for the session to act on.
-
-    With no spec, use the KONSOLE_DBUS_SERVICE and KONSOLE_DBUS_SESSION that
-    Konsole exports into every session's environment, so running this inside
-    the tab you want marked just works.
-    """
-    if spec:
-        if ":" not in spec:
-            raise DBusError(f"session spec must be service:/Sessions/N, got {spec!r}")
-        service, path = spec.split(":", 1)
-        return service, path
-
-    service = os.environ.get("KONSOLE_DBUS_SERVICE")
-    path = os.environ.get("KONSOLE_DBUS_SESSION")
-    if service and path:
-        return service, path
-
-    services = list_konsole_services()
-    if len(services) == 1:
-        sessions = list_sessions(services[0])
-        if len(sessions) == 1:
-            return services[0], sessions[0]
-    raise DBusError(
-        "not running inside Konsole and could not pick a session unambiguously; "
-        "pass --session service:/Sessions/N (see the `sessions` command)"
-    )
-
-
-# ---------------------------------------------------------------------------
-# Commands
-# ---------------------------------------------------------------------------
+# ---- Commands ----
 
 
 def _resolve_from_args(args):
-    return resolve_key(getattr(args, "path", None), getattr(args, "key", None))
+    return resolve_key_for(getattr(args, "path", None),
+                           getattr(args, "seed", None))
 
 
 def _key_from_args(args):
@@ -1251,13 +1291,15 @@ def _render_kwargs(args):
             raise SystemExit("--background wants a six digit hex colour")
         background = tuple(int(text[i:i + 2], 16) for i in (0, 2, 4))
     return {
-        "saturation": args.saturation,
+        "chroma": args.chroma,
         "lightness": args.lightness,
         "background": background,
     }
 
 
 SOURCE_NOTES = {
+    "key": "the recorded key, which outranks all of the below",
+    "remap": "the recorded seed, restamped at this mapping version",
     "explicit": "given on the command line",
     "override": f"committed {OVERRIDE_FILENAME}",
     "remote": "git remote, portable across checkouts",
@@ -1269,12 +1311,12 @@ SOURCE_NOTES = {
 def cmd_show(args):
     key, source = _resolve_from_args(args)
     print(f"key       {key}")
-    print(f"source    {source}  ({SOURCE_NOTES[source]})")
+    note = SOURCE_NOTES.get(source)
+    print(f"source    {source}" + (f"  ({note})" if note else ""))
     print(f"project   {project_name(key)}")
     print(f"icon      {icon_name(key)}")
-    print(f"profile   {profile_name(key)}")
     print(f"badge     {badge_label(key)}")
-    print(f"colour    {hex_colour(identicon_colour(key, args.saturation, args.lightness))}")
+    print(f"colour    {hex_colour(identicon_colour(key, args.chroma, args.lightness))}")
     print()
     print(render_ansi(key))
     return 0
@@ -1283,10 +1325,14 @@ def cmd_show(args):
 def cmd_render(args):
     key = _key_from_args(args)
     kwargs = _render_kwargs(args)
-    if args.format == "svg":
-        data = render_svg(key, args.size, **kwargs).encode("utf-8")
+    if args.edge:
+        block, extra = fit_block(args.edge), {"edge": args.edge}
     else:
-        data = render_png(key, args.size, **kwargs)
+        block, extra = args.block, {}
+    if args.format == "svg":
+        data = render_svg(key, block, **kwargs).encode("utf-8")
+    else:
+        data = render_png(key, block, **extra, **kwargs)
     if args.out == "-":
         sys.stdout.buffer.write(data)
     else:
@@ -1302,8 +1348,8 @@ def cmd_apply(args):
     and 1 under --check when it is not, so a CI job or a dependent tool can
     branch on it without parsing anything.
     """
-    result = install_into_repo(args.path, args.key, args.size, args.check,
-                               args.reseed, not args.no_readme,
+    result = install_into_repo(args.path, args.seed, args.block, args.check,
+                               args.reseed, args.remap, not args.no_readme,
                                **_render_kwargs(args))
     if args.json:
         print(json.dumps(result, indent=2))
@@ -1311,197 +1357,42 @@ def cmd_apply(args):
 
     verb = "would be" if args.check else ""
     print(f"key      {result['key']}  ({result['source']})")
+    print(f"seed     {result['seed']}")
+    print(f"mapping  {result['mapping_version']}")
     print(f"colour   {result['colour']}")
     for name, state in sorted(result["changes"].items()):
         mark = " " if state == "unchanged" else "*"
         print(f" {mark} {result['files'][name]}  {verb} {state}".rstrip())
     if result["seed_drift"]:
         print()
-        print(f"The recorded seed is {result['key']}, but this repository "
+        print(f"The recorded seed is {result['seed']}, but this repository "
               f"would seed as {result['seed_drift']} today.")
         print("The identicon is unchanged, which is the point: a mark that "
               "re-derived itself would not be an identity. Run "
-              "`apply --reseed` to adopt the new key and change the mark.")
+              "`apply --reseed` to adopt the new seed and change the mark.")
     elif result["masking"]:
         print()
         print(f"{OVERRIDE_FILENAME} pins this repository to "
-              f"{result['key']}, but its remote now says "
+              f"{result['seed']}, but its remote now says "
               f"{result['masking']}.")
         print("The override wins, which is what it is for. If the move was "
               "meant to change the identity, delete the file and re-run; if "
               "it was not, nothing needs doing.")
-    elif result["source"] not in ("remote", "override", "seed"):
+    elif result["source"] not in ("remote", "override", "key", "remap"):
         print()
-        print(f"This repository has no usable git remote, so the key is a path "
-              f"and will not survive being cloned elsewhere. Commit a "
-              f"{OVERRIDE_FILENAME} file holding the key to pin it.")
+        print(f"This repository has no usable git remote, so the seed is a "
+              f"path and will not survive being cloned elsewhere. Commit a "
+              f"{OVERRIDE_FILENAME} file holding the seed to pin it.")
+    if result["mapping_drift"]:
+        print()
+        print(f"This repository is drawn by mapping version "
+              f"{result['mapping_version']}; this implementation seeds new "
+              f"repositories at version {result['mapping_drift']}.")
+        print("Nothing is out of date. The recorded key is what the mark is, "
+              "so a newer mapping reaches this repository only when somebody "
+              "decides it should: run `apply --remap`, and the changed line "
+              "in the key file is the record of that decision.")
     return 0 if result["current"] or not args.check else 1
-
-
-def cmd_install(args):
-    key = _key_from_args(args)
-    written = install_icon(key, **_render_kwargs(args))
-    print(f"icon {icon_name(key)}")
-    for path in written:
-        print(f"  {path}")
-    print()
-    print("Konsole reads profile icons through QIcon::fromTheme, which caches. A")
-    print("running Konsole may not show a brand new icon until it restarts.")
-    return 0
-
-
-def cmd_list(args):
-    icons = installed_icons()
-    profiles = installed_profiles()
-    if not icons and not profiles:
-        print("nothing installed")
-        return 0
-    for name, paths in icons.items():
-        print(f"{name}  ({len(paths)} files)")
-    for path in profiles:
-        print(f"{path.name}  ->  {path}")
-    return 0
-
-
-def cmd_uninstall(args):
-    if args.all:
-        names = list(installed_icons())
-        profiles = installed_profiles()
-    else:
-        key = _key_from_args(args)
-        names = [icon_name(key)]
-        candidate = konsole_profile_dir() / profile_filename(key)
-        profiles = [candidate] if candidate.exists() else []
-
-    removed = 0
-    for name in names:
-        for path in remove_icon(name):
-            print(f"removed {path}")
-            removed += 1
-    for path in profiles:
-        path.unlink()
-        print(f"removed {path}")
-        removed += 1
-    if not removed:
-        print("nothing to remove")
-    return 0
-
-
-def cmd_sessions(args):
-    services = list_konsole_services()
-    if not services:
-        print("no Konsole instance is on the session bus")
-        return 1
-    for service in services:
-        print(service)
-        for path in list_sessions(service):
-            print(f"  {service}:{path}")
-    return 0
-
-
-BADGE_METHODS = (
-    "setBadgeEnabled",
-    "setBadgeText",
-    "setBadgeColor",
-    "setBadgeTextOnly",
-    "setBadgeTransparency",
-    "setBadgeFontFamily",
-    "setBadgeFontSize",
-)
-
-
-def cmd_probe(args):
-    """Report which of the two routes this Konsole build actually offers.
-
-    setBadgeColor takes a QColor, which is not a basic D-Bus type. Konsole
-    registers no metatype for it, so it may be absent from introspection even
-    though the header marks it Q_SCRIPTABLE. That is exactly what this checks.
-    """
-    service, path = resolve_session(args.session)
-    print(f"session   {service}:{path}")
-    members = dbus_members(service, path)
-    print(f"members   {len(members)}")
-    print()
-    print("badge route")
-    for method in BADGE_METHODS:
-        print(f"  {'yes' if method in members else 'NO '}  {method}")
-    print()
-    print("profile route")
-    for method in ("setProfile", "profile"):
-        print(f"  {'yes' if method in members else 'NO '}  {method}")
-    print()
-    print("not scriptable, hence no direct tab-icon route")
-    print("  NO   setIconName")
-    return 0
-
-
-def cmd_badge(args):
-    key = _key_from_args(args)
-    service, path = resolve_session(args.session)
-    members = dbus_members(service, path)
-
-    if args.clear:
-        dbus_call(service, path, "setBadgeEnabled", ["false"])
-        print(f"badge cleared on {service}:{path}")
-        return 0
-
-    label = args.label or badge_label(key)
-    dbus_call(service, path, "setBadgeText", [label])
-    dbus_call(service, path, "setBadgeEnabled", ["true"])
-    print(f"badge text  {label}")
-
-    colour = hex_colour(identicon_colour(key, args.saturation, args.lightness))
-    if "setBadgeColor" in members:
-        dbus_call(service, path, "setBadgeColor", [colour])
-        print(f"badge colour {colour}")
-    else:
-        print(f"badge colour {colour} NOT APPLIED - setBadgeColor absent from introspection")
-        print("             QColor has no D-Bus metatype registered in Konsole")
-    return 0
-
-
-def cmd_profile(args):
-    key = _key_from_args(args)
-    install_icon(key, **_render_kwargs(args))
-    target = install_profile(key, parent=args.parent)
-    name = profile_name(key)
-    print(f"icon     {icon_name(key)}")
-    print(f"profile  {name}")
-    print(f"         {target}")
-
-    if not args.apply:
-        print()
-        print("re-run with --apply to switch the current tab to it")
-        return 0
-
-    service, path = resolve_session(args.session)
-    dbus_call(service, path, "setProfile", [name])
-    active = dbus_call(service, path, "profile").strip()
-    print(f"applied  {service}:{path}")
-    print(f"now on   {active or '(empty)'}")
-    if active != name:
-        print()
-        print("setProfile matches against already-loaded profiles and no-ops on a")
-        print("miss. A profile written after Konsole started is not loaded yet;")
-        print("open Settings, Manage Profiles, or restart Konsole, then retry.")
-        return 1
-    return 0
-
-
-def cmd_demo(args):
-    key = _key_from_args(args)
-    print(f"=== {key} ===")
-    print(render_ansi(key))
-    print()
-    for step, handler in (("probe", cmd_probe), ("badge", cmd_badge),
-                          ("profile", cmd_profile)):
-        print(f"--- {step} ---")
-        try:
-            handler(args)
-        except DBusError as error:
-            print(f"skipped: {error}")
-        print()
-    return 0
 
 
 # Hook events at which control comes back to the human. Notification is left
@@ -1550,7 +1441,7 @@ def cmd_emit(args):
         path = args.path
         if not path and not sys.stdin.isatty():
             path = payload_cwd(sys.stdin)
-        key, source = resolve_key(path, args.key)
+        key, source = resolve_key_for(path, args.seed)
 
         text = render(
             key,
@@ -1559,7 +1450,7 @@ def cmd_emit(args):
             depth=resolve_colour_depth(args.colour),
             protocol=resolve_protocol(args.protocol),
             size=args.size,
-            saturation=args.saturation,
+            chroma=args.chroma,
             lightness=args.lightness,
         )
 
@@ -1601,66 +1492,240 @@ def cmd_hooks(args):
     return 0
 
 
-def cmd_doctor(args):
-    sibling = text_module_path()
-    print(f"{TEXT_MODULE:16} "
-          f"{sibling if sibling.is_file() else 'NOT FOUND - text styles will '
-                                              'print nothing'}")
-    print(f"qdbus            {find_qdbus() or 'NOT FOUND'}")
-    print(f"gdbus            {find_gdbus() or 'NOT FOUND'}")
-    print(f"icon theme root  {icon_theme_root()}")
-    print(f"profile dir      {konsole_profile_dir()}")
-    print(f"in Konsole       {'yes' if os.environ.get('KONSOLE_DBUS_SESSION') else 'no'}")
-    for variable in ("KONSOLE_DBUS_SERVICE", "KONSOLE_DBUS_SESSION", "KONSOLE_VERSION"):
-        print(f"  {variable}={os.environ.get(variable, '')}")
-    print(f"icons installed  {len(installed_icons())}")
-    print(f"profiles written {len(installed_profiles())}")
+# ---- Conformance validator ----
+#
+# CONTRIBUTING.md asks a port for three things and says the vectors are the
+# whole conformance test. But a port in Rust cannot run this repository's
+# unittest suite, so "check yourself against the vectors" has meant "write your
+# own harness" -- which is work this project can do once instead of every
+# implementer doing it differently.
+#
+# So the check is offered outward: point `validate` at your implementation and
+# it reports which vectors you reproduce. It reaches into nothing, runs what it
+# is given, and compares stdout to `vectors.json`.
+#
+# Grid and colour only. Those are what the vectors pin and what CONTRIBUTING.md
+# calls a complete port; renderings are explicitly optional and are not checked.
+
+VECTORS_NAME = "vectors.json"
+
+
+def vectors_path():
+    return pathlib.Path(__file__).with_name(VECTORS_NAME)
+
+
+def load_vectors(path=None):
+    path = pathlib.Path(path) if path else vectors_path()
+    if not path.is_file():
+        raise FileNotFoundError(
+            f"{path} not found; {VECTORS_NAME} is the contract and validate "
+            f"cannot run without it")
+    document = json.loads(path.read_text())
+    vectors = document.get("vectors")
+    if not isinstance(vectors, list) or not vectors:
+        raise ValueError(f"{path} has no vectors")
+
+    # One rule, so one version, and every vector must be stamped at it. A bump
+    # that does not bring its vectors fails here rather than in the wild.
+    covered = sorted({parse_key(vector["key"])[0] for vector in vectors})
+    if covered != [MAPPING_VERSION]:
+        raise ValueError(
+            f"{path} pins mapping versions {covered} and this implementation "
+            f"draws {MAPPING_VERSION} only; a bump has to bring its vectors "
+            f"with it, and retired versions have to leave")
+    return document
+
+
+def _cell(value):
+    """One cell as "0" or "1".
+
+    A string cell is read by value, not by truthiness. `"0"` is a true Python
+    string, so a port emitting `[["0", "1", ...], ...]` -- a perfectly
+    reasonable shape -- would otherwise be told its grid was solid, which is
+    a wrong answer dressed up as a real one.
+    """
+    if isinstance(value, str):
+        text = value.strip()
+        if text not in ("0", "1"):
+            raise TypeError(f"cell {value!r} is neither 0 nor 1")
+        return text
+    return "1" if value else "0"
+
+
+def _normalise_grid(value):
+    """Accept the shapes a port might reasonably emit, reject the rest.
+
+    A validator that fails a correct implementation over JSON shape is worse
+    than no validator, so a row may be "01101" or [0,1,1,0,1] or booleans or
+    ["0","1",...].
+    """
+    rows = []
+    for row in value:
+        if isinstance(row, str):
+            rows.append(row.strip())
+        else:
+            rows.append("".join(_cell(cell) for cell in row))
+    return rows
+
+
+def check_output(text, vector):
+    """Compare one implementation's output for one key. Returns a problem list."""
     try:
-        services = list_konsole_services()
-        print(f"konsole services {', '.join(services) if services else 'none'}")
-    except DBusError as error:
-        print(f"konsole services unavailable: {error}")
+        got = json.loads(text)
+    except ValueError as error:
+        return [f"output is not JSON: {error}"]
+    if not isinstance(got, dict):
+        return ["output is not a JSON object"]
+
+    problems = []
+    if "grid" not in got:
+        problems.append("no 'grid' in output")
+    else:
+        try:
+            rows = _normalise_grid(got["grid"])
+        except TypeError:
+            problems.append("'grid' is not five rows of five cells")
+            rows = None
+        if rows is not None and rows != vector["grid"]:
+            problems.append(f"grid {rows} != {vector['grid']}")
+
+    colour = got.get("colour", got.get("color"))
+    if colour is None:
+        problems.append("no 'colour' in output")
+    else:
+        wanted = vector["foreground"].lower()
+        if str(colour).lower().lstrip("#") != wanted.lstrip("#"):
+            problems.append(f"colour {colour} != {vector['foreground']}")
+    return problems
+
+
+def validate_command(argv, vectors, timeout=30):
+    """Run `argv + [key]` once per vector and collect the results.
+
+    The key, not the seed. A port hashes what it is handed and has no business
+    knowing about mapping versions -- that is the point of putting the version
+    in the key rather than in everybody's code.
+    """
+    results = []
+    for vector in vectors:
+        key = vector["key"]
+        try:
+            completed = subprocess.run([*argv, key],
+                                       capture_output=True, text=True,
+                                       timeout=timeout)
+        except (OSError, subprocess.SubprocessError) as error:
+            results.append({"key": key, "problems": [str(error)]})
+            continue
+        if completed.returncode != 0:
+            detail = (completed.stderr or completed.stdout).strip()
+            results.append({"key": key,
+                            "problems": [f"exited {completed.returncode}: {detail}"]})
+            continue
+        results.append({"key": key,
+                        "problems": check_output(completed.stdout, vector)})
+    return results
+
+
+def cmd_validate(args):
+    vectors = load_vectors(args.vectors)["vectors"]
+    if not args.command:
+        print("give the command that runs your implementation, for example:\n"
+              "  repository-identicon validate -- ./my-identicon --json\n"
+              "It is run once per vector with the key as its last argument, and\n"
+              "must print {\"grid\": [...], \"colour\": \"#rrggbb\"} on stdout.",
+              file=sys.stderr)
+        return 2
+
+    results = validate_command(args.command, vectors)
+    failed = [r for r in results if r["problems"]]
+    if args.json:
+        print(json.dumps({"vectors": len(results),
+                          "passed": len(results) - len(failed),
+                          "results": results}, indent=2))
+    else:
+        for result in results:
+            if result["problems"]:
+                print(f"FAIL {result['key']}")
+                for problem in result["problems"]:
+                    print(f"       {problem}")
+            else:
+                print(f"ok   {result['key']}")
+        print()
+        print(f"{len(results) - len(failed)}/{len(results)} vectors reproduced")
+        if failed:
+            print("This is not a repository identicon until they all pass.")
+    return 1 if failed else 0
+
+
+def cmd_doctor(args):
+    """Report what this tool depends on that is not in this file.
+
+    Short, because there is little left to depend on: the sibling module and
+    the vectors. Anything about a desktop belongs to Console-Colophon, which
+    has a `doctor` of its own.
+    """
+    sibling = text_module_path()
+    print(f"{TEXT_MODULE:16} " + (str(sibling) if sibling.is_file()
+                                  else "NOT FOUND - text styles will print nothing"))
+    vectors = vectors_path()
+    print(f"{VECTORS_NAME:16} " + (str(vectors) if vectors.is_file()
+                                   else "NOT FOUND - validate cannot run"))
+    print(f"{'mapping version':16} {MAPPING_VERSION}")
+    key, source = resolve_key_for(getattr(args, "path", None))
+    print(f"{'key here':16} {key}  ({source})")
     return 0
+
+
+# ---- Command line ----
 
 
 def build_parser():
     parser = argparse.ArgumentParser(
         prog="repository-identicon",
-        description="Per-project identicons for Konsole tabs, over the session "
-                    "D-Bus interface.",
+        description="A deterministic visual identity for a software project, "
+                    "derived from the project and from nothing else. This is "
+                    "the reference implementation of the specification in "
+                    "SPEC.md; `apply` is the command you want.",
     )
+    # Both numbers, because the one people need is usually the other one: a bug
+    # report about a colour is about the mapping version, not the release.
+    parser.add_argument("--version", action="version",
+                        version=f"repository-identicon {VERSION} "
+                                f"(mapping version {MAPPING_VERSION})")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    def add_common(target, *, path=True, render=False, session=False):
+    def add_common(target, *, path=True, render=False):
         if path:
             target.add_argument("path", nargs="?", help="project path (default: cwd)")
-            target.add_argument("--key", help="override the derived key outright")
+            # `--key` was the published name for this before the key and the
+            # seed became different things. It has always meant the identity,
+            # which is the seed, so it stays as an alias rather than breaking.
+            target.add_argument("--seed", "--key", dest="seed",
+                                help="override the derived seed outright")
         else:
-            target.set_defaults(key=None)
+            target.set_defaults(seed=None)
         if render:
-            target.add_argument("--saturation", type=float, default=SATURATION)
-            target.add_argument("--lightness", type=float, default=LIGHTNESS)
+            target.add_argument("--chroma", type=float, default=MARK_CHROMA)
+            target.add_argument("--lightness", type=float, default=MARK_LIGHTNESS)
             target.add_argument("--background", help="six digit hex; default transparent")
         else:
-            target.set_defaults(saturation=SATURATION, lightness=LIGHTNESS, background=None)
-        if session:
-            target.add_argument("--session",
-                                help="service:/Sessions/N; default from the "
-                                     "environment")
-        else:
-            target.set_defaults(session=None)
+            target.set_defaults(chroma=MARK_CHROMA, lightness=MARK_LIGHTNESS, background=None)
 
     apply_cmd = sub.add_parser(
         "apply", help="create or update the identicon files in a repository")
     add_common(apply_cmd, render=True)
-    apply_cmd.add_argument("--size", type=int, default=ARTIFACT_SIZE,
-                           help=f"PNG and SVG size; default {ARTIFACT_SIZE}")
+    apply_cmd.add_argument("--block", type=int, default=ARTIFACT_BLOCK,
+                           choices=BLOCKS,
+                           help=f"block size in pixels; default "
+                                f"{ARTIFACT_BLOCK}. The canvas follows.")
     apply_cmd.add_argument("--check", action="store_true",
                            help="report what would change, write nothing, and "
                                 "exit 1 if not current")
     apply_cmd.add_argument("--reseed", action="store_true",
-                           help="re-derive the key and change the mark; the "
-                                "only thing that does")
+                           help="re-derive the seed and change the mark")
+    apply_cmd.add_argument("--remap", action="store_true",
+                           help=f"keep the seed, move it to mapping version "
+                                f"{MAPPING_VERSION}, and change the mark")
     apply_cmd.add_argument("--no-readme", action="store_true",
                            help="do not add the mark to the README")
     apply_cmd.add_argument("--json", action="store_true",
@@ -1673,50 +1738,14 @@ def build_parser():
 
     render = sub.add_parser("render", help="write one identicon image")
     add_common(render, render=True)
-    render.add_argument("--size", type=int, default=256)
+    render.add_argument("--block", type=int, default=ARTIFACT_BLOCK,
+                        choices=BLOCKS, help="block size in pixels")
+    render.add_argument("--edge", type=int,
+                        help="fit the grid to this exact canvas instead, for "
+                             "somewhere the size is not ours to choose")
     render.add_argument("--format", choices=("png", "svg"), default="png")
     render.add_argument("--out", default="-", help="output file, or - for stdout")
     render.set_defaults(func=cmd_render)
-
-    install = sub.add_parser("install", help="install the identicon into the user icon theme")
-    add_common(install, render=True)
-    install.set_defaults(func=cmd_install)
-
-    listing = sub.add_parser("list", help="list installed identicons and profiles")
-    add_common(listing, path=False)
-    listing.set_defaults(func=cmd_list)
-
-    uninstall = sub.add_parser("uninstall", help="remove installed identicons and profiles")
-    add_common(uninstall)
-    uninstall.add_argument("--all", action="store_true")
-    uninstall.set_defaults(func=cmd_uninstall)
-
-    sessions = sub.add_parser("sessions", help="list Konsole sessions on the bus")
-    add_common(sessions, path=False)
-    sessions.set_defaults(func=cmd_sessions)
-
-    probe = sub.add_parser("probe", help="report which D-Bus methods this Konsole exposes")
-    add_common(probe, path=False, session=True)
-    probe.set_defaults(func=cmd_probe)
-
-    badge = sub.add_parser("badge", help="route one: set the session badge")
-    add_common(badge, render=True, session=True)
-    badge.add_argument("--label", help="override the derived one or two character label")
-    badge.add_argument("--clear", action="store_true", help="disable the badge instead")
-    badge.set_defaults(func=cmd_badge)
-
-    profile = sub.add_parser(
-        "profile", help="route two: generate a profile carrying the icon")
-    add_common(profile, render=True, session=True)
-    profile.add_argument("--parent", default="FALLBACK/", help="profile to inherit from")
-    profile.add_argument("--apply", action="store_true", help="switch the session to it")
-    profile.set_defaults(func=cmd_profile)
-
-    demo = sub.add_parser("demo", help="probe, then exercise both routes on one session")
-    add_common(demo, render=True, session=True)
-    demo.add_argument("--label", default=None)
-    demo.add_argument("--parent", default="FALLBACK/")
-    demo.set_defaults(func=cmd_demo, clear=False, apply=True)
 
     emit = sub.add_parser(
         "emit",
@@ -1738,8 +1767,20 @@ def build_parser():
     hooks.add_argument("--style", choices=STYLES, default="icon")
     hooks.set_defaults(func=cmd_hooks)
 
+    validate = sub.add_parser(
+        "validate",
+        help="check another implementation against the pinned vectors",
+        description="Runs your implementation once per vector with the key as "
+                    "its last argument. It must print "
+                    '{"grid": [...], "colour": "#rrggbb"} on stdout.')
+    add_common(validate, path=False)
+    validate.add_argument("--vectors", help=f"default: {VECTORS_NAME} beside this script")
+    validate.add_argument("--json", action="store_true")
+    validate.add_argument("command", nargs="*", help="the command to run")
+    validate.set_defaults(func=cmd_validate)
+
     doctor = sub.add_parser("doctor", help="environment report")
-    add_common(doctor, path=False)
+    add_common(doctor)
     doctor.set_defaults(func=cmd_doctor)
 
     return parser
@@ -1749,8 +1790,11 @@ def main(argv=None):
     args = build_parser().parse_args(argv)
     try:
         return args.func(args)
-    except DBusError as error:
+    except UnknownMappingVersion as error:
+        # A stranded repository is an ordinary situation with a known answer,
+        # not a crash. Say the answer rather than printing a traceback at it.
         print(f"error: {error}", file=sys.stderr)
+        print("       repository-identicon apply --remap", file=sys.stderr)
         return 1
     except BrokenPipeError:
         # Piping into head closes the pipe early. Retarget stdout at devnull so

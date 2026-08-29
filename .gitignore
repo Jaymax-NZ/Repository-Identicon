@@ -1,5 +1,15 @@
 __pycache__/
 *.pyc
 
+# Editor swap files. One was committed by accident.
+*.swp
+*.swo
+*~
+.*.sw?
+
+# Rollback copies apply leaves beside what it replaced. A working-directory
+# convenience, overwritten each run; git already has the history.
+*.prior.*
+
 # mix.py scratch output
 work-in-progress/mixes.svg

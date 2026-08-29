@@ -1,26 +1,23 @@
 #!/usr/bin/env python3
-"""The wheel: the gamut as a ring, and the blocks placed by hand against it.
+"""The wheel: the gamut as a ring, and the vocabulary available to name it.
 
-    python3 wheel.py                   render the next free wheelN.svg
-    python3 wheel.py --reference       regenerate in-use.tsv from bench.tsv
-    python3 wheel.py --refill          add newly admissible triples to bench.tsv
-    python3 wheel.py --tables          also draw the corner lists and the unused
+    python3 wheel.py --painted                render the next free wheelN.svg
+    python3 wheel.py --painted --ring-only    the ring alone, tiers not drawn
+    python3 wheel.py --painted --out FILE     render to a name of your own
+    python3 wheel.py --reference              regenerate in-use.tsv
 
-**No algorithm is being scored here any more.** The wheel was built to hold an
-algorithm to a target file, and that route ended: `bench.tsv` is now the answer
-itself, fifty blocks placed by eye, and `in-use.tsv` is generated from it. What
-survives from that era is the measurement -- every block still reports the hue
-its blend reads as, and how far it was moved from it.
+`--painted` judges in the colours the vendors paint, and everything is authored
+against it; the Unicode palette is a different arrangement and solving anything
+against it will not transfer.
 
-**One concern per artifact.** A block carries the multiset only: three squares,
-no arrangement, no square-versus-circle. Those two are identity, and identity is
-a separate question from whether the mark names the colour. Mixing them is what
-made the contact sheets hard to read, because a change of arrangement and a
-change of mapping look identical at a glance and only one is a colour judgement.
+**`wheel.tsv` is the wheel, and this file only draws it.** All 165 triples have
+a line each, 63 on the ring with an angle, the rest in a tier or one of three
+sunk bands; a tile's number is the line it sits on, clockwise from the top.
+`--reference` writes `in-use.tsv`, the mapping alone, from that same file.
 
-Nothing here reads a font or a screen. The ring is the gamut identicon.js
-actually produces, at its own fixed saturation and lightness, so a block sits
-directly against the colour it is meant to name.
+A block carries the multiset only -- no arrangement, no square-versus-circle.
+Those are identity, and identity is a separate question from whether the mark
+names the colour.
 """
 
 import importlib.util
@@ -28,8 +25,8 @@ import math
 import pathlib
 import sys
 
-D = "/home/justin/Code/Projects/Repository-Identicon/"
-S = pathlib.Path(__file__).parent
+REPO = str(pathlib.Path(__file__).resolve().parent.parent) + "/"
+HERE = pathlib.Path(__file__).parent
 
 
 def load(path, module):
@@ -39,34 +36,115 @@ def load(path, module):
     return loaded
 
 
-text = load(D + "text-identicon.py", "t")
-identicon = load(D + "repository-identicon.py", "i")
+text = load(REPO + "text-identicon.py", "t")
+identicon = load(REPO + "repository-identicon.py", "i")
+
+
+# ---------------------------------------------------------------------------
+# Palette, painted and nominal
+# ---------------------------------------------------------------------------
 
 NOMINAL = {name: "#{:02x}{:02x}{:02x}".format(*rgb)
            for _e, name, _cp, rgb in text.PALETTE}
 ORDER = {name: k for k, (_e, name, _cp, _rgb) in enumerate(text.PALETTE)}
 
+# What the squares are actually painted, averaged across the vendor sets by the
+# share of developers likely to be reading through each -- from
+# `../emoji-square-colours.md`, which samples seven sets and states its own
+# weighting. The palette proper stays anchored on the Unicode names, because
+# there is no single truth to anchor on: seven vendors disagree by up to twenty
+# degrees of hue on one square, so any vendor's values would be wrong for
+# everybody else's reader. These are for asking a different question -- what a
+# triple looks like where it is actually read -- and `--painted` asks it.
+#
+# Independently corroborated where it could be: sampling Emojipedia's renderings
+# of the Fluent 3D and Twemoji squares reproduces that document's values exactly,
+# and its Noto values match the COLRv1 font installed on this machine.
+PAINTED = {
+    "red": (0xE4, 0x3B, 0x3F), "orange": (0xFD, 0x85, 0x26),
+    "yellow": (0xFD, 0xC1, 0x39), "green": (0x53, 0xBC, 0x53),
+    "blue": (0x27, 0x7E, 0xE2), "purple": (0xA6, 0x55, 0xD7),
+    "brown": (0x98, 0x5D, 0x4A), "black": (0x29, 0x28, 0x2A),
+    "white": (0xE0, 0xDB, 0xE4),
+}
+AS_PAINTED = False       # --painted
+
+
+def square_rgb(name):
+    """The colour to treat this square as, under whichever palette is in force."""
+    return PAINTED[name] if AS_PAINTED else text.PALETTE[ORDER[name]][3]
+
+
+def square_hex(name):
+    """Hex for a square under whichever palette is in force."""
+    return text.hex_colour(square_rgb(name))
+
+
+def multiset(names):
+    """Order-free form, for asking whether two triples use the same squares."""
+    return tuple(sorted(names, key=lambda n: ORDER[n]))
+
+
 # ---------------------------------------------------------------------------
-# Geometry. The ring is thick enough to read as a colour rather than a line,
-# and the spike starts close enough to it that the comparison is immediate.
+# Geometry
+#
+# The ring is thick enough to read as a colour rather than a line. Reading
+# outward: the tiers, tier 0's numbers, the gamut, and tier 0's trefoils on
+# neutral ground.
 # ---------------------------------------------------------------------------
 
-# 1400 was sized for the spikes, which reached far outside the gamut ring.
-# With them off the drawing stops at RING_OUT, and the canvas was mostly the
-# white space they used to occupy. The corner lists set the floor now, not the
-# wheel: 27 rows at 15px, twice over, plus margins.
 SIZE = 720
 CENTRE = SIZE / 2
-TECH_IN, TECH_OUT = 152, 160   # the workings: stretch rules and drift ticks
-NUM_R = 165                    # the numbers, in the gap before the gamut
-RING_IN, RING_OUT = 170, 212   # the gamut itself
-OUTER_IN, OUTER_OUT = 218, 268  # the ring to look at: the blocks, wide
-# The second gamut ring, and the trefoils that sit on it. Deep enough for the
-# cluster (about 2.9 disc radii) with a little air at each edge.
-TREF_IN, TREF_OUT = 272, 296
-TREF_BG = "#ececec"
-TABLE_W = 232                  # the roster, beside the wheel
-LANE_H, LANE_GAP = 14, 2.5      # the lane stack, with --tables
+TIER_FLOOR = 62                # nearest the middle a tier may reach
+# The pitch is capped rather than derived from this, so moving the ring out
+# costs the stack depth, not every block its height.
+TIER_OUT = 258                 # the outermost tier
+# Tier 0 alone is held off the stack below it. The gap between the ring and the
+# first tier is doing a different job from the gap between any other pair --
+# it separates the arrangement from the alternatives to it, not one alternative
+# from the next -- so it is set on its own rather than by widening every tier's
+# label gap, which would have thinned every block to pay for it.
+RING_SEP = 5
+
+# **A view, not a smaller wheel.** `--ring-only` draws the ring and leaves the
+# tiers and the roster off the page. Everything is still read, still packed,
+# still assigned a tier and still reported by the checklist -- the run says the
+# same things it always did and the numbering is untouched. What changes is one
+# picture, for looking at the arrangement without the alternatives to it
+# crowding round; `wheel.tsv` remains the record of all 165.
+RING_ONLY = False
+RING_DEEP = 1.5                # the ring's depth, with nothing beneath it
+# **The offsets and tier 0's numbers have changed places.** The ticks were out
+# in the corridor between the ring and the gamut, and the numbers were in the
+# clear gap inside the ring with every other tier's. That put the one mark that
+# measures a tile against the gamut on the far side of the tile from the gamut,
+# so reading a tick against the hue it points at meant crossing the block, and
+# it put tier 0's numbers deepest of the two things competing for the corridor's
+# attention. Reversed: the ticks drop into the gap inside the ring, where the
+# leader now runs outward to the tile's inner edge, and the numbers take the
+# corridor, where a number sits between the ring it names and the gamut it is
+# being judged against.
+#
+# The tick radius is not a constant any more -- the gap it sits in is set by
+# `pitch`, which is set by how deep the stack turned out, so it is computed
+# where that is known and passed in.
+# Every block carries its number, and no number is laid over a colour. A tier
+# is therefore two bands: the block itself, and a clear gap immediately inside
+# it holding that tier's numbers.
+TIER_BAND = 13                 # the coloured block
+TIER_LABEL = 11                # the clear gap inside it, for its numbers
+RING_IN, RING_OUT = 264, 306   # the gamut itself
+# Centred in the corridor rather than set from either edge: the number belongs
+# to neither the ring nor the gamut. It is the thing that lets you name one
+# while looking at the other, so it sits the same distance from both.
+RING_NUMBER_R = (TIER_OUT + RING_IN) / 2
+NUMBER_SIZE = 4.5              # small enough to clear the corridor
+# The neutral band and the trefoils that sit on it. Deep enough for the cluster
+# (about 2.9 disc radii) with a little air at each edge.
+TREF_IN, TREF_OUT = 306, 336   # inner edge against the gamut, no seam
+TREF_BG = "#e2e2e2"
+COL_W = 120                    # one roster column, beside the wheel
+ROSTER_ROWS = 96               # rows a column holds at this canvas height
 RING_STEP = 0.25                # degrees per ring segment
 
 
@@ -79,9 +157,9 @@ def polar(radius, degrees):
 def sector(r0, r1, a0, a1):
     """An annular sector as a path.
 
-    The base band uses real arcs rather than the rotated rectangles the ring
-    gets away with: a division is five degrees wide, and at this radius a
-    rectangle's corners would visibly overshoot the arc.
+    Real arcs, not the rotated rectangles the ring gets away with: these span
+    from one degree up to the trefoil band's half-circles, and at these radii a
+    rectangle's corners visibly overshoot.
     """
     large = 1 if (a1 - a0) % 360 > 180 else 0
     x0, y0 = polar(r1, a0)
@@ -92,217 +170,463 @@ def sector(r0, r1, a0, a1):
             f'L{x2:.2f},{y2:.2f} A{r0},{r0} 0 {large} 0 {x3:.2f},{y3:.2f} Z')
 
 
+# A wedge is as wide as the identity its triple affords. Three distinct
+# squares give six arrangements and eight shape combinations -- forty-eight
+# marks -- against a pair's three-by-eight and three-of-a-kind's one-by-eight.
+# Eight degrees, four and one price that, near enough, and make the picture
+# say what each entry is worth rather than merely that it exists.
+#
+# **The eight is optimistic and the wheel does not currently show it.** Black
+# and white are never circled, so a triple containing one has four shape
+# combinations and one containing both has two. A three-distinct block with a
+# black in it is worth twelve marks, not forty-eight, and is drawn as wide as
+# one worth forty-eight. See the README: it is a real fault in the pricing, not
+# a rounding.
+WEDGE = {3: 8.0, 2: 4.0, 1: 1.0}
+# --scale multiplies every class alike, so the 8/4/1 ratio -- and with it the
+# reading that width is the identity a triple affords -- survives untouched.
+WIDTH_SCALE = 1.0
+# Wedges may touch. They are meant to: an eight-degree run of eight-degree
+# wedges tiles exactly, and demanding clear air between them pushed a
+# perfectly packed row inward one wedge at a time for no reason. Only a real
+# overlap sends an entry to the next lane.
+WEDGE_TOL = 1e-6
+
+
 # ---------------------------------------------------------------------------
-# The bench: triples that are not on the wheel but might deserve to be.
+# The catalogue, and what the harness says
 # ---------------------------------------------------------------------------
 
-BENCH_PER_CORNER = 27
-BENCH = S / "bench.tsv"
+# Below this Oklab chroma a blend is a grey and its hue angle is noise. Seven
+# qualify under the Unicode names, at chroma zero, with the next candidate two
+# orders of magnitude clear. Under --painted it is six and the margin is thin:
+# the highest neutral is 0.018 and the next candidate 0.022, so this is a knife
+# edge, not a comfortable cut. Do not nudge it.
+NEUTRAL_CHROMA = 0.02
 
 
-def read_bench():
-    """The roster, verbatim. Numbers are the file's, never recomputed."""
-    out = []
-    for line in BENCH.read_text().splitlines():
-        if not line.strip() or line.lstrip().startswith("#"):
-            continue
-        f = line.split("\t")
-        at = float(f[5]) if len(f) > 5 and f[5].strip() else None
-        mult = float(f[6]) if len(f) > 6 and f[6].strip() else 1.0
-        out.append((int(f[0]), multiset(f[1:4]), f[4].strip(), at, mult))
-    return out
+_PERC = None
 
 
-def pool(roster):
-    """Every unused triple the harness allows, best first, minus the rejected."""
-    perceptual = load(str(S / "perceptual.py"), "perc")
-    # **One class.** Whether a triple is currently on the wheel is not a
-    # property of the triple, and the spread-and-stretch route assigns them by
-    # hand anyway -- so being in use no longer disqualifies anything. The
-    # roster is the vocabulary, not a list of leftovers. Only what is already
-    # numbered, and what has been rejected outright, is excluded.
-    known = {multiset(names) for _n, names, _s, _at, _m in roster}
+def harness():
+    """The perceptual rules, loaded once. Advisory here, not a gate."""
+    global _PERC
+    if _PERC is None:
+        _PERC = load(str(HERE / "perceptual.py"), "perc")
+    return _PERC
+
+
+# `W` and `K`, for a single white or black on an extreme target, were dropped
+# with the rule behind them -- see the tint note in perceptual.py.
+FLAGS = [("opponent", "opp"), ("gap", "gap"), ("two whites", "WW"),
+         ("two blacks", "KK"), ("forbidden", "no")]
+
+
+def flag_of(broken):
+    """The shortest honest label for what the harness says about a triple."""
+    for prefix, code in FLAGS:
+        if any(b.startswith(prefix) for b in broken):
+            return code
+    return ""
+
+
+def catalogue():
+    """**Every** triple, at the hue its blend reads as, with what the harness
+    thinks of it -- and nothing kept off the page for what the harness thinks.
+
+    All 165 multisets. The rules are still run and what they say is drawn on
+    the block as a broken edge and named in the roster, but they no longer
+    decide what is admitted. `DARK` and `LIGHT` are absolute luminances and the
+    version 2 ring runs 0.20 to 0.49, never reaching `LIGHT` at 0.58, so the
+    two-white rule fires at every hue and is measuring nothing -- and is right
+    every time anyway, since all seven two-white triples were sunk by eye.
+    Moving the cut into the gap in the distribution would make it pass four of
+    them. See the note in `perceptual.py`.
+
+    A few multisets average to a neutral and have no hue at all: six under
+    `--painted`, seven under the Unicode names. `atan2` of nothing is zero, so
+    `nearest_gamut` hands them a position they have no claim to -- three blacks
+    read 0.0 degrees, at dE 0.411 painted and 0.646 named. They are returned
+    separately, listed in the roster and given no place on the ring, since a
+    wheel is an argument about hue and they are not in it.
+
+    Returned best-first, by how faithfully the blend renders the colour at the
+    hue it reads as.
+    """
+    perceptual = harness()
     palette = [name for _e, name, _cp, _rgb in text.PALETTE]
-
-    rows, seen = [], set()
+    rows, hueless, seen = [], [], set()
     for a in palette:
         for b in palette:
             for c in palette:
                 key = multiset((a, b, c))
-                if key in seen or key in known:
+                if key in seen:
                     continue
                 seen.add(key)
                 mixed = mix_rgb(key)
-                hue, colour, delta = nearest_gamut(mixed)
-                if perceptual.violations(colour, tuple(ORDER[n] for n in key)):
-                    continue
-                rows.append((delta, hue, key, mixed))
-    return sorted(rows)
+                _L, ok_a, ok_b = oklab(mixed)
+                reads, colour, delta = nearest_gamut(mixed)
+                flag = flag_of(perceptual.violations(
+                    colour, tuple(ORDER[n] for n in key)))
+                if math.hypot(ok_a, ok_b) < NEUTRAL_CHROMA:
+                    hueless.append((delta, None, key, mixed, "--"))
+                else:
+                    rows.append((delta, reads, key, mixed, flag))
+    return sorted(rows), sorted(hueless)
 
 
-def candidates(limit, placed_only=True):
-    """What the bench currently offers, with its own numbers.
+def flag_at(names, hue):
+    """What the harness says about this triple at the hue it is drawn on."""
+    return flag_of(harness().violations(gamut_at(hue),
+                                        tuple(ORDER[n] for n in names)))
 
-    **The numbers used to be positional and moved under the reader.** Placing
-    six triples and freeing three renumbered everything, so `red red blue` went
-    from 22 to 21 without shifting a degree. The roster now lives in
-    `bench.tsv`, an entry keeps its number for good, and a number is never
-    reissued -- the same discipline `target.tsv` already gets, for the same
-    reason: it is referred to by hand, across renders.
 
-    A plain render only reads. `--refill` is what appends new candidates,
-    picking sector by sector so the cool half is not crowded out, and giving
-    each the next free number.
+def circular_overlap(a0, a1, b0, b1):
+    """Do two arcs meet, allowing for either having been written across zero?"""
+    for shift in (-360.0, 0.0, 360.0):
+        if a0 + shift < b1 - WEDGE_TOL and b0 < a1 + shift - WEDGE_TOL:
+            return True
+    return False
+
+
+# **The seating constants have gone with the seating**: `MAX_NUDGE`,
+# `NUDGE_STEP`, `MAX_PUSH`, `AUTO_FILL` and `FLUSH_TOL`, none of them reachable
+# now that every seat is written down and the ring is closed. `FLUSH_TOL` was
+# set from Justin's eye: the gap between two adjacent tiles, in degrees of ring.
+# A gap of 0.106 he could not see, one of 0.380 he asked to close -- about half
+# a pixel and about two, at this radius. HANDOVER.md:169 holds the fuller
+# version.
+
+
+# ---------------------------------------------------------------------------
+# Verdicts: bias, sink, and the sunk bands
+# ---------------------------------------------------------------------------
+
+# How a tile is nudged between tiers. `out` is packed before its neighbours so
+# it takes the outermost tier with room; `in` starts its search a tier deeper.
+# Neither can put a tile on the ring -- that is what `ring` is for -- and
+# neither moves it in angle, which stays fixed at the hue its blend reads.
+BIAS = {"out": -1, "in": 1}
+
+
+def bias_of(names):
+    """How many tiers out or in, from the verdict and its optional count.
+
+    `out 2` is dropped before `out`, which is dropped before everything else,
+    so it gets first refusal on the outer tiers. `in 2` starts its search two
+    tiers further in. Neither moves a tile in angle.
     """
-    # Where a triple is drawn inside the ring is its own datum, in the `at`
-    # column, and nothing else decides it. It was briefly derived from the
-    # divisions a triple occupied in target.tsv, which quietly imposed that
-    # file's five-degree sampling grid on a ring that has no grid -- eight
-    # degrees became unrepresentable for no reason at all. A triple with no
-    # `at` falls back to the hue its blend reads as, which is a measurement
-    # rather than a placement, and is only a starting point.
-    rows = []
-    for n, names, status, at, mult in read_bench():
-        if status != "offered":
-            continue
-        # The ring is full and hand-placed, so an entry with no position is no
-        # longer a candidate waiting its turn -- it is a colour that did not
-        # make it. Drawing those behind the ring, and listing them in the
-        # corners, was the apparatus of choosing. `--tables` brings both back
-        # when there is choosing to do again.
-        if placed_only and at is None:
-            continue
-        mixed = mix_rgb(names)
-        reads, _colour, delta = nearest_gamut(mixed)
-        rows.append((delta, reads if at is None else at, names, mixed, n,
-                     at is not None, reads, mult))
-    rows.sort(key=lambda r: r[1])
-    return rows[:limit]
+    verdict, where = placements().get(names, ("", None))
+    step = BIAS.get(verdict, 0)
+    if step and where and where[0] == "count":
+        return step * int(where[1])
+    return step
 
 
-def refill(limit):
-    """Append every triple the harness allows to the roster.
+# Where the two cuts fall, in the same 0-100 luminance the blocks are drawn in.
+# Widened from 45 and 74 on Justin's eye: `red green black` at 48.6 reads dark
+# and `red green white` at 64.9 reads light, and both were in the middle band.
+#
+# **Set past the block that moved them, not at it.** 48.7 would have taken #29
+# and left `orange blue black` at 48.8 behind, which is a tenth of a point and
+# nothing anybody can see. Each cut sits in the nearest real hole in the
+# distribution instead -- 50.5 falls between 49.9 and 53.2, 63.0 between 61.6
+# and 64.8 -- so no pair a hair apart ends up in different rings.
+#
+# Frozen rather than taken from the ring's own range, which is what they were
+# first set against: a threshold that moves when the ring moves would quietly
+# reband a tile between one render and the next.
+SUNK_DARK, SUNK_MID, SUNK_LIGHT = 0, 1, 2
+SUNK_DARK_MAX = 50.5
+SUNK_LIGHT_MIN = 63.0
 
-    No slot count, no sector quota and no quality bar. The roster is meant to
-    hold every admissible triple, and the wedge widths already price each one
-    by the identity it affords -- so a weak triple shows as a thin sliver
-    rather than being kept off the list. Rationing existed when there were
-    twenty-four places to give out; there are none now.
+
+def luminance(rgb):
+    """Perceived lightness of a blend, 0 to 100, gamma-aware.
+
+    Straight-average grey put `yellow white white` and `blue black black` far
+    closer together than any eye does, and the bands drawn off it did not look
+    like bands.
     """
-    roster = read_bench()
-    # No quality bar any more. The wedge widths now price each entry by the
-    # identity it affords -- eight degrees for three distinct squares, four
-    # for a pair, one for three of a kind -- so a weak triple shows as a
-    # thin sliver rather than being left out of the picture entirely.
-    chosen = list(pool(roster))
-    if not chosen:
-        print("nothing new under the good line")
-        return 0
-
-    nxt = max((n for n, _k, _s, _at, _m in roster), default=0) + 1
-    lines = BENCH.read_text().rstrip("\n").split("\n")
-    for delta, hue, names, _mixed in sorted(chosen, key=lambda r: r[1]):
-        lines.append("\t".join([str(nxt), *names, "offered"]))
-        print(f"  #{nxt:<4} {hue:>5.0f}  {' '.join(names):26} dE {delta:.3f}")
-        nxt += 1
-    BENCH.write_text("\n".join(lines) + "\n")
-    return len(chosen)
+    r, g, b = ((c / 255) ** 2.2 for c in rgb)
+    return 100 * (0.2126 * r + 0.7152 * g + 0.0722 * b) ** (1 / 2.2)
 
 
-def bench(out, rows):
-    """The candidates, parked in the four corners the wheel does not reach."""
-    SW, GAP, ROW = 11, 2, 15
-    margin = 14
-    # Right-hand columns are right-aligned to the margin rather than mirrored
-    # from the circle, so they use the full width instead of hugging the wheel.
-    entry_w = 3 * (SW + GAP) + 8 + SW + 6 + 52
-    right = SIZE - margin - entry_w
-    bottom = SIZE - margin - BENCH_PER_CORNER * ROW - 4
+def sunk_band(rgb):
+    """Which of the three sunk rings a rejected blend belongs in."""
+    lit = luminance(rgb)
+    if lit <= SUNK_DARK_MAX:
+        return SUNK_DARK
+    return SUNK_LIGHT if lit >= SUNK_LIGHT_MIN else SUNK_MID
 
-    gutter = 16
-    corners = [(margin + gutter, margin), (right, margin),
-               (margin + gutter, bottom), (right, bottom)]
 
-    out.append('<g font-family="monospace" font-size="9" fill="#666">')
-    for c, (ox, oy) in enumerate(corners):
-        chunk = rows[c * BENCH_PER_CORNER:(c + 1) * BENCH_PER_CORNER]
-        if not chunk:
+def is_sunk(names):
+    """Whether a tile has been sent to the inner-inner band.
+
+    `sink` is for the ones judged noise: they are read as a block, if at all,
+    and never against the tile beside them. So they come out from among the
+    alternatives, where their only effect was to push the tiers that are still
+    being judged inward and away from the ring.
+    """
+    return placements().get(names, ("", None))[0] == "sink"
+
+
+def sunk_at(names):
+    """The angle a `sink` line gives, if it gives one.
+
+    **The one verdict that moves a tile in angle without seating it.** For
+    anything still under judgement that would be a lie -- the whole point of a
+    tier is that a tile sits at the hue its blend reads, so it can be compared
+    with the ring above it. A sunk tile is not being compared with anything, so
+    a few degrees costs nothing, and spending them is what lets the set close
+    up into two rows instead of splaying across nine.
+    """
+    verdict, where = placements().get(names, ("", None))
+    if verdict != "sink":
+        return None
+    return where[1] if where and where[0] == "at" else None
+
+
+# ---------------------------------------------------------------------------
+# wheel.tsv: the wheel
+# ---------------------------------------------------------------------------
+
+# The wheel's own version, which is not the key's mapping version. The mapping
+# version says which colour rule drew a mark; this says which arrangement of
+# tricolours stands over it, and it moves when a tile moves.
+WHEEL_VERSION = "0.3"
+
+WHEEL_TSV = HERE / "wheel.tsv"
+
+_LINES = None
+
+
+def tsv_lines():
+    """Every line of `wheel.tsv`, in order: `(verb, where, triple)`.
+
+    **The line number is the tile's number, and the line says which tile.**
+    Both, deliberately: position alone would put the whole file one out,
+    silently, if a line were ever dropped, and the triple alone was what the
+    old file avoided carrying, because transcribing one by hand put half a
+    batch on the wrong tiles once. The number column is never read as an
+    identity, only compared with where it sits.
+    """
+    global _LINES
+    if _LINES is not None:
+        return _LINES
+    _LINES = []
+    if not WHEEL_TSV.exists():
+        return _LINES
+    for line in WHEEL_TSV.read_text().splitlines():
+        # A trailing comment, so a placement can carry what it cost beside it.
+        line = line.split("#", 1)[0]
+        if not line.strip():
             continue
-        if c == 0:
-            out.append(f'<text x="{ox}" y="{oy + 8}" fill="#444">not on the wheel</text>')
-        top = oy + (20 if c == 0 else 8)
-        for r, row in enumerate(chunk):
-            delta, hue, names, mixed = row[0], row[1], row[2], row[3]
-            y = top + r * ROW
-            n = row[4]
-            out.append(f'<text x="{ox - 4}" y="{y + SW - 3}" text-anchor="end" '
-                       f'fill="#999">{n}</text>')
-            for s, name in enumerate(names):
-                out.append(f'<rect x="{ox + s * (SW + GAP)}" y="{y}" width="{SW}" '
-                           f'height="{SW}" fill="{NOMINAL[name]}" stroke="#aaa" '
-                           f'stroke-width="0.5"/>')
-            mx = ox + 3 * (SW + GAP) + 8
-            out.append(f'<rect x="{mx}" y="{y}" width="{SW}" height="{SW}" '
-                       f'fill="{text.hex_colour(mixed)}" stroke="#666" '
-                       f'stroke-width="0.7"/>')
-            out.append(f'<text x="{mx + SW + 6}" y="{y + SW - 3}">'
-                       f'{hue:.0f}&#176; {delta:.3f}</text>')
-    out.append('</g>')
+        parts = line.split()
+        n, verb, where, triple = parts[0], parts[1], parts[2], parts[3:]
+        if len(triple) != 3:
+            print(f"  not three squares: {line.strip()}")
+            continue
+        if not n.isdigit() or int(n) != len(_LINES) + 1:
+            print(f"  #{n} sits on line {len(_LINES) + 1}: {line.strip()}")
+        _LINES.append((verb, where, multiset(tuple(triple))))
+    seen = {t for _v, _w, t in _LINES}
+    if len(seen) != len(_LINES):
+        print(f"  {len(_LINES) - len(seen)} triples named twice "
+              f"in {WHEEL_TSV.name}")
+    return _LINES
+
+
+def placements():
+    """Where each tile goes, keyed by triple, read off `wheel.tsv`.
+
+    Every tile has a line, including the ones the packer would place by falling
+    through to its default. `tier` is that default written down: off the ring,
+    wherever the packing puts it.
+    """
+    out = {}
+    for verb, where, names in tsv_lines():
+        if verb == "ring":
+            out[names] = ("ring", ("at", float(where)))
+        elif verb == "sink":
+            out[names] = ("sink", ("at", float(where)))
+        elif verb in ("tier", "eject", "hueless"):
+            out[names] = ("inner", None)
+        elif verb in ("in", "out"):
+            out[names] = (verb, ("count", int(where)))
+        else:
+            print(f"  no such verdict: {verb} on {' '.join(names)}")
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Placing the ring
+# ---------------------------------------------------------------------------
+
+# Ranking candidates by dE alone was wrong at least once: `red yellow purple`
+# won 14 degrees on Justin's eye over two orange-based triples that dE
+# preferred. That judgement is in `wheel.tsv` now, tile by tile.
+
+
+def propose(rows):
+    """The ring: every tile `wheel.tsv` seats, at the angle it gives them.
+
+    A lookup, not a search: every seat is written down. The one piece of work
+    left is the collision guard, and it stays even though nothing currently
+    trips it, because a silently overlapping ring is the failure the whole
+    flattening was done to avoid.
+
+    **The harness does not vote here.** What the rules say is carried on the
+    block as a broken edge and in the roster as a code, for you to overrule or
+    agree with by looking.
+    """
+    decided = placements()
+    chosen = []
+
+    # Angle, not hue: equal angle is equal share of projects, and a tile is as
+    # wide as the share it takes. Compression belongs to the ring alone -- a
+    # tile squeezed along with it gives back exactly what the compression was
+    # for.
+
+    def verdict(names):
+        got = decided[names][0] if names in decided else None
+        return "inner" if got in ("out", "in") else got
+
+    for delta, reads, names, mixed, _flag in rows:
+        if verdict(names) != "ring":
+            continue
+        where = decided[names][1]
+        if where is None or where[0] != "at":
+            print(f"  {' '.join(names)} (#{canon(names)}) is on the ring "
+                  f"with no angle; left off")
+            continue
+        chosen.append((delta, where[1] % 360, names, mixed, reads))
+
+    keep, contested = [], []
+    for row in sorted(chosen, key=lambda r: r[1]):
+        half = WEDGE[len(set(row[2]))] * WIDTH_SCALE / 2
+        if any(circular_overlap(row[1] - half, row[1] + half,
+                                k[1] - WEDGE[len(set(k[2]))] * WIDTH_SCALE / 2,
+                                k[1] + WEDGE[len(set(k[2]))] * WIDTH_SCALE / 2)
+               for k in keep):
+            contested.append(row)
+        else:
+            keep.append(row)
+    return keep, contested
+
+
+def gaps(chosen):
+    """The arcs tier 0 leaves unnamed, longest first, in angle.
+
+    Angle rather than hue, so a gap reads as the share of projects that would
+    get no triple: one degree here is one degree of the draw wherever it sits.
+    """
+    arcs = sorted(((r[1] - WEDGE[len(set(r[2]))] * WIDTH_SCALE / 2) % 360,
+                   WEDGE[len(set(r[2]))] * WIDTH_SCALE) for r in chosen)
+    out = []
+    for k, (lo, wide) in enumerate(arcs):
+        nxt = arcs[(k + 1) % len(arcs)][0] + (360 if k + 1 == len(arcs) else 0)
+        if nxt - (lo + wide) > WEDGE_TOL:
+            out.append(((lo + wide) % 360, nxt - (lo + wide)))
+    return sorted(out, key=lambda g: -g[1])
 
 
 def gamut_at(hue):
-    """The colour identicon.js produces at this hue, at its fixed s and l."""
-    return tuple(identicon._quantise(v)
-                 for v in identicon._hsl_to_rgb((hue % 360) / 360,
-                                                identicon.SATURATION,
-                                                identicon.LIGHTNESS))
+    """The colour mapping version 2 produces at this hue.
+
+    One Oklab lightness right around the wheel, with the chroma capped or held
+    to what sRGB carries, whichever is smaller. The ring is the thing a block
+    is judged against, so it has to be the ring the project actually draws --
+    it was identicon.js's fixed-saturation HSL until version 2 replaced it.
+    """
+    degrees = hue % 360
+    return tuple(identicon._encode(v) for v in identicon._oklch_to_linear(
+        identicon.MARK_LIGHTNESS, identicon.gamut_chroma(degrees), degrees))
 
 
-def hue_of(rgb):
-    """Plain HSL hue in degrees. Zero for an achromatic."""
-    r, g, b = rgb
-    mx, mn = max(rgb), min(rgb)
-    if mx == mn:
+# ---------------------------------------------------------------------------
+# Compressing the ring
+#
+# The hue draw is uniform, so every degree of ring gets the same share of
+# projects -- including the degrees no triple can name. A warp changes where
+# those bits land: hue still runs 0 to 360 and every colour still exists, but
+# an arc can be given less of the draw than its width suggests.
+#
+# The speed function is a raised cosine, so its derivative is zero at both
+# ends and the ramp has no corner: `speed(t) = 1 + (peak-1) * bump(t)`, with
+# the bump one full cosine period centred on `centre` and half-width `half`.
+# Its integral is elementary, which matters more than it looks: a port has to
+# reproduce this exactly, and a closed form with one sine in it is a paragraph
+# of specification where a spline would be a page.
+#
+# WARP is (centre, half, peak) in degrees, or None for the uniform draw.
+# `peak` is how much faster the hue advances at the centre, so the share of
+# projects landing there falls by roughly that factor.
+# ---------------------------------------------------------------------------
+
+WARP = (215.0, 50.0, 4.0)
+
+
+def warp_theta(angle):
+    """Angle around the drawing to hue on the ring. Identity when unwarped."""
+    if WARP is None:
+        return angle % 360
+    centre, half, peak = WARP
+    total = 360 + (peak - 1) * half
+    return 360 * (angle + (peak - 1) * _bump_integral(angle % 360)) / total
+
+
+def _bump_integral(t):
+    """The raised-cosine bump, integrated from the ramp's start to angle t."""
+    centre, half, _peak = WARP
+    u = t - centre
+    if u <= -half:
         return 0.0
-    d = mx - mn
-    h = ((g - b) / d) % 6 if mx == r else \
-        ((b - r) / d + 2 if mx == g else (r - g) / d + 4)
-    return (h * 60) % 360
+    if u >= half:
+        return half
+    return 0.5 * (u + half) + (half / (2 * math.pi)) * math.sin(math.pi * u / half)
 
 
-def multiset(names):
-    """Order-free form, for asking whether two triples use the same squares."""
-    return tuple(sorted(names, key=lambda n: ORDER[n]))
+def warp_angle(hue):
+    """Hue on the ring back to angle around the drawing, by bisection.
+
+    Numeric because only the renderer needs it: the mapping itself only ever
+    goes the other way, from the digest's bits to a colour.
+    """
+    if WARP is None:
+        return hue
+    turns, hue = divmod(hue, 360)
+    lo, hi = 0.0, 360.0
+    for _ in range(60):
+        mid = (lo + hi) / 2
+        if warp_theta(mid) < hue:
+            lo = mid
+        else:
+            hi = mid
+    return turns * 360 + (lo + hi) / 2
 
 
 # ---------------------------------------------------------------------------
 # Rendering
 # ---------------------------------------------------------------------------
 
-def ring(out, inner=None, outer=None):
+def ring(out):
     """The gamut itself, one thin segment at a time.
 
     Drawn as rotated rectangles rather than annular sectors: at this radius a
     quarter-degree of arc is under a pixel, so the difference is invisible and
     the arithmetic is one line instead of four.
-
-    Drawn twice now. The inner copy is what the block ring is judged against.
-    The outer copy is the ground the trefoils sit on, so each cluster of
-    constituent squares is read against the gamut colour at its own position
-    rather than against white -- which is the comparison actually being made
-    when a triple is placed, and the one thing white paper cannot show.
     """
-    inner = RING_IN if inner is None else inner
-    outer = RING_OUT if outer is None else outer
+    inner, outer = RING_IN, RING_OUT
     width = 2 * math.pi * outer * RING_STEP / 360 + 0.4
     steps = int(round(360 / RING_STEP))
     for k in range(steps):
-        hue = k * RING_STEP
-        colour = text.hex_colour(gamut_at(hue))
+        angle = k * RING_STEP
+        colour = text.hex_colour(gamut_at(warp_theta(angle)))
         out.append(
             f'<rect x="{CENTRE - width / 2:.3f}" y="{CENTRE - outer:.1f}" '
             f'width="{width:.3f}" height="{outer - inner}" fill="{colour}" '
-            f'transform="rotate({hue:.4f} {CENTRE} {CENTRE})"/>')
+            f'transform="rotate({angle:.4f} {CENTRE} {CENTRE})"/>')
 
 
 # White pulls less weight than the physics says it should. A rendered white
@@ -324,13 +648,13 @@ def mix_rgb(names):
     """
     weights = [WHITE_WEIGHT if n == "white" else 1.0 for n in names]
     total = sum(weights)
-    linear = [tuple(text._linear(v) for v in text.PALETTE[ORDER[n]][3])
-              for n in names]
+    linear = [tuple(text._linear(v) for v in square_rgb(n)) for n in names]
     return tuple(text._encode(sum(w * c[k] for w, c in zip(weights, linear)) / total)
                  for k in range(3))
 
 
 def oklab(rgb):
+    """sRGB to Oklab."""
     return text._oklab(tuple(text._linear(v) for v in rgb))
 
 
@@ -350,14 +674,11 @@ _GAMUT_HUE = [(h, colour, hue_angle(colour)) for h, colour in _GAMUT]
 def nearest_gamut(rgb):
     """Which gamut hue this blend reads as, by hue and not by proximity.
 
-    **This was wrong, and wrong in a way that pointed the same direction every
-    time.** It used to take the gamut colour at the smallest Oklab distance --
-    but a blend of three squares is always lighter and duller than the gamut,
-    which is fixed at saturation 0.7, so the nearest colour outright was chosen
-    mostly on lightness. Pale blends were matched to the cyans and darker ones
-    to the oranges, regardless of hue: `blue blue white` came out as 198
-    degrees when its hue is 282, and `green purple brown` came out as 38
-    degrees when it is a green at 129.
+    **Not by Oklab distance.** A blend of three squares is always lighter and
+    duller than the gamut, so the nearest colour outright gets chosen mostly on
+    lightness, pale blends matching the cyans and dark ones the oranges
+    regardless of hue: `blue blue white` came out at 198 degrees when its hue
+    is 282.
 
     A blend's hue is its hue. It is read off the Oklab hue angle and matched
     against the gamut's, and the distance is then reported against the colour
@@ -370,297 +691,294 @@ def nearest_gamut(rgb):
     return hue, colour, math.dist(oklab(colour), oklab(rgb))
 
 
-# A wedge is as wide as the identity its triple affords. Three distinct
-# squares give six arrangements and eight shape combinations -- forty-eight
-# marks -- against a pair's three-by-eight and three-of-a-kind's one-by-eight.
-# Eight degrees, four and one price that, near enough, and make the picture
-# say what each entry is worth rather than merely that it exists.
-#
-# **The eight is optimistic and the wheel does not currently show it.** Black
-# and white are never circled, so a triple containing one has four shape
-# combinations and one containing both has two. A three-distinct block with a
-# black in it is worth twelve marks, not forty-eight, and is drawn as wide as
-# one worth forty-eight. See the README: it is a real fault in the pricing, not
-# a rounding.
-WEDGE = {3: 8.0, 2: 4.0, 1: 1.0}
-# Wedges may touch. They are meant to: an eight-degree run of eight-degree
-# wedges tiles exactly, and demanding clear air between them pushed a
-# perfectly packed row inward one wedge at a time for no reason. Only a real
-# overlap sends an entry to the next lane.
-WEDGE_TOL = 1e-6
-OFFER_FLOOR = 62       # nearest the middle a lane may reach
 DISC_R = 6.0           # a constituent disc; what a 4 degree block can carry
 
 
-def offer_band(out, rows, tables=False):
-    """The vocabulary, at the hue each entry sits at.
+def tiers(out, proposal, rest, tiers_map=None):
+    """The vocabulary, stacked inward from the gamut, the suggestion outermost.
 
-    **Two rings, with different jobs.** The blocks are drawn twice. Outside the
-    gamut, wide, is the ring to look at: the mixture each triple makes, at the
-    hue it has been placed, with its trefoil beyond it. Inside the gamut is a
-    narrow technical band carrying the machinery -- the entry number, the
-    stretch rules, and the drift ticks and their leaders. Reading a colour and
-    auditing a placement are different acts and were fighting for the same
-    forty pixels; separating them lets the outer ring be as large as the
-    comparison needs while the workings stay legible and out of the way.
+    **Nothing may be hidden.** Bucketing by four degrees and stacking three
+    deep buried anything sharing a bucket and still overlapped across bucket
+    edges. A block you cannot see is a block you cannot judge.
 
-    **Nothing may be hidden.** The previous version bucketed by four degrees
-    and stacked three deep, which buried anything that shared a bucket and,
-    worse, still overlapped across bucket edges -- #67 at 345.5 and #24 at
-    346.5 landed in different buckets and drew straight over each other. A
-    block you cannot see is a block you cannot judge.
+    Tiers are packed greedily instead: walk the entries in angle order and drop
+    each into the first tier whose last block has cleared, opening a new tier
+    only when every existing one is still occupied. That guarantees no overlap
+    at any angle and uses depth only where the crowding is. Tier 0 is filled
+    first and alone, so the suggestion reads as one band against the gamut and
+    everything else stacks behind it.
 
-    Lanes are now packed greedily instead: walk the entries in angle order and
-    drop each into the first lane whose last block has cleared, opening a new
-    lane only when every existing one is still occupied. That guarantees no
-    overlap at any angle, and uses depth only where the crowding actually is --
-    one lane through the empty stretches, five or six through the oranges.
-    Lane height then divides whatever room the deepest cluster needs.
+    **Every block carries its number**, in the clear gap inside its own tier.
+    Numbering tier 0 alone was a false economy: three green-blue triples read
+    within a degree of each other, so they stack radially and read as one mark,
+    and nothing on the drawing could say what the two behind it were.
+
+    The trefoils stay with the outermost tier; one per tile would be a thicket.
     """
-    # Two passes, and the order matters. Entries with an explicit position are
-    # a deliberate arrangement, so they take the lanes against the gamut and
-    # read as one clean ring. Everything still sitting at the hue its blend
-    # happens to make is a measurement, not a decision, and goes behind them.
-    lanes = []                      # end angle of the last block in each lane
+    ends = []                       # the arcs already taken in each tier
     assigned = []
 
-    def half(row):
-        return width_of(row) / 2
-
     def drop(row, floor):
-        start = row[1] - half(row)
-        for k in range(floor, len(lanes)):
-            if start >= lanes[k] - WEDGE_TOL:
-                lanes[k] = row[1] + half(row)
+        """Into the outermost tier with actual room at this angle.
+
+        **Each tier holds a list of arcs, not a running end angle.** The end
+        angle was enough only while every tile arrived in angle order; the
+        moment a tier bias let one jump the queue, it set the tier's end past
+        everything behind it and locked the rest of the ring out -- five tiles
+        in tiers 2 to 6 with tier 1 empty beneath them.
+        """
+        wide = width_of(row) / 2
+        for k in range(floor, len(ends)):
+            if not any(circular_overlap(row[1] - wide, row[1] + wide, a, b)
+                       for a, b in ends[k]):
+                ends[k].append((row[1] - wide, row[1] + wide))
                 assigned.append((k, row))
                 return
-        lanes.append(row[1] + half(row))
-        assigned.append((len(lanes) - 1, row))
+        # Nothing had room: open a new tier. Appending to the last one instead
+        # drew every tile that did not fit on top of what was already there --
+        # a shallow-looking stack that was an overlapping one, and the check
+        # that passed it only ever looked at the ring.
+        while len(ends) < floor:
+            ends.append([])
+        ends.append([(row[1] - wide, row[1] + wide)])
+        assigned.append((len(ends) - 1, row))
 
-    for row in sorted((r for r in rows if r[5]), key=lambda r: r[1]):
+    for row in sorted(proposal, key=lambda r: r[1]):
         drop(row, 0)
-    behind = len(lanes)
-    for row in sorted((r for r in rows if not r[5]), key=lambda r: r[1]):
-        drop(row, behind)
+    behind = len(ends)
+    for row in sorted((r for r in rest if not is_sunk(r[2])),
+                      key=lambda r: (bias_of(r[2]), r[1])):
+        drop(row, behind + max(0, bias_of(row[2])))
 
-    depth = max(len(lanes), 1)
-    height = min(LANE_H,
-                 (TECH_OUT - OFFER_FLOOR) / depth - LANE_GAP) if tables \
-        else TECH_OUT - TECH_IN
+    # **The sunk ones start below everything, not merely deeper.** Given a
+    # bias they still competed for tiers with the alternatives, and one that
+    # happened to find room surfaced among them -- which is the one thing the
+    # verdict is for preventing. Their floor is whatever depth the rest ended
+    # at, so the band is theirs alone and cannot be entered from above.
+    #
+    # **And banded by luminance.** Split by how dark the blend comes out, the
+    # two ends read as what they are -- too dark to carry a hue, too light to
+    # carry one -- with the middle band holding the ones rejected for some
+    # other reason entirely. Each band's floor is the depth the band above
+    # ended at, so no tile can surface out of its own band however much room
+    # happens to be going in the one above it. Outermost first, so: neither,
+    # then too light, then too dark hard against the middle of the wheel. The
+    # two ends are done being looked at and the middle band is not, so the band
+    # that still has questions in it sits nearest the tiers still being judged.
+    for band in (SUNK_MID, SUNK_LIGHT, SUNK_DARK):
+        floor = len(ends)
+        for row in sorted((r for r in rest
+                           if is_sunk(r[2]) and sunk_band(r[3]) == band),
+                          key=lambda r: r[1]):
+            drop(row, floor)
+
+    # **Nothing is reordered after packing.** Ranking the tiers by chroma broke
+    # the one property the packing exists to give: a tile sits in the outermost
+    # tier that had room for it, so the stack is dense from tier 1 inward and
+    # depth reads as crowding. Reordering left holes against the ring and put
+    # sparse tiers outside full ones.
+
+    depth = max(len(ends), 1)
+    # `RING_SEP` comes off the top before the stack is divided up, so holding
+    # tier 0 clear costs the tiers below it depth rather than costing every
+    # block its height.
+    pitch = min(TIER_BAND + TIER_LABEL,
+                (TIER_OUT - RING_SEP - TIER_FLOOR) / depth)
+    height = pitch * TIER_BAND / (TIER_BAND + TIER_LABEL)
+    # Half again as deep, and only with the tiers hidden. At full depth the ring
+    # would eat the gap below it and sit on the tier behind it, so the deeper
+    # block and the hidden stack are one look rather than two settings.
+    ring_height = height * (RING_DEEP if RING_ONLY else 1.0)
 
     ticks = []
-    for idx, (lane, row) in enumerate(assigned):
-        delta, hue, names, mixed, n, _p, reads, _mult = row
-        colour = text.hex_colour(mixed)
+    tiers_map = {} if tiers_map is None else tiers_map
+    for tier, row in assigned:
+        _delta, at, names, mixed, n, proposed, _reads, flag = row
         wide = width_of(row) / 2
-        outer = TECH_OUT - lane * (height + LANE_GAP)
-
-        # The technical band: thin, inside the gamut, carrying the workings.
-        out.append(
-            f'<path d="{sector(outer - height, outer, hue - wide, hue + wide)}" '
-            f'fill="{colour}" stroke="#888" stroke-width="0.5"/>')
-        if width_of(row) >= 4.0 and not lane:
-            number(out, hue, n)
-        if lane:
+        lo, hi = at - wide, at + wide
+        outer = TIER_OUT - tier * pitch - (RING_SEP if tier else 0)
+        # Tier 0 is drawn with a heavier edge -- lightened to 0.65, but not
+        # down to the 0.5 the other tiers get. Being outermost is not enough to
+        # find it by: it is filled first and only where a block fits, so a
+        # stretch of hue it has nothing for shows tier 1 as the outermost thing
+        # present, and the suggestion and the alternatives read alike.
+        #
+        # A block the harness objects to is drawn with a broken edge, not a
+        # colour and not a fade: the fill is the entire claim the block makes,
+        # so anything done to it argues with the thing being judged.
+        colour, weight = ('#333', 0.65) if proposed else ('#888', 0.5)
+        dash = ' stroke-dasharray="2 1.6"' if flag else ''
+        # **Recorded before anything is drawn.** Under `--ring-only` the tiers
+        # are not drawn, and every one of them is still packed, still assigned a
+        # depth and still reported by the checklist. Nothing is dropped from the
+        # run; one band of it is left off the picture.
+        tiers_map[names] = tier
+        band = ring_height if tier == 0 else height
+        if RING_ONLY and tier:
             continue
-        ticks.append((reads, hue, mixed))
-        stretch(out, row, outer - height)
-
-        # The ring to look at: same block, outside the gamut, wide enough to
-        # judge the colour against the gamut it sits beside.
         out.append(
-            f'<path d="{sector(OUTER_IN, OUTER_OUT, hue - wide, hue + wide)}" '
-            f'fill="{colour}" stroke="#888" stroke-width="0.5"/>')
-        if width_of(row) >= 4.0:
-            venn(out, idx, names, TREF_OUT - 3.0, hue, trefoil_r(row))
+            f'<path d="{sector(outer - band, outer, lo, hi)}" '
+            f'fill="{text.hex_colour(mixed)}" stroke="{colour}" '
+            f'stroke-width="{weight}"{dash}/>')
+        # Up against the block rather than centred in the gap below it. Centred
+        # sat a number as near the tier beneath as the one it names, and on a
+        # wheel nine deep that is a real question every time you read one.
+        # Tier 0 alone is numbered outward, in the corridor between the ring and
+        # the gamut; every other tier keeps its number in the gap inside itself,
+        # which is the only place it could go without covering something.
+        number(out, at, n, RING_NUMBER_R if tier == 0
+               else outer - height - (pitch - height) * 0.3)
+        constituents(out, names, at, outer - band / 2, hi - lo)
+        if proposed:
+            ticks.append((at, warp_angle(_reads), mixed))
+        if proposed and width_of(row) >= 4.0:
+            venn(out, names, tref_top(), at, DISC_R)
+    # Inside the ring now: the ticks take the clear gap tier 0's numbers left,
+    # hung a fixed distance below the block, and the leader runs outward from
+    # that vertex to the tile's inner edge.
+    drift(out, ticks, TIER_OUT - ring_height,
+          TIER_OUT - ring_height - TICK_GAP)
+    return depth
 
-    drift(out, ticks)
+
+DRIFT_W = 0.55            # the tick stroke, in pixels
+DRIFT_LEAD_W = 0.25       # the leader running from the tick to the block
+
+# **The tick is anchored at its far end, not at its middle.** It used to be
+# drawn either side of a centre radius, so shortening it walked the leader's
+# attachment point outward and moved the whole fan. The vertex -- where the
+# leader leaves the tick -- is now the fixed thing, set as a gap below the
+# block, and the tick grows outward from it. Shortening it therefore opens air
+# between the tick and the block it belongs to and disturbs nothing else.
+TICK_GAP = 6.5            # vertex to the block's inner edge
+TICK_LEN = 5.0 / 3        # a third of what it was
 
 
-def number(out, hue, n):
-    """The block's number, in the white gap between the workings and the gamut.
+def drift(out, ticks, band, vertex):
+    """A tick where each tile would sit if nobody had moved it, and a leader.
+
+    A placed tile and one left where it fell look identical, so each tile gets
+    a tick at its unmoved hue and a leader back to it. The tick is painted in
+    the tile's own colour, which is what says whose it is.
+    """
+    for at, home, mixed in ticks:
+        colour = text.hex_colour(mixed)
+        x0, y0 = polar(vertex, home)
+        x1, y1 = polar(vertex + TICK_LEN, home)
+        out.append(f'<line x1="{x0:.2f}" y1="{y0:.2f}" x2="{x1:.2f}" '
+                   f'y2="{y1:.2f}" stroke="{colour}" stroke-width="{DRIFT_W}"/>')
+        if abs(((at - home + 180) % 360) - 180) < 0.01:
+            continue
+        bx, by = polar(band, at)
+        out.append(f'<line x1="{x0:.2f}" y1="{y0:.2f}" x2="{bx:.2f}" '
+                   f'y2="{by:.2f}" stroke="{colour}" '
+                   f'stroke-width="{DRIFT_LEAD_W}" stroke-opacity="0.85"/>')
+
+
+DOT_R = 1.7               # a constituent dot inside its own tile
+DOT_MIN = 0.5             # below this a dot is a smudge, and nothing is drawn
+
+
+def constituents(out, names, at, radius, span):
+    """The three squares themselves, in order, inside the tile they make.
+
+    The tile is the mixture; these are what it is a mixture of, in the order
+    they would be shown. Drawn where the tile is rather than out on the
+    trefoil band, so the two are read together without moving the eye.
+
+    **Shrunk to fit, not dropped.** A tile too narrow for three dots at full
+    size used to get none at all, and the rule bit far harder than its width
+    suggested: the dots are a fixed size in pixels while a tile's width is an
+    angle, so the same four-degree block loses them purely by sitting in a
+    deeper tier, where the radius is smaller and four degrees is fewer pixels.
+    That put the makeup out of reach of exactly the blocks whose colour is
+    hardest to guess, and the only way to see one was to promote it. The dots
+    now take whatever size the tile can hold, down to `DOT_MIN`, below which
+    they would be three smudges rather than three colours.
+    """
+    step = math.degrees(2.6 * DOT_R / radius)
+    rad = DOT_R
+    if span < 3 * step:
+        step = span / 3
+        rad = math.radians(step) * radius / 2.6
+        if rad < DOT_MIN:
+            return
+    for k, name in enumerate(names):
+        x, y = polar(radius, at + (k - 1) * step)
+        # The separating stroke shrinks with the dot. Held at 0.35 it was
+        # thicker than the small dots were wide, so three colours read as one
+        # white pill.
+        out.append(f'<circle cx="{x:.2f}" cy="{y:.2f}" r="{rad:.2f}" '
+                   f'fill="{square_hex(name)}" stroke="#ffffff" '
+                   f'stroke-width="{min(0.35, rad * 0.2):.2f}"/>')
+
+
+def number(out, hue, n, radius):
+    """The block's number, in the clear gap immediately inside its own tier.
 
     **On the band it was type laid over the colour it was meant to let you
     read**, and taking it off entirely left the wheel unnameable -- the roster
-    could say what a block was but you could not point at one. The gap does
-    both jobs: nothing is covered, and the number sits on the same radius as
-    its block.
+    could say what a block was but you could not point at one. A gap per tier
+    does both jobs: nothing is covered, and every number sits directly under
+    the block it names, so which tier it belongs to needs no explaining.
 
     Set tangentially, and flipped through the lower half so none of them stand
     on their heads. Rotating with the wheel rather than staying upright is what
-    keeps a two-digit number inside the four degrees the narrowest block gets;
-    upright text would need the width of its diagonal at every angle.
+    keeps a three-digit number inside the four degrees most blocks get; upright
+    text would need the width of its diagonal at every angle.
     """
     lower = 90 < hue < 270
     turn = hue - 180 if lower else hue
-    y = CENTRE + NUM_R if lower else CENTRE - NUM_R
+    y = CENTRE + radius if lower else CENTRE - radius
+    # The baseline nudge is a share of the size rather than a fixed 2.2, so the
+    # number stays centred on its radius when the size changes. At 2.2 against a
+    # smaller face it sat low in the corridor instead of in the middle of it.
     out.append(
-        f'<text x="{CENTRE}" y="{y + 3:.1f}" text-anchor="middle" '
-        f'font-family="monospace" font-size="6.5" fill="#666" '
+        f'<text x="{CENTRE}" y="{y + NUMBER_SIZE * 0.4:.2f}" '
+        f'text-anchor="middle" font-family="monospace" '
+        f'font-size="{NUMBER_SIZE}" fill="#666" '
         f'transform="rotate({turn:.3f} {CENTRE} {CENTRE})">{n}</text>')
 
 
-def trefoil_r(_row):
-    """One size for every trefoil.
-
-    **Sizing each cluster to its own block was wrong.** It looked efficient --
-    a wide block has more arc, so it can carry a bigger mark -- but disc area
-    then reads as a quantity, and it is not one: a trefoil says what three
-    squares average to, and that claim is identical whether the block beneath
-    it is four degrees or sixteen. Varying the size made narrow blocks look
-    like lesser statements of the same fact. The size is set by the narrowest
-    block that gets a trefoil at all, which is four degrees.
-    """
-    return DISC_R
-
-
 def width_of(row):
-    """How wide this block is drawn: its class price, times any hand stretch."""
-    return WEDGE[len(set(row[2]))] * row[7]
+    """How wide this block is drawn: its class price, and nothing else.
 
-
-STRETCH_IN = 1.6       # how far inward of the block the first rule sits
-STRETCH_STEP = 1.7     # spacing between stacked rules
-STRETCH_W = 1.0
-STRETCH_CAP = 1.4      # length of the radial cap at each end
-
-
-def stretch(out, row, inner):
-    """Rules under a widened block, as long as the block ought to have been.
-
-    The 8/4/1 degrees price a block by the identity it affords, and that is the
-    one thing a stretched block stops saying: at 2x a pair is as wide as an
-    unstretched three-distinct and reads as worth the same. This puts the class
-    price back on the page. Each rule spans the natural width, centred, with a
-    cap at each end, so the block overhangs it by exactly what was added.
-
-    **How far it was stretched is a count, not a length.** One rule alone said
-    only that a block had been widened -- telling 1.5x from 2x meant eyeing the
-    overhang against a width that is itself variable, which is no way to read a
-    chart. There is now one rule per half-step of stretch: one for 1.5x, two
-    for 2x. Counting two marks is immediate in a way that judging a proportion
-    never is.
+    Nothing is hand-stretched any more; every block is at 1x.
     """
-    steps = int(round((row[7] - 1) / 0.5))
-    if steps < 1:
-        return
-    natural = WEDGE[len(set(row[2]))] / 2
-    for k in range(steps):
-        r = inner - STRETCH_IN - k * STRETCH_STEP
-        sx, sy = polar(r, row[1] - natural)
-        ex, ey = polar(r, row[1] + natural)
-        out.append(
-            f'<path d="M {sx:.2f} {sy:.2f} A {r:.1f} {r:.1f} 0 0 1 {ex:.2f} '
-            f'{ey:.2f}" fill="none" stroke="#555" stroke-width="{STRETCH_W}"/>')
-    deep = inner - STRETCH_IN - (steps - 1) * STRETCH_STEP
-    for side in (-natural, natural):
-        cx, cy = polar(inner - STRETCH_IN + STRETCH_CAP / 2, row[1] + side)
-        dx, dy = polar(deep - STRETCH_CAP / 2, row[1] + side)
-        out.append(
-            f'<line x1="{cx:.2f}" y1="{cy:.2f}" x2="{dx:.2f}" y2="{dy:.2f}" '
-            f'stroke="#555" stroke-width="{STRETCH_W}"/>')
+    return WEDGE[len(set(row[2]))] * WIDTH_SCALE
 
 
-# Where a block sits is a decision, and the block itself cannot show that a
-# decision was taken -- a placed entry and one left at the hue its blend reads
-# looks identical. This is the only marker on the wheel that records a
-# judgement rather than a measurement, so it is drawn as faintly as it can be
-# and still be found when looked for: a hairline arc from the block's nominal
-# hue to where it was actually put, with a tick at nominal. Lanes behind the
-# first are all at nominal by definition and get nothing.
-# Inside the technical band, not between it and the gamut. The ticks used to
-# sit in the six pixels separating the two, where the leaders had to cross the
-# band's own edge to reach their blocks and the whole apparatus pressed up
-# against the gamut it was not about. Below the band there is open space, the
-# leaders run inward and unobstructed, and the ring reads outward from the
-# gamut without this crossing it.
-DRIFT_R = 143
-# **Every lane 0 block gets a tick, including the ones that never moved.**
-# Ticks were suppressed below a quarter of a degree on the grounds that such a
-# move is rounding rather than a decision, which is true and beside the point:
-# a block sitting exactly on nominal is a fact worth showing, and suppressing
-# it made the mono-colours -- which are all at nominal, by construction --
-# look as though they had been left out. A block at nominal now reads as a
-# tick with a leader running straight down it.
-
-
-DRIFT_W = 1.1          # tick stroke, in pixels
-# One tick's worth of arc, so a split pair reads as two marks with a gap the
-# same size as the marks themselves.
-DRIFT_GAP = math.degrees(2 * DRIFT_W / DRIFT_R)
-
-
-def drift(out, ticks):
-    """Ticks at the hue each lane 0 block would sit at if nobody had moved it.
-
-    **The connecting arc is gone.** Joining tick to block along a circle put
-    every one of them on the same line, and at this density the lines ran into
-    each other and read as one continuous rule rather than as forty separate
-    displacements. The tick alone says where nominal was; the block's own
-    colour says which block it belongs to, which is why it is painted in that
-    colour rather than in grey.
-
-    **Coincidences are split, not stacked.** Two triples can blend to the same
-    hue -- #16 and #95 both read 261.8 -- and drawing one over the other lost
-    a tick with nothing to show it had happened, so the marks could never be
-    counted. Any run closer together than a tick's width is spread evenly
-    about its own mean with exactly that width between neighbours: the pair
-    still reads as one event at one hue, and both are there to be counted.
-    """
-    placed = []
-    for angle, hue, mixed in sorted(ticks):
-        if placed and angle - placed[-1][-1][0] <= DRIFT_GAP:
-            placed[-1].append((angle, hue, mixed))
-        else:
-            placed.append([(angle, hue, mixed)])
-    for group in placed:
-        mid = sum(a for a, _h, _m in group) / len(group)
-        for i, (_a, hue, mixed) in enumerate(group):
-            at = mid + (i - (len(group) - 1) / 2) * DRIFT_GAP
-            colour = text.hex_colour(mixed)
-            x0, y0 = polar(DRIFT_R - 2.5, at)
-            x1, y1 = polar(DRIFT_R + 2.5, at)
-            out.append(
-                f'<line x1="{x0:.2f}" y1="{y0:.2f}" x2="{x1:.2f}" '
-                f'y2="{y1:.2f}" stroke="{colour}" '
-                f'stroke-width="{DRIFT_W}"/>')
-            # The leader closes the loop the tick alone could not: it runs
-            # from the tick's outer end to the middle of the block's outer
-            # edge, so every tick names its block unambiguously. Because each
-            # one leans by however far its block was moved, they fan rather
-            # than stack, and the extreme cases are the ones lying nearly
-            # flat against the ring -- visible as slope, without a number.
-            bx, by = polar(TECH_IN, hue)
-            out.append(
-                f'<line x1="{x1:.2f}" y1="{y1:.2f}" x2="{bx:.2f}" '
-                f'y2="{by:.2f}" stroke="{colour}" stroke-width="0.45" '
-                f'stroke-opacity="0.85"/>')
-
+# ---------------------------------------------------------------------------
+# The trefoils
+# ---------------------------------------------------------------------------
 
 # The trefoil is a Venn diagram, not three separate discs. Separate discs said
 # only which squares go in; overlapping them puts the two-way mixes and the
-# three-way mix on the page as well, in the one place where the question "what
-# does this actually average to" is being asked. Inner borders are dropped: a
-# stroke on each lens would out-draw the fills at this size, and the whole
-# point is to read the colours.
+# three-way mix on the page as well, which is where the question "what does
+# this actually average to" is being asked. Inner borders are dropped: a stroke
+# on each lens would out-draw the fills at this size.
 #
-# The discs stay DISC_R across; pulling their centres together is what makes
-# the cluster smaller. How far together is the whole balance of the mark. At a
-# centre-to-centre separation of DISC_R the middle swallowed almost everything
-# and the two-way lenses came out as slivers too thin to carry a colour -- the
-# mixes were being drawn and could not be seen. DISC_SEP is that separation as
-# a multiple of the radius: below sqrt(3) there is a middle region at all, and
-# 1.45 leaves all seven regions wide enough to read.
-#
-# Back to 1.0 -- centres one radius apart, the tightest arrangement here. The
-# wider setting was a fix for the wrong fault: the mixes were missing because
-# the clip-paths did not resolve, not because the lenses were thin. With the
-# regions drawn as explicit polygons they show at any separation, so the
-# cluster can be as compact as it was to begin with.
+# DISC_SEP is the centre-to-centre separation as a multiple of the disc radius:
+# below sqrt(3) there is a middle region at all, and 1.0 is the tightest
+# arrangement here. **Do not widen it to make the lenses readable** -- they
+# were missing because the clip-paths did not resolve, not because they were
+# thin, and the regions are explicit polygons now.
 DISC_SEP = 1.0
 
 
-def venn(out, idx, names, top, hue, radius=None):
+def tref_top():
+    """The radius the outermost point of a trefoil sits at, centring it.
+
+    **Measured, not nudged.** The cluster's depth is two disc radii plus the
+    drop to the tucked-under third, so the padding that centres it is worked
+    out rather than guessed, and it stays centred if the discs or the band
+    change size.
+    """
+    depth = 2 * DISC_R + 1.5 * DISC_SEP * DISC_R / math.sqrt(3)
+    return TREF_OUT - (TREF_OUT - TREF_IN - depth) / 2
+
+
+def venn(out, names, top, hue, radius=None):
     """Three overlapping discs, with every intersection filled by its mix.
 
     Drawn without any subtraction: the three discs go down whole, the three
@@ -690,7 +1008,7 @@ def venn(out, idx, names, top, hue, radius=None):
     for k in range(3):
         out.append(disc(k, ' fill="none" stroke="#777" stroke-width="0.9"'))
     for k in range(3):
-        out.append(disc(k, f' fill="{NOMINAL[names[k]]}"'))
+        out.append(disc(k, f' fill="{square_hex(names[k])}"'))
     for a, b in ((0, 1), (1, 2), (0, 2)):
         out.append(overlap([centres[a], centres[b]],
                            mix_rgb((names[a], names[b])), rad))
@@ -700,14 +1018,12 @@ def venn(out, idx, names, top, hue, radius=None):
 def overlap(centres, mixed, rad):
     """The region common to these discs, as one explicit polygon.
 
-    **This used to be done with clip-paths, and that is why the mixes were
-    missing.** The lens was a disc carrying `clip-path="url(#...)"`, which
-    every browser honours and at least one SVG renderer does not -- an
-    unresolved reference clips the shape away entirely, so the three plain
-    discs survived and every overlap silently vanished. Nothing in the file
-    looked wrong, which is the worst kind of wrong. There are no references
-    here now: the region is computed and written out as coordinates, so what
-    the file says is what any renderer draws.
+    **No clip-paths.** A lens drawn as a disc carrying `clip-path="url(#...)"`
+    is honoured by every browser and by at least one SVG renderer not at all --
+    an unresolved reference clips the shape away entirely, so the three plain
+    discs survive and every overlap silently vanishes, with nothing in the file
+    looking wrong. The region is computed and written out as coordinates
+    instead, so what the file says is what any renderer draws.
 
     The intersection of discs is convex, hence star-shaped about any interior
     point, so casting a ray from the centroid and taking the nearest exit of
@@ -736,60 +1052,170 @@ def overlap(centres, mixed, rad):
             f'fill="{text.hex_colour(mixed)}"/>')
 
 
-def table(out, rows):
-    """What is in use, in hue order, beside the wheel.
+# ---------------------------------------------------------------------------
+# Numbering, the roster and the checklist
+# ---------------------------------------------------------------------------
+
+def table(out, rows, columns):
+    """Every block on the wheel, beside the wheel, in as many columns as it takes.
 
     The wheel says where each block sits and what it looks like; it cannot say
-    what it is made of and where it ought to have been without covering itself
-    in type. This is the other half: mixture, constituents, the hue the mixture
-    reads as, and how far the block was moved from it. Sorted by position, so
-    reading down the column walks round the ring.
+    what it is made of without covering itself in type. This is the other half:
+    mixture, constituents, the hue the mixture reads as, and dE, the Oklab
+    distance between the blend and the gamut colour it stands in for.
 
-    Offset carries its sign. A block pulled back against the direction of
-    increasing hue reads negative, and a column of like signs is a run that was
-    dragged bodily rather than seated one at a time -- which is worth being
-    able to see at a glance, since it is exactly what the cascades did.
+    **All of them, not the suggestion alone.** Tier 0 used to be the roster and
+    the rest lived in corner lists behind a flag, which meant a block could be
+    drawn on the wheel, numbered on the wheel, and named nowhere. Tier 0 comes
+    first, in ring order; the rest follow from 101 in the order of the hue they
+    read as, which is the order their numbers were issued in, so a number found
+    on the wheel is looked up by counting down.
     """
-    SW, GAP, ROW = 10, 2, 12.4
-    x0 = SIZE + 14
-    top = 26
-    out.append('<g font-family="monospace" font-size="8.5" fill="#444">')
-    out.append(f'<text x="{x0}" y="{top - 12}" font-size="9.5" fill="#222">'
-               f'in use, {len(rows)} blocks, by position</text>')
-    out.append(f'<text x="{x0 + 150}" y="{top - 2}" text-anchor="end" '
-               f'fill="#888">nominal</text>')
-    out.append(f'<text x="{x0 + 196}" y="{top - 2}" text-anchor="end" '
-               f'fill="#888">offset</text>')
-    for i, row in enumerate(sorted(rows, key=lambda r: r[1])):
-        _d, hue, names, mixed, n, _p, reads, _m = row
-        y = top + i * ROW
-        drop = y + SW - 2
-        out.append(f'<text x="{x0 + 18}" y="{drop}" text-anchor="end" '
-                   f'fill="#999">{n}</text>')
-        out.append(f'<rect x="{x0 + 24}" y="{y}" width="{SW}" height="{SW}" '
-                   f'fill="{text.hex_colour(mixed)}" stroke="#666" '
-                   f'stroke-width="0.7"/>')
-        for s, name in enumerate(names):
-            out.append(f'<rect x="{x0 + 44 + s * (SW + GAP)}" y="{y}" '
-                       f'width="{SW}" height="{SW}" fill="{NOMINAL[name]}" '
-                       f'stroke="#aaa" stroke-width="0.5"/>')
-        off = ((hue - reads + 180) % 360) - 180
-        out.append(f'<text x="{x0 + 150}" y="{drop}" text-anchor="end">'
-                   f'{reads:.1f}&#176;</text>')
-        out.append(f'<text x="{x0 + 196}" y="{drop}" text-anchor="end" '
-                   f'fill="{"#b00" if abs(off) >= 10 else "#444"}">'
-                   f'{off:+.1f}&#176;</text>')
+    SW, GAP, ROW = 6, 1, 7.0
+    top = 22
+    # Tier 0 gets a column to itself even where it does not fill one. Splitting
+    # on the row count alone ran the 101s up the bottom of the first column
+    # under a heading that said they were on the ring, which is exactly the
+    # sort of quiet mislabelling this roster exists to prevent.
+    first = [r for r in rows if r[5]]
+    others = sorted((r for r in rows if not r[5]), key=lambda r: r[4])
+    chunks = [first] + [others[k:k + ROSTER_ROWS]
+                        for k in range(0, len(others), ROSTER_ROWS)]
+    out.append('<g font-family="monospace" font-size="5.5" fill="#444">')
+    for c, chunk in enumerate(chunks[:columns]):
+        if not chunk:
+            continue
+        x0 = SIZE + 14 + c * COL_W
+        head = (f"on the ring: {len(chunk)}" if c == 0 else
+                f"#{chunk[0][4]}-{chunk[-1][4]}")
+        out.append(f'<text x="{x0}" y="{top - 9}" font-size="6.5" '
+                   f'fill="#222">{head}</text>')
+        out.append(f'<text x="{x0 + 78}" y="{top - 2}" text-anchor="end" '
+                   f'fill="#888">reads</text>')
+        out.append(f'<text x="{x0 + 100}" y="{top - 2}" text-anchor="end" '
+                   f'fill="#888">dE</text>')
+        out.append(f'<text x="{x0 + 104}" y="{top - 2}" fill="#888">rule</text>')
+        for i, row in enumerate(chunk):
+            delta, _hue, names, mixed, n, proposed, reads, flag = row
+            y = top + i * ROW
+            drop = y + SW - 2
+            out.append(f'<text x="{x0 + 12}" y="{drop}" text-anchor="end" '
+                       f'fill="{"#333" if proposed else "#999"}">{n}</text>')
+            out.append(f'<rect x="{x0 + 15}" y="{y}" width="{SW}" '
+                       f'height="{SW}" fill="{text.hex_colour(mixed)}" '
+                       f'stroke="#666" stroke-width="0.7"/>')
+            for s, name in enumerate(names):
+                out.append(f'<rect x="{x0 + 26 + s * (SW + GAP)}" y="{y}" '
+                           f'width="{SW}" height="{SW}" fill="{square_hex(name)}" '
+                           f'stroke="#aaa" stroke-width="0.5"/>')
+            where = "  --  " if reads is None else f"{reads:.1f}&#176;"
+            out.append(f'<text x="{x0 + 78}" y="{drop}" text-anchor="end">'
+                       f'{where}</text>')
+            # Red past dE 0.15: far enough from the gamut colour it stands in
+            # for to be worth a second look.
+            out.append(f'<text x="{x0 + 100}" y="{drop}" text-anchor="end" '
+                       f'fill="{"#b00" if delta >= 0.15 else "#444"}">'
+                       f'{delta:.3f}</text>')
+            if flag:
+                out.append(f'<text x="{x0 + 104}" y="{drop}" fill="#999">'
+                           f'{flag}</text>')
     out.append('</g>')
 
 
-def render(show_tables=False):
-    """The wheel: the gamut, the blocks placed against it, and the workings.
+# **A number is a position, and the position is written down.** It is the line
+# a tile sits on in `wheel.tsv`, which is ordered clockwise from the top -- so
+# the file is the numbering, and sorting the file is how the wheel is
+# renumbered. Nothing in this module decides it, so nothing here can disagree
+# with the drawing about what a number means.
+CANON = {}
 
-    `--tables` restores the corner lists and the unused colours -- the
-    apparatus of choosing, which travels together and is off while there is
-    nothing left to choose.
+
+def canon(names):
+    """The tile's number: the line it sits on in `wheel.tsv`."""
+    if not CANON:
+        for k, (_verb, _where, triple) in enumerate(tsv_lines(), 1):
+            CANON[triple] = k
+    return CANON[names]
+
+
+# Three row shapes travel through this file, aligned on delta, names and mixed
+# so a helper can take more than one of them. Field 1 is not shared: it is the
+# hue the blend reads as in the first, and the angle the tile is drawn at in
+# the other two.
+#   catalogue: (delta, reads, names, mixed, flag)
+#   propose:   (delta, angle, names, mixed, reads)
+#   numbered:  (delta, angle, names, mixed, number, on_ring, reads, flag)
+def numbered(picks, others):
+    """Rows for the renderer, each carrying the number `wheel.tsv` gives it."""
+    rows = []
+    for i, (delta, at, names, mixed, reads) in enumerate(sorted(picks,
+                                                                key=lambda r: r[1])):
+        rows.append((delta, at, names, mixed, canon(names), True, reads,
+                     flag_at(names, warp_theta(at))))
+    for i, (delta, reads, names, mixed, flag) in enumerate(
+            sorted(others, key=lambda r: r[1])):
+        moved = sunk_at(names)
+        rows.append((delta, warp_angle(reads) if moved is None else moved,
+                     names, mixed, canon(names), False, reads, flag))
+    return rows
+
+
+def checklist(picks, tiers_of):
+    """Every line of `wheel.tsv`, and what actually became of it.
+
+    Reported by the run rather than by me: a tile that could not be seated used
+    to print one line among many and was missed, and an instruction applied to
+    the wrong tile showed up nowhere at all.
     """
-    wide = SIZE + TABLE_W
+    seats = {r[2]: r[1] for r in picks}
+    print("     #  verdict         triple                  outcome")
+    trouble = 0
+    for n, (verb, where, names) in enumerate(tsv_lines(), 1):
+        if names in seats:
+            got = f"ring {seats[names]:.1f}"
+        elif names in tiers_of:
+            got = f"tier-{tiers_of[names]}"
+        elif verb == "hueless":
+            got = "no hue"
+        else:
+            got = "NOWHERE"
+        # A tile asked for the ring and not on it, or one that landed nowhere
+        # at all. Everything else is the file and the drawing agreeing.
+        bad = (verb == "ring" and names not in seats) or got == "NOWHERE"
+        trouble += bad
+        print(f"  {'! ' if bad else '  '}{n:>3}  {verb + ' ' + where:<14} "
+              f"{' '.join(names):<22}  {got}")
+    if trouble:
+        print(f"  {trouble} line(s) did not land")
+    return trouble
+
+
+# ---------------------------------------------------------------------------
+# Assembling the page
+# ---------------------------------------------------------------------------
+
+def render():
+    """The wheel: the gamut, and every triple admissible against it.
+
+    The canvas takes as many roster columns as the vocabulary needs, so adding
+    a triple widens the page rather than dropping a row off the bottom of it.
+    """
+    all_rows, hueless = catalogue()
+    picks, ejected = propose(all_rows)
+    for row in ejected:
+        print(f"  no room on the ring for {' '.join(row[2])} "
+              f"(#{canon(row[2])}); it stays in the tiers")
+    taken = {r[2] for r in picks}
+    rest = [r for r in all_rows if r[2] not in taken]
+    rows = numbered(picks, rest)
+    # The ones that average to a neutral keep their place in the roster and
+    # take none on the ring: no hue, so nowhere to stand.
+    rows += [(d, None, names, mixed, canon(names), False, None, flag)
+             for d, _r, names, mixed, flag in hueless]
+    # One column for tier 0, then as many as the rest need. With the roster off
+    # the canvas is the wheel and nothing else.
+    columns = 1 + max(1, -(-(len(rows) - len(picks)) // ROSTER_ROWS))
+    wide = SIZE if RING_ONLY else SIZE + 14 + columns * COL_W + 24
     out = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{wide}" '
            f'height="{SIZE}" viewBox="0 0 {wide} {SIZE}">',
            f'<rect width="{wide}" height="{SIZE}" fill="#ffffff"/>']
@@ -801,20 +1227,20 @@ def render(show_tables=False):
     # the same everywhere and biases nothing.
     out.append(f'<path d="{sector(TREF_IN, TREF_OUT, 0, 180)}" fill="{TREF_BG}"/>')
     out.append(f'<path d="{sector(TREF_IN, TREF_OUT, 180, 360)}" fill="{TREF_BG}"/>')
-    offers = candidates(4 * BENCH_PER_CORNER, not show_tables)
-    offer_band(out, offers, show_tables)
-    table(out, [r for r in offers if r[5]])
-    if show_tables:
-        bench(out, offers)
+    tiers_of = {}
+    depth = tiers(out, [r for r in rows if r[5]],
+                  [r for r in rows if not r[5] and r[1] is not None], tiers_of)
+    if not RING_ONLY:
+        table(out, rows, columns)
     out.append('</svg>')
-    return "\n".join(out)
+    return "\n".join(out), rows, picks, depth, tiers_of
 
 
 # ---------------------------------------------------------------------------
-# Scoring a candidate against the target
+# The in-use artifact, and the CLI
 # ---------------------------------------------------------------------------
 
-IN_USE = S / "in-use.tsv"
+IN_USE = HERE / "in-use.tsv"
 
 EMOJI = {name: emoji for emoji, name, _cp, _rgb in text.PALETTE}
 
@@ -822,22 +1248,24 @@ EMOJI = {name: emoji for emoji, name, _cp, _rgb in text.PALETTE}
 def reference():
     """The in-use set alone, as arcs of hue, for an implementation to consume.
 
-    `bench.tsv` is a working document: it carries what was rejected, what is
-    on the bench unused, how far each block was stretched and by whose hand.
-    None of that is wanted by something deciding which three squares a project
-    gets. This is the other artifact -- the mapping and nothing else, derived
-    from the same file so the two cannot disagree.
+    `wheel.tsv` is a working document: it carries what was rejected, what sits
+    in a tier unused, and which band each of those is in. None of that is
+    wanted by something deciding which three squares a project gets. This is
+    the other artifact -- the mapping and nothing else, derived from the same
+    file so the two cannot disagree.
 
     Rows tile [0, 360) with no gap and no overlap, so a lookup is `from <= hue
     < to` and always hits exactly once. The block that straddles zero is split
     into two rows sharing its number rather than left to wrap, because a
     consumer that has to special-case one row will eventually not.
     """
-    rows = sorted((r for r in read_bench() if r[3] is not None),
-                  key=lambda r: r[3])
+    rows = sorted(((n, names, float(where))
+                   for n, (verb, where, names) in enumerate(tsv_lines(), 1)
+                   if verb == "ring"), key=lambda r: r[2])
     arcs = []
-    for n, names, _status, at, mult in rows:
-        half = WEDGE[len(set(names))] * mult / 2
+    for n, names, at in rows:
+        # Class price, no multiplier.
+        half = WEDGE[len(set(names))] / 2
         lo, hi = at - half, at + half
         if lo < 0:
             arcs.append((0.0, hi, n, names))
@@ -856,22 +1284,30 @@ def reference():
     assert abs(edge - 360) < 1e-6, f"ends at {edge}, not 360"
 
     out = [
+        f"# Colour mapping wheel {WHEEL_VERSION}.",
+        "#",
         "# The mapping, and nothing else: which three squares stand for a hue.",
         "#",
-        "# Generated by `wheel.py --reference` from bench.tsv. Do not edit by",
-        "# hand -- edit bench.tsv and regenerate, or the wheel and the table",
+        "# Generated by `wheel.py --reference` from wheel.tsv. Do not edit by",
+        "# hand -- edit wheel.tsv and regenerate, or the wheel and the table",
         "# will disagree and only one of them is being looked at.",
         "#",
-        "# Hue is the HSL hue identicon.js derives from the digest, in degrees,",
-        "# at its fixed saturation 0.7 and lightness 0.5. Rows tile 0 to 360",
-        "# with no gap and no overlap: the row to use is the one where",
-        "# `from <= hue < to`, and there is always exactly one.",
+        "# **Indexed by the draw, not by the hue.** The number to look up is the",
+        "# raw 28 bits from the digest as degrees -- `hexval(h[-7:]) / 0xfffffff",
+        "# * 360` -- before any mapping version's colour rule touches it. Under",
+        "# version 3 the hue is that value warped, so the two are different",
+        "# numbers and indexing by the wrong one silently shifts every triple",
+        "# around the blue-greens. The ring these rows come from is placed in the",
+        "# same coordinate, which is why they agree.",
+        "#",
+        "# Rows tile 0 to 360 with no gap and no overlap: the row to use is the",
+        "# one where `from <= draw < to`, and there is always exactly one.",
         "#",
         "# The squares are given inner to outer, already in the order they are",
         "# to be shown. Arrangement and square-versus-circle are a separate",
         f"# channel and are not in this file. {len(rows)} blocks.",
         "#",
-        "# from\tto\tn\tone\ttwo\tthree\tmark",
+        "# from\tto\tn\tone\ttwo\tthree\tmark   (from/to are draw, not hue)",
     ]
     for lo, hi, n, names in arcs:
         out.append("\t".join([f"{lo:.1f}", f"{hi:.1f}", str(n), *names,
@@ -881,18 +1317,32 @@ def reference():
 
 
 def next_path():
-    """The next unused wheelN.svg. The wheel is a series, like the sheets."""
-    n = 1
-    while (S / f"wheel{n}.svg").exists():
-        n += 1
-    return S / f"wheel{n}.svg"
+    """One past the highest wheelN.svg. The wheel is a series, like the sheets.
+
+    **Highest plus one, not first free.** The series is full of holes, and a
+    render into a hole overwrites nothing on disk and everything in the record:
+    the numbers are how these pictures are referred to across sessions, so
+    wheel1 meaning two different pictures is worse than a gap. Observed, not
+    theorised -- a plain render landed on the committed wheel1.svg.
+    """
+    used = [int(p.stem[5:])
+            for p in HERE.glob("wheel*.svg") if p.stem[5:].isdigit()]
+    return HERE / f"wheel{max(used, default=0) + 1}.svg"
 
 
 def main(argv):
-    if "--refill" in argv:
-        added = refill(4 * BENCH_PER_CORNER)
-        print(f"{added} added to {BENCH.name}")
-        return 0
+    """Parse the flags, then either regenerate in-use.tsv or render and report
+    what landed where.
+    """
+    global AS_PAINTED, WARP, WIDTH_SCALE, RING_ONLY
+    AS_PAINTED = "--painted" in argv
+    RING_ONLY = "--ring-only" in argv
+    if "--scale" in argv:
+        WIDTH_SCALE = float(argv[argv.index("--scale") + 1])
+    if "--warp" in argv:
+        centre, half, peak = (float(v) for v in
+                              argv[argv.index("--warp") + 1].split(","))
+        WARP = (centre, half, peak)
 
     if "--reference" in argv:
         arcs, blocks = reference()
@@ -902,13 +1352,27 @@ def main(argv):
     if "--out" in argv:
         path = pathlib.Path(argv[argv.index("--out") + 1])
         if not path.is_absolute():
-            path = S / path
+            path = HERE / path
     else:
         path = next_path()
-    svg = render("--tables" in argv)
+    svg, rows, picks, depth, tiers_of = render()
     path.write_text(svg)
-    placed = sum(1 for r in read_bench() if r[3] is not None)
-    print(f"{path} {len(svg)} bytes, {placed} blocks")
+    checklist(picks, tiers_of)
+    covered = sum(WEDGE[len(set(r[2]))] for r in picks)
+    flagged = sum(1 for r in rows if r[7])
+    print(f"{path} {len(svg)} bytes")
+    # Which palette: the two make pictures easily mistaken for each other.
+    print(f"  {'squares as the vendors paint them, weighted' if AS_PAINTED else 'squares as Unicode names them'}"
+          f"{f', tiles at {WIDTH_SCALE:g}x' if WIDTH_SCALE != 1 else ''}"
+          f"{', ring only -- the tiers are packed and reported, not drawn' if RING_ONLY else ''}")
+    print(f"  catalogue {len(rows)} triples, {depth} tiers deep, "
+          f"{flagged} flagged by the harness, "
+          f"{sum(1 for r in rows if r[1] is None)} with no hue")
+    print(f"  tier 1: {len(picks)} blocks, {covered:.0f} of 360 degrees "
+          f"({covered / 3.6:.0f}%), "
+          f"{sum(1 for r in rows if r[5] and r[7])} of them flagged")
+    for at, wide in gaps(picks)[:6]:
+        print(f"    gap {wide:5.1f} deg from {at:5.1f}")
     return 0
 
 

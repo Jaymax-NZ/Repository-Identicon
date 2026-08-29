@@ -11,6 +11,11 @@
 // fill, and puts the background on the root element's style. The rects alone
 // are the pattern, with no pixel decoding and no resampling to argue about.
 //
+// Keys, not seeds. The key is hashed exactly as it reads -- the mapping
+// version prefix is part of it -- so this takes the finished strings and knows
+// nothing about how they were built. The reference implementation owns that
+// rule; a second copy of it here would be a second thing to forget.
+//
 //   node js-vectors.js <key> [key...]
 
 const crypto = require('crypto');
@@ -32,13 +37,20 @@ function vector(key) {
     grid[y / CELL][x / CELL] = 1;
   }
 
+  // The pattern only. From mapping version 2 the colour is this project's own
+  // rule -- a capped ring at one Oklab lightness -- which this library cannot
+  // produce and has no opinion about. The grid rule is unchanged, so it is
+  // still the thing an outside implementation pins.
   return {
     key,
     md5,
     grid: grid.map(r => r.join('')),
-    foreground: rgb(svg.match(/fill:rgba\(([^)]+)\)/)[1]),
-    background: rgb(svg.match(/background-color:rgba\(([^)]+)\)/)[1]),
   };
 }
 
-console.log(JSON.stringify(process.argv.slice(2).map(vector), null, 1));
+const argv = process.argv.slice(2);
+if (!argv.length) {
+  console.error('usage: node js-vectors.js <key> [key...]');
+  process.exit(2);
+}
+console.log(JSON.stringify({ vectors: argv.map(vector) }, null, 1));

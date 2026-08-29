@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1340" height="1010" viewBox="0 0 1340 1010">
+<rect width="1340" height="1010" fill="#ffffff"/>
+<defs>
+  <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#5a6169"/>
+  </marker>
+  <marker id="gb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#1d4ed8"/>
+  </marker>
+  <marker id="go" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#c2410c"/>
+  </marker>
+  <marker id="gg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#9aa1a8"/>
+  </marker>
+</defs>
+<style>
+  .r  { font-family: ui-monospace, monospace; font-size: 12px; fill: #1b1f24; }
+  .rs { font-family: ui-monospace, monospace; font-size: 11px; fill: #6b7076; }
+  .e  { font-family: ui-monospace, monospace; font-size: 10.5px; fill: #5a6169; }
+  .eb { font-family: ui-monospace, monospace; font-size: 10.5px; fill: #1d4ed8; }
+  .eo { font-family: ui-monospace, monospace; font-size: 10.5px; fill: #c2410c; }
+  .h  { font-family: ui-sans-serif, system-ui, sans-serif; font-size: 12.5px; font-weight: 600; fill: #6b7076; letter-spacing: .06em; }
+  .n  { font-family: ui-sans-serif, system-ui, sans-serif; font-size: 12px; fill: #6b7076; }
+  .box  { fill: #f6f7f8; stroke: #c9ced3; }
+  .boxb { fill: #eef6ff; stroke: #2563eb; stroke-width: 1.4; }
+  .boxo { fill: #fff7ed; stroke: #c2410c; stroke-width: 1.4; }
+</style>
+
+<text x="40" y="48" font-family="ui-sans-serif, system-ui, sans-serif" font-size="21" font-weight="600" fill="#1b1f24">The routines, and what they hand each other</text>
+<text x="40" y="72" class="n">Signatures as written. Blue is derived from the grid, orange from the angle.</text>
+
+<!-- key resolution -->
+<text x="40" y="112" class="h">RESOLVING THE KEY</text>
+<rect x="40" y="124" width="228" height="42" rx="5" class="box"/><text x="52" y="150" class="r">recorded_key(dir)</text>
+<rect x="40" y="176" width="228" height="42" rx="5" class="box"/><text x="52" y="202" class="r">resolve_seed(path)</text>
+<rect x="330" y="150" width="252" height="42" rx="5" class="box"/><text x="342" y="176" class="r">resolve_key_for(path)</text>
+<g fill="none" stroke="#5a6169" stroke-width="1.2" marker-end="url(#g)">
+  <path d="M268,145 C300,145 300,166 324,168"/><path d="M268,197 C300,197 300,178 324,175"/>
+</g>
+<path d="M582,171 L654,171" fill="none" stroke="#5a6169" stroke-width="1.2" marker-end="url(#g)"/>
+<rect x="658" y="150" width="300" height="42" rx="5" fill="#1b1f24"/>
+<text x="674" y="176" class="r" fill="#ffffff">"3:github.com/owner/repo"</text>
+
+<!-- digest -->
+<path d="M808,192 L808,224" fill="none" stroke="#5a6169" stroke-width="1.2" marker-end="url(#g)"/>
+<rect x="694" y="228" width="228" height="40" rx="5" class="box"/><text x="706" y="253" class="r">_digest(key)</text>
+<text x="932" y="253" class="e">32 hex chars</text>
+
+<text x="40" y="308" class="h">DERIVATION</text>
+<g fill="none" stroke-width="1.3">
+  <path d="M760,268 C700,268 470,286 424,314" stroke="#1d4ed8" marker-end="url(#gb)"/>
+  <path d="M860,268 C920,268 1060,286 1104,314" stroke="#c2410c" marker-end="url(#go)"/>
+</g>
+<text x="520" y="292" class="eb">chars 0-14</text>
+<text x="990" y="292" class="eo">chars 25-31</text>
+
+<rect x="296" y="318" width="256" height="44" rx="5" class="boxb"/><text x="308" y="345" class="r">identicon_grid(key)</text>
+<rect x="976" y="318" width="256" height="44" rx="5" class="boxo"/><text x="988" y="345" class="r">identicon_hue(key)</text>
+<text x="308" y="380" class="eb">grid &#8212; 5x5 of bool</text>
+<text x="988" y="380" class="eo">a fraction of a turn; x360 = the angle</text>
+
+<path d="M1104,362 L1104,404" fill="none" stroke="#c2410c" stroke-width="1.3" marker-end="url(#go)"/>
+<rect x="820" y="408" width="412" height="86" rx="6" class="boxo"/>
+<text x="834" y="432" class="r">identicon_colour(key, chroma, lightness)</text>
+<text x="834" y="452" class="rs">v&#8805;3: warp_hue &#8594; gamut_chroma &#8594; _oklch_to_linear</text>
+<text x="834" y="469" class="rs">v&#8804;1: _hsl_to_rgb &#8594; _quantise</text>
+<text x="834" y="486" class="rs">picks by parse_key(key)</text>
+<text x="1246" y="455" class="eo">(r,g,b)</text>
+
+<!-- renderers -->
+<text x="40" y="546" class="h">RENDERERS &#8212; each takes the key and calls both of the above</text>
+<g>
+  <rect x="40" y="558" width="250" height="42" rx="5" class="box"/><text x="52" y="584" class="r">render_rgba(key, block, ...)</text>
+  <rect x="40" y="606" width="250" height="38" rx="5" class="box"/><text x="52" y="630" class="r">render_png(key, block)</text>
+  <rect x="40" y="650" width="250" height="38" rx="5" class="box"/><text x="52" y="674" class="r">render_inline(key, protocol)</text>
+  <rect x="310" y="558" width="230" height="42" rx="5" class="box"/><text x="322" y="584" class="r">render_svg(key, ...)</text>
+  <rect x="310" y="606" width="230" height="38" rx="5" class="box"/><text x="322" y="630" class="r">render_ansi(key)</text>
+  <rect x="310" y="650" width="230" height="38" rx="5" class="box"/><text x="322" y="674" class="r">artifact_bytes(key)</text>
+</g>
+<g fill="none" stroke="#5a6169" stroke-width="1.1" marker-end="url(#g)">
+  <path d="M165,600 L165,606"/><path d="M165,644 L165,650"/>
+</g>
+<rect x="600" y="558" width="270" height="42" rx="5" class="box"/><text x="612" y="584" class="r">render_text(key, ...)</text>
+<rect x="600" y="606" width="270" height="38" rx="5" class="box"/><text x="612" y="630" class="r">render_banner / render_line</text>
+<path d="M735,600 L735,606" fill="none" stroke="#5a6169" stroke-width="1.1" marker-end="url(#g)"/>
+
+<g fill="none" stroke-width="1.2" stroke-dasharray="4 3">
+  <path d="M296,340 C160,340 120,470 128,552" stroke="#1d4ed8" marker-end="url(#gb)"/>
+  <path d="M820,451 C640,451 600,500 700,552" stroke="#c2410c" marker-end="url(#go)"/>
+</g>
+
+<!-- text module -->
+<text x="600" y="726" class="h">text-identicon.py &#8212; vendored alone, no key and no digest</text>
+<path d="M735,644 L735,742" fill="none" stroke="#5a6169" stroke-width="1.2" marker-end="url(#g)"/>
+<text x="746" y="700" class="e">grid, (r,g,b)</text>
+<rect x="600" y="746" width="270" height="40" rx="5" class="box"/><text x="612" y="771" class="r">text(grid, rgb)</text>
+<g fill="none" stroke="#5a6169" stroke-width="1.2" marker-end="url(#g)">
+  <path d="M660,786 C640,806 600,812 566,820"/>
+  <path d="M800,786 C820,806 860,812 900,820"/>
+</g>
+<rect x="310" y="822" width="256" height="40" rx="5" class="boxb"/><text x="322" y="847" class="r">grid_lines(grid)</text>
+<text x="322" y="880" class="eb">two lines of octants</text>
+<rect x="904" y="822" width="286" height="40" rx="5" class="box"/><text x="916" y="847" class="r">emoji_triple(rgb, grid)</text>
+<path d="M1047,862 L1047,890" fill="none" stroke="#5a6169" stroke-width="1.2" marker-end="url(#g)"/>
+<rect x="904" y="894" width="286" height="40" rx="5" class="box"/><text x="916" y="919" class="r">triple(rgb, grid)</text>
+<g fill="none" stroke-width="1.2" marker-end="url(#g)">
+  <path d="M904,914 C860,914 700,930 640,944" stroke="#5a6169"/>
+</g>
+<rect x="330" y="924" width="300" height="40" rx="5" class="boxo"/><text x="342" y="949" class="r">triple_indices(rgb)</text>
+<text x="342" y="982" class="eo">which three squares &#8212; nearest mix of 165</text>
+<rect x="700" y="960" width="300" height="40" rx="5" class="boxb"/><text x="712" y="985" class="r">arrange(indices, grid)</text>
+<path d="M1047,934 C1047,950 1010,956 1004,972" fill="none" stroke="#1d4ed8" stroke-width="1.2" marker-end="url(#gb)"/>
+<text x="1014" y="1000" class="eb">&#8592; grid_bits(grid), 15 bits</text>
+
+<!-- not wired -->
+<rect x="40" y="98" width="1" height="1" fill="none"/>
+<g>
+  <rect x="1006" y="558" width="300" height="130" rx="7" fill="#fdfdfd" stroke="#9aa1a8" stroke-width="1.3" stroke-dasharray="6 4"/>
+  <text x="1020" y="580" class="h" fill="#6b7076">NOT WIRED IN</text>
+  <text x="1020" y="602" class="rs">wheel.tsv &#8594; wheel.py --reference</text>
+  <text x="1020" y="620" class="rs">&#8594; in-use.tsv</text>
+  <text x="1020" y="642" class="rs">shaped.mark(rgb, grid, draw)</text>
+  <text x="1020" y="659" class="rs">&#8594; shaped.triple + shaped.shapes</text>
+  <text x="1020" y="678" class="n" font-size="11">the circles live only here</text>
+</g>
+<path d="M1090,688 C1090,880 1090,930 1006,944" fill="none" stroke="#9aa1a8" stroke-width="1.3" stroke-dasharray="6 4" marker-end="url(#gg)"/>
+<text x="1100" y="820" class="n" font-size="11" transform="rotate(90 1100 820)">would replace triple_indices</text>
+</svg>

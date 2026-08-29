@@ -19,15 +19,37 @@ Run this inside the repository you want marked:
 python3 /path/to/repository-identicon.py apply
 ```
 
-It derives the key from the git remote and writes five files:
+It derives the key from the git remote and writes these:
 
 ```
-.identicon/repository-identicon.png       raster, 256px
-.identicon/repository-identicon.svg       vector
-.identicon/repository-identicon.colour    "#rrggbb", and a newline
-.identicon/repository-identicon.txt       the text mark, two lines
-.identicon/repository-identicon.key       the seed the others came from
+.identicon/repository-identicon.png            block 5, 27px canvas
+.identicon/repository-identicon@4x.png         the mark magnified 4x, 104px
+.identicon/repository-identicon-128.png        for a consumer that fixes the size
+.identicon/repository-identicon-256.png        likewise
+.identicon/repository-identicon.svg            vector, same geometry
+.identicon/repository-identicon.colour         "#rrggbb\n", nothing else
+.identicon/repository-identicon.grid           five lines of "01010"
+.identicon/repository-identicon.txt            the text rendering, ready to cat
+.identicon/repository-identicon.key            the key, hashed exactly as it reads
 ```
+
+`.colour` and `.grid` are the mark as text — enough to draw it with no PNG
+decoder and no SVG parser.
+
+One file each. The mark holds its brightness right around the colour wheel, so
+the same image sits on a white page and on a near-black one and the project
+looks like itself in both. There is no light or dark variant to choose between.
+
+To hand the mark to GitLab, copy one out yourself. GitLab reads `logo.png` at
+the repository root when no avatar has been uploaded, so this is the whole
+integration, and no other forge offers an equivalent:
+
+```bash
+cp .identicon/repository-identicon-256.png logo.png
+```
+
+It is a manual copy on purpose. Writing to your repository root is your
+decision, not the tool's.
 
 It also adds the mark to the repository's README, after the first heading:
 
@@ -43,18 +65,24 @@ exactly as you left it — and a repository with no README is never given one.
 Commit the lot. To read the colour anywhere else,
 `$(cat .identicon/repository-identicon.colour)` is the whole integration.
 
-**The seed is recorded once and reused after that.** Re-running refreshes the
-artifacts from it — so a better renderer or a different size reaches every
-repository — and leaves the identity alone. Renaming the repository, moving it
-between forges, or cloning it somewhere else does not change the mark. That is
-reported as seed drift and nothing more:
+**The key is recorded once and hashed verbatim after that.** It reads
+`1:github.com/owner/repo` — a mapping version, then the seed — and it is the
+one thing the mark depends on. Re-running refreshes the artifacts from it, so a
+better renderer or a different size reaches every repository while leaving the
+identity alone.
+
+Nothing else moves the mark. Renaming the repository, moving it between forges,
+cloning it somewhere else, or upgrading to a tool that draws newly seeded
+repositories differently: all reported, none acted on. Two switches change it,
+and both have to be asked for:
 
 ```bash
-python3 /path/to/repository-identicon.py apply --reseed
+python3 /path/to/repository-identicon.py apply --reseed   # adopt today's seed
+python3 /path/to/repository-identicon.py apply --remap    # same seed, new mapping
 ```
 
-is the only thing that adopts a new key and changes the mark, and it has to be
-asked for.
+Each rewrites that one line, so the change to your mark arrives as a diff you
+review rather than as a surprise on somebody's next upgrade.
 
 Anything it replaces is kept beside it as `repository-identicon.prior.<ext>`,
 so rolling back is a `mv`. One level, overwritten each run — git has the rest.
@@ -78,10 +106,17 @@ not survive being cloned. `apply` says so, and the fix is a
 | `text-identicon.py` | the text rendering, for media that display no image |
 | `reference/` | the library the derivation conforms to, committed rather than fetched, and the harness that regenerates the vectors from it |
 | `tests/` | the implementation against the vectors, and the vectors against the library |
-| `work-in-progress/` | the emoji-square mapping, settled but not yet adopted — a fallback for media that can show neither an image nor styled text; nothing here is imported by anything |
+| `work-in-progress/` | what is settled but not yet adopted: the emoji-square mapping, a fallback for media that can show neither an image nor styled text, and `scope-split.md`, which says where each half of `repository-identicon.py` belongs; nothing here is imported by anything |
 
 ```bash
 python3 -m unittest discover -s tests -t tests
+```
+
+Writing an implementation elsewhere? `validate` runs it against the pinned
+vectors, so you do not have to build a harness to find out whether you agree:
+
+```bash
+python3 repository-identicon.py validate -- ./my-identicon --json
 ```
 
 Nothing here reaches the network, and nothing needs installing.
@@ -105,11 +140,15 @@ decoding and no resampling to argue about.
 
 ## Implementations vendor this; they do not depend on it
 
-Two consumers exist, and each carries its own copy of the derivation:
+Three consumers exist, and each carries its own copy of the derivation:
 
-- [`Claude-State-Panel`](../Claude-State-Panel) — Konsole tabs, panel glyphs, a
-  terminal banner. Its copy differs in one line, `ICON_PREFIX`, which the
-  specification explicitly leaves to the implementing tool.
+- [`Console-Colophon`](../Console-Colophon) — the XDG icon theme and Konsole
+  tabs. This half used to be in this repository; `SPEC.md` § Scope puts every
+  side effect out, so it left. Its copy is held to `vectors.json` by its own
+  test suite, and `validate` can check it from outside.
+- [`Claude-State-Panel`](../Claude-State-Panel) — panel glyphs and a terminal
+  banner. Its copy differs in one line, `ICON_PREFIX`, which the specification
+  explicitly leaves to the implementing tool.
 - [`Claude-Colophon`](../Claude-Colophon) — a Claude Code plugin. It *must*
   vendor, because a plugin is copied whole and has no dependency mechanism at
   all.

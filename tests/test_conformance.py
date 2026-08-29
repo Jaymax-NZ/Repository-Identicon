@@ -2,25 +2,27 @@
 
 `vectors.json` is the whole point of this repository. A specification that only
 describes a derivation can be read two ways by two careful people; a
-specification with vectors cannot. Everything here checks that this
-implementation is one of the readings the vectors permit -- which is to say, the
-only one.
+specification with vectors cannot.
 
-Standard library only, and no network: a conformance suite that has to fetch
-something is one that stops working the day the something moves.
+Standard library only, and no network. `git` must be on PATH -- the install
+tests run against real repositories -- and only the regeneration test skips,
+when node is absent.
 
     python3 -m unittest discover -s tests -t tests
 """
 
+import hashlib
 import importlib.util
 import json
 import os
 import pathlib
 import re
 import shutil
+import struct
 import subprocess
 import tempfile
 import unittest
+from unittest import mock
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 VECTORS = ROOT / "vectors.json"
@@ -28,6 +30,7 @@ REFERENCE = ROOT / "reference" / "js-vectors.js"
 
 
 def load(name, module):
+    """Import a script by path -- both are hyphen-named, so `import` cannot."""
     spec = importlib.util.spec_from_file_location(module, ROOT / name)
     loaded = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(loaded)
@@ -36,25 +39,53 @@ def load(name, module):
 
 identicon = load("repository-identicon.py", "repository_identicon")
 text_identicon = load("text-identicon.py", "text_identicon")
-vectors = json.loads(VECTORS.read_text())
+vectors = json.loads(VECTORS.read_text())["vectors"]
 
+
+def pinned_versions():
+    """The mapping versions the committed vectors cover."""
+    return {identicon.parse_key(v["key"])[0] for v in vectors}
+
+
+# ---- The vectors and the implementation ----
 
 class TestTheVectorsThemselves(unittest.TestCase):
 
     def test_there_are_some(self):
         self.assertTrue(vectors, "vectors.json is empty")
 
+    def test_the_version_this_implementation_seeds_at_is_pinned(self):
+        """A bump that brings no vectors is a bump nothing checks."""
+        self.assertIn(identicon.MAPPING_VERSION, pinned_versions())
+
+    def test_only_the_version_this_implementation_draws_is_pinned(self):
+        """One rule, so one version. Retired versions leave with their rule --
+        a vector nothing can draw is a vector nothing checks."""
+        self.assertEqual({identicon.MAPPING_VERSION}, pinned_versions())
+
     def test_each_carries_everything_needed_to_check_an_implementation(self):
         for vector in vectors:
             for field in ("key", "md5", "grid", "foreground"):
                 self.assertIn(field, vector)
-            self.assertEqual(5, len(vector["grid"]))
+            self.assertEqual(5, len(vector["grid"]),
+                             f"{vector['key']}: the grid is not five rows")
             for row in vector["grid"]:
                 self.assertRegex(row, r"^[01]{5}$")
 
     def test_no_two_vectors_share_a_key(self):
         keys = [vector["key"] for vector in vectors]
-        self.assertEqual(len(keys), len(set(keys)))
+        self.assertEqual(len(keys), len(set(keys)), "two vectors share a key")
+
+    def test_the_version_is_inside_what_gets_hashed(self):
+        """Change the version and the mark moves, because the stamp is part of
+        the string being digested. That is why the version has to be a reviewed
+        line rather than a note about one."""
+        for vector in vectors:
+            _version, seed = identicon.parse_key(vector["key"])
+            self.assertNotEqual(
+                identicon.identicon_grid(vector["key"]),
+                identicon.identicon_grid(f"{identicon.MAPPING_VERSION + 1}:{seed}"),
+                f"{seed}: restamping did not move the grid")
 
 
 class TestTheImplementationConforms(unittest.TestCase):
@@ -87,6 +118,8 @@ class TestTheImplementationConforms(unittest.TestCase):
                     vector["foreground"],
                     identicon.hex_colour(identicon.identicon_colour(vector["key"])))
 
+
+# ---- Remotes and text rendering ----
 
 class TestRemoteNormalisation(unittest.TestCase):
     """Every spelling of one repository must collapse to one key, or an SSH
@@ -143,11 +176,12 @@ class TestTheTextRendering(unittest.TestCase):
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
 
 
+# ---- Regenerating the vectors ----
+
 class TestTheVectorsCanBeRegenerated(unittest.TestCase):
-    """The reference library is committed rather than fetched, so anyone can
-    re-derive the vectors offline, for as long as this repository exists. A
-    reference that has to be downloaded is one that can disappear, and one did
-    during the week this was written."""
+    """The reference library is committed rather than fetched: a reference that
+    must be downloaded can vanish, and one did. Anyone can re-derive the vectors
+    offline for as long as this repository exists."""
 
     def test_the_reference_harness_and_library_are_present(self):
         self.assertTrue(REFERENCE.exists())
@@ -169,8 +203,223 @@ class TestTheVectorsCanBeRegenerated(unittest.TestCase):
             ["node", str(REFERENCE), *[v["key"] for v in vectors]],
             capture_output=True, text=True, cwd=str(ROOT / "reference"), timeout=60)
         self.assertEqual(0, result.returncode, result.stderr)
-        self.assertEqual(vectors, json.loads(result.stdout))
 
+        # The library pins the pattern. From mapping version 2 the colour is
+        # this project's own rule, which the library cannot produce and has no
+        # opinion about, so it is checked against the implementation instead.
+        produced = json.loads(result.stdout)["vectors"]
+        self.assertEqual([v["key"] for v in vectors],
+                         [v["key"] for v in produced])
+        for pinned, made in zip(vectors, produced):
+            with self.subTest(key=pinned["key"]):
+                self.assertEqual(pinned["md5"], made["md5"])
+                self.assertEqual(pinned["grid"], made["grid"])
+                self.assertNotIn("foreground", made)
+                self.assertEqual(
+                    pinned["foreground"],
+                    identicon.hex_colour(
+                        identicon.identicon_colour(pinned["key"])))
+
+
+# ---- Geometry and colour ----
+
+class TestTheBlocksAndTheCanvas(unittest.TestCase):
+    """The block is specified; the canvas is derived.
+
+    `@4x` multiplies the block by four and the border by two: the border is
+    chrome, so quadrupling it would spend the new pixels on empty edge. The 4x
+    magnifies the *mark*, not the canvas.
+    """
+
+    # Any key; a literal one because nothing here asserts a version-dependent value.
+    KEY = f"{identicon.MAPPING_VERSION}:github.com/someone/a-project"
+
+    def area(self, rgba, block, border):
+        """The GRID x GRID block region, with the border cropped off."""
+        edge = identicon.canvas_edge(block, border)
+        side = block * identicon.GRID
+        rows = []
+        for y in range(border, border + side):
+            start = (y * edge + border) * 4
+            rows.append(rgba[start:start + side * 4])
+        return b"".join(rows)
+
+    def magnify(self, pixels, side, scale):
+        """Nearest-neighbour upscale of a `side`x`side` RGBA region by `scale`."""
+        rows = []
+        for y in range(side):
+            row = pixels[y * side * 4:(y + 1) * side * 4]
+            rows.extend([b"".join(row[x * 4:(x + 1) * 4] * scale
+                                  for x in range(side))] * scale)
+        return b"".join(rows)
+
+    def test_the_canvas_is_five_blocks_and_two_borders(self):
+        self.assertEqual([7, 12, 17, 22, 27],
+                         [identicon.canvas_edge(b, 1) for b in identicon.BLOCKS])
+        self.assertEqual([24, 44, 64, 84, 104],
+                         [identicon.canvas_edge(b * identicon.ARTIFACT_SCALE,
+                                                identicon.SCALED_BORDER)
+                          for b in identicon.BLOCKS])
+
+    def test_the_scaled_mark_is_the_mark_magnified(self):
+        scale, border2 = identicon.ARTIFACT_SCALE, identicon.SCALED_BORDER
+        for block in identicon.BLOCKS:
+            with self.subTest(block=block):
+                one = identicon.render_rgba(self.KEY, block)
+                many = identicon.render_rgba(self.KEY, block * scale,
+                                             border=border2)
+                self.assertEqual(
+                    self.magnify(self.area(one, block, identicon.BORDER),
+                                 block * identicon.GRID, scale),
+                    self.area(many, block * scale, border2))
+
+    def test_the_border_doubles_rather_than_quadrupling(self):
+        """The one part of `@4x` that is not a magnification -- not a bug."""
+        self.assertEqual(2 * identicon.BORDER, identicon.SCALED_BORDER)
+        self.assertNotEqual(identicon.ARTIFACT_SCALE * identicon.BORDER,
+                            identicon.SCALED_BORDER)
+
+    def test_the_pngs_declare_the_derived_canvas(self):
+        for block in identicon.BLOCKS:
+            with self.subTest(block=block):
+                png = identicon.render_png(self.KEY, block)
+                edge = identicon.canvas_edge(block, identicon.BORDER)
+                self.assertEqual((edge, edge),
+                                 struct.unpack(">II", png[16:24]))
+
+    # The sizes a consumer that fixes its canvas is likely to ask for. The icon
+    # theme wants 48 pixels at `48x48/apps/` whatever that divides into, which
+    # is what `edge` is for -- but installing icons is Console-Colophon's job,
+    # so the list is written here rather than imported from a constant.
+    FIXED_CANVASES = (16, 22, 24, 32, 48, 64, 128, 256)
+
+    def test_a_canvas_somebody_else_fixed_is_filled_exactly(self):
+        """`edge` pads the grid rather than changing the file's size."""
+        for edge in self.FIXED_CANVASES:
+            with self.subTest(edge=edge):
+                block = identicon.fit_block(edge)
+                self.assertLessEqual(block * identicon.GRID, edge,
+                                     f"the block overflows the {edge}px canvas")
+                png = identicon.render_png(self.KEY, block, edge=edge)
+                self.assertEqual((edge, edge),
+                                 struct.unpack(">II", png[16:24]))
+
+    def test_every_large_canvas_is_exact(self):
+        for canvas in identicon.LARGE_CANVASES:
+            with self.subTest(canvas=canvas):
+                block, border = identicon.large_geometry(canvas)
+                self.assertEqual(canvas, identicon.canvas_edge(block, border))
+
+    def test_a_canvas_with_no_exact_geometry_is_refused(self):
+        for canvas in (16, 48, 100):
+            with self.subTest(canvas=canvas):
+                with self.assertRaises(ValueError):
+                    identicon.large_geometry(canvas)
+
+    def test_the_large_pngs_declare_their_canvas(self):
+        wanted = identicon.artifact_bytes(self.KEY)
+        for canvas in identicon.LARGE_CANVASES:
+            with self.subTest(canvas=canvas):
+                self.assertEqual((canvas, canvas),
+                                 struct.unpack(">II", wanted[f"png{canvas}"][16:24]))
+
+
+class TestTheColourRule(unittest.TestCase):
+    """One brightness across the wheel, so one file serves both grounds."""
+
+    KEY = f"{identicon.MAPPING_VERSION}:github.com/someone/a-project"
+
+    @staticmethod
+    def luminance(rgb):
+        def channel(value):
+            value /= 255
+            return (value / 12.92 if value <= 0.03928
+                    else ((value + 0.055) / 1.055) ** 2.4)
+        red, green, blue = (channel(v) for v in rgb)
+        return 0.2126 * red + 0.7152 * green + 0.0722 * blue
+
+    def contrast(self, a, b):
+        first, second = self.luminance(a), self.luminance(b)
+        return (max(first, second) + 0.05) / (min(first, second) + 0.05)
+
+    def mark_rgb(self, degrees):
+        chroma = identicon.gamut_chroma(degrees)
+        return tuple(identicon._encode(c) for c in
+                     identicon._oklch_to_linear(identicon.MARK_LIGHTNESS,
+                                                chroma, degrees))
+
+    def test_one_file_clears_the_threshold_on_both_grounds(self):
+        """The whole reason there is no light and no dark variant."""
+        for ground in ((255, 255, 255), (13, 17, 23)):
+            worst = min(self.contrast(self.mark_rgb(d), ground)
+                        for d in range(0, 360, 5))
+            with self.subTest(ground=ground):
+                self.assertGreaterEqual(worst, 3.0)
+
+    def test_the_chroma_is_capped_not_flattened(self):
+        """Some hues reach the cap and some cannot. Holding every hue to what
+        the narrowest can manage costs about half the colour on the wheel."""
+        reached = [d for d in range(0, 360, 5)
+                   if identicon.gamut_chroma(d) >= identicon.MARK_CHROMA]
+        self.assertTrue(reached, "no hue reaches the cap")
+        self.assertLess(len(reached), 72, "the cap binds nowhere")
+
+    def test_no_hue_leaves_the_gamut(self):
+        for degrees in range(0, 360):
+            with self.subTest(degrees=degrees):
+                linear = identicon._oklch_to_linear(
+                    identicon.MARK_LIGHTNESS, identicon.gamut_chroma(degrees),
+                    degrees)
+                self.assertTrue(identicon._in_gamut(linear))
+
+    def test_the_gamut_search_is_reproducible(self):
+        """Fixed bounds, fixed rounds, rounded off at the end -- because
+        'search until it converges' is not something a port can reproduce."""
+        self.assertEqual(30, identicon.GAMUT_STEPS)
+        for degrees in (0, 137.5, 201, 359.9):
+            value = identicon.gamut_chroma(degrees)
+            self.assertEqual(value, round(value, 4))
+
+    def test_a_withdrawn_version_is_refused_rather_than_redrawn(self):
+        """Versions 0 to 2 were drafts and no release carried them, so they are
+        gone. A key stamped at one must raise, not be quietly drawn with
+        today's rule -- that would move a mark nobody asked to move, which is
+        the failure the stamp exists to prevent."""
+        seed = "github.com/justin-maxwell/claude-state-panel"
+        for key in (seed, "0:" + seed, "1:" + seed, "2:" + seed):
+            with self.subTest(key=key):
+                with self.assertRaises(identicon.UnknownMappingVersion):
+                    identicon.identicon_colour(key)
+
+    def test_a_version_from_the_future_is_refused_too(self):
+        """Symmetric, and for the same reason: an unknown stamp is somebody
+        else's rule, and guessing at it draws a mark this build cannot vouch
+        for."""
+        with self.assertRaises(identicon.UnknownMappingVersion):
+            identicon.identicon_colour(
+                f"{identicon.MAPPING_VERSION + 1}:github.com/a/b")
+
+    def test_there_is_one_of_each(self):
+        """One file per artifact -- what one brightness across the wheel buys."""
+        wanted = identicon.artifact_bytes(self.KEY)
+        for name in ("png", "png4x", "png128", "png256", "svg", "colour",
+                     "grid", "txt"):
+            self.assertIn(name, wanted)
+        self.assertEqual(8, len(wanted))
+
+
+class TestTheArtifactSet(unittest.TestCase):
+    """One list of names feeds both the paths and the bytes."""
+
+    # Any key; a literal one because nothing here asserts a version-dependent value.
+    KEY = f"{identicon.MAPPING_VERSION}:github.com/someone/a-project"
+
+    def test_names_and_bytes_cannot_disagree(self):
+        self.assertEqual(set(identicon.artifact_paths("/nowhere")),
+                         set(identicon.artifact_bytes(self.KEY)))
+
+
+# ---- Installing into a repository ----
 
 class TestTheDocumentsAndTheCodeAgreeOnTheArtifacts(unittest.TestCase):
     """Every file the specification lists is one the installer writes.
@@ -187,13 +436,20 @@ class TestTheDocumentsAndTheCodeAgreeOnTheArtifacts(unittest.TestCase):
     """
 
     def documented(self, path):
+        """Every artifact filename the document names, taken whole.
+
+        Whole filenames, not the extension: `@4x.png`, `-128.png` and
+        `-256.png` all end in `.png`, so an extension-only comparison passes
+        while three of the four rasters go undocumented.
+        """
         body = (ROOT / path).read_text(encoding="utf-8")
         return set(re.findall(
-            r"\.identicon/repository-identicon\.([a-z]+)", body))
+            r"\.identicon/(repository-identicon[A-Za-z0-9@-]*\.[a-z0-9]+)",
+            body))
 
     def produced(self):
-        names = set(identicon.artifact_paths(".")) | {"key"}
-        return {"png", "svg", "colour", "txt", "key"} & names | names
+        return ({filename for _, filename in identicon.artifact_names()}
+                | {identicon.KEY_NAME})
 
     def test_spec_lists_exactly_what_is_written(self):
         self.assertEqual(self.produced(), self.documented("SPEC.md"))
@@ -203,8 +459,8 @@ class TestTheDocumentsAndTheCodeAgreeOnTheArtifacts(unittest.TestCase):
 
     def test_every_artifact_has_content_derived_from_the_key(self):
         """Not a placeholder, not empty, and different for a different key."""
-        one = identicon.artifact_bytes("github.com/a/one")
-        two = identicon.artifact_bytes("github.com/b/two")
+        one = identicon.artifact_bytes(identicon.stamp_key("github.com/a/one"))
+        two = identicon.artifact_bytes(identicon.stamp_key("github.com/b/two"))
         for name, body in one.items():
             with self.subTest(artifact=name):
                 self.assertTrue(body, f"{name} is empty")
@@ -215,10 +471,8 @@ class TestTheDocumentsAndTheCodeAgreeOnTheArtifacts(unittest.TestCase):
 class TestInstallingIntoARepository(unittest.TestCase):
     """The thing the project is for: putting the mark in the repository.
 
-    Everything else here checks a derivation. This checks the deliverable --
-    that running it in a repository leaves the right files, that running it
-    twice changes nothing, and that --check notices when something has drifted
-    without touching it.
+    Everything else here checks a derivation. This checks the deliverable,
+    against a real git repository.
     """
 
     def setUp(self):
@@ -231,9 +485,13 @@ class TestInstallingIntoARepository(unittest.TestCase):
 
     def test_it_writes_every_artifact(self):
         result = identicon.install_into_repo(self.tmp)
-        self.assertEqual("github.com/someone/a-project", result["key"])
+        self.assertEqual("github.com/someone/a-project", result["seed"])
+        # Interpolated, not a literal: a hard-coded "2:" here fails on the next
+        # bump while testing nothing that changed.
+        self.assertEqual(f"{identicon.MAPPING_VERSION}:github.com/someone/a-project",
+                         result["key"])
         self.assertEqual("remote", result["source"])
-        for name in ("png", "svg", "colour", "txt"):
+        for name in ("png", "png4x", "svg", "colour", "grid", "txt"):
             with self.subTest(artifact=name):
                 path = pathlib.Path(result["files"][name])
                 self.assertTrue(path.is_file(), path)
@@ -248,7 +506,21 @@ class TestInstallingIntoARepository(unittest.TestCase):
             identicon.identicon_grid(result["key"]),
             identicon.identicon_colour(result["key"]))
         self.assertEqual(expected + "\n", body)
-        self.assertEqual(2, len(body.rstrip("\n").split("\n")))
+
+    def test_a_hand_written_mark_in_any_variant_is_left_alone(self):
+        """The mark somebody already placed is theirs. Any of the variants
+        counts, in markdown or in HTML, because all of them are the mark."""
+        for body in (
+            "# T\n\n![](.identicon/repository-identicon-light.svg)\n",
+            "# T\n\n![](.identicon/repository-identicon-dark.svg)\n",
+            '# T\n\n<img width="64" src=".identicon/repository-identicon-base.svg">\n',
+            "# T\n\n![](.identicon/repository-identicon-256.png)\n",
+        ):
+            with self.subTest(body=body.splitlines()[-1][:44]):
+                readme = pathlib.Path(self.tmp) / "README.md"
+                readme.write_text(body)
+                identicon.install_into_repo(self.tmp)
+                self.assertEqual(body, readme.read_text())
 
     def test_the_colour_file_is_the_whole_parser(self):
         """A consumer runs `cat`, and that is the entire integration."""
@@ -258,9 +530,9 @@ class TestInstallingIntoARepository(unittest.TestCase):
         self.assertRegex(body, r"^#[0-9a-f]{6}\n$")
 
     def test_running_it_twice_on_an_unchanged_key_changes_nothing(self):
-        """Idempotent for a *fixed* key, which is the only sense in which it
-        is idempotent: the sibling test below renames the remote and expects
-        every artifact to be rewritten."""
+        """Idempotent for a *fixed* key, which is the only sense in which it is
+        idempotent: test_reseed_is_the_only_thing_that_changes_the_mark renames
+        the remote and expects the seed, colour and recorded key to move."""
         first = identicon.install_into_repo(self.tmp)
         again = identicon.install_into_repo(self.tmp)
         self.assertTrue(again["current"])
@@ -303,6 +575,7 @@ class TestInstallingIntoARepository(unittest.TestCase):
         self.assertEqual(before["key"],
                          identicon.prior_path(after["files"]["key"])
                          .read_text().splitlines()[-1])
+        self.assertEqual(before["seed"], "github.com/someone/a-project")
 
     def test_nothing_is_kept_when_nothing_is_replaced(self):
         result = identicon.install_into_repo(self.tmp, readme=False)
@@ -319,10 +592,13 @@ class TestInstallingIntoARepository(unittest.TestCase):
         self.assertFalse(
             identicon.prior_path(result["files"]["colour"]).exists())
 
-    def test_the_seed_is_recorded_on_the_first_run(self):
+    def test_the_key_is_recorded_on_the_first_run(self):
+        """The whole key, version stamp included, because the whole key is
+        what gets hashed."""
         result = identicon.install_into_repo(self.tmp)
         self.assertEqual("remote", result["source"])
-        self.assertEqual(result["key"], identicon.recorded_seed(self.tmp))
+        self.assertEqual(result["key"], identicon.recorded_key(self.tmp))
+        self.assertEqual(identicon.MAPPING_VERSION, result["mapping_version"])
 
     def test_a_rename_does_not_change_the_mark(self):
         """The whole point of an identity: it does not re-derive itself."""
@@ -331,7 +607,7 @@ class TestInstallingIntoARepository(unittest.TestCase):
         after = identicon.install_into_repo(self.tmp)
         self.assertEqual(before["key"], after["key"])
         self.assertEqual(before["colour"], after["colour"])
-        self.assertEqual("seed", after["source"])
+        self.assertEqual("key", after["source"])
         self.assertTrue(after["current"])
 
     def test_a_rename_is_reported_as_seed_drift(self):
@@ -341,11 +617,11 @@ class TestInstallingIntoARepository(unittest.TestCase):
         self.assertEqual("github.com/someone/renamed", after["seed_drift"])
 
     def test_artifacts_refresh_without_touching_the_seed(self):
-        """A better renderer or a different size must reach every repository
+        """A better renderer or a different block must reach every repository
         without disturbing anybody's identity."""
         before = identicon.install_into_repo(self.tmp)
         self._rename_remote()
-        after = identicon.install_into_repo(self.tmp, size=128)
+        after = identicon.install_into_repo(self.tmp, block=3)
         self.assertEqual(before["key"], after["key"])
         self.assertEqual("unchanged", after["changes"]["key"])
         self.assertEqual("updated", after["changes"]["png"])
@@ -354,10 +630,10 @@ class TestInstallingIntoARepository(unittest.TestCase):
         before = identicon.install_into_repo(self.tmp)
         self._rename_remote()
         after = identicon.install_into_repo(self.tmp, reseed=True)
-        self.assertEqual("github.com/someone/renamed", after["key"])
+        self.assertEqual("github.com/someone/renamed", after["seed"])
         self.assertNotEqual(before["colour"], after["colour"])
-        self.assertEqual("github.com/someone/renamed",
-                         identicon.recorded_seed(self.tmp))
+        self.assertEqual(f"{identicon.MAPPING_VERSION}:github.com/someone/renamed",
+                         identicon.recorded_key(self.tmp))
         self.assertIsNone(after["seed_drift"])
 
     def test_an_override_masking_a_renamed_remote_is_reported(self):
@@ -372,7 +648,7 @@ class TestInstallingIntoARepository(unittest.TestCase):
 
         result = identicon.install_into_repo(self.tmp, check=True)
         self.assertEqual("override", result["source"])
-        self.assertEqual(pinned, result["key"])
+        self.assertEqual(pinned, result["seed"])
         self.assertEqual("github.com/someone/moved-on", result["masking"])
 
     def test_an_override_agreeing_with_the_remote_is_not_reported(self):
@@ -424,10 +700,9 @@ class TestInstallingIntoARepository(unittest.TestCase):
         self.assertEqual(body, readme.read_text(encoding="utf-8"))
 
     def test_a_readme_that_documents_the_path_still_gets_a_mark(self):
-        """Found by dogfooding. A README that *describes* these files -- in a
-        fenced block, a table, or prose -- is not a README that displays one,
-        and matching the bare path meant exactly the projects integrating with
-        this never got their own mark."""
+        """A README that *describes* these files -- in a fenced block, a table,
+        or prose -- is not a README that displays one. Matching the bare path
+        denied a mark to exactly the projects integrating with this."""
         readme = self._readme(
             "# Docs\n\nIt writes:\n\n```\n"
             ".identicon/repository-identicon.svg    vector\n```\n")
@@ -437,9 +712,8 @@ class TestInstallingIntoARepository(unittest.TestCase):
                       readme.read_text(encoding="utf-8"))
 
     def test_the_mark_shown_as_a_fenced_example_does_not_count(self):
-        """The second dogfooding correction: this repository's own README
-        shows the markdown in a code block. A mark inside a fence is a mark
-        being talked about, not one being displayed."""
+        """A mark inside a fence is one being talked about, not one being
+        displayed -- this repository's own README is the case."""
         readme = self._readme(
             "# Docs\n\nPut this in your README:\n\n```markdown\n"
             f"{identicon.README_MARK}\n```\n")
@@ -488,6 +762,242 @@ class TestInstallingIntoARepository(unittest.TestCase):
             capture_output=True, text=True, timeout=60)
         self.assertEqual(1, completed.returncode, completed.stdout)
         self.assertFalse(json.loads(completed.stdout)["current"])
+
+
+# ---- The key file ----
+
+class TestTheKeyFileWins(unittest.TestCase):
+    """The mapping version is in the key, and the key is a tracked file.
+
+    So a repository's mark cannot move because a constant moved in here. It
+    moves when that line moves, which is a diff somebody reviews -- which is
+    the entire point of putting the version there rather than in the code.
+    """
+
+    SEED = "github.com/someone/a-project"
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.tmp, ignore_errors=True)
+        subprocess.run(["git", "init", "-q", self.tmp], check=True, timeout=30)
+        subprocess.run(["git", "-C", self.tmp, "remote", "add", "origin",
+                        f"https://{self.SEED}.git"], check=True, timeout=30)
+
+    def write_key(self, key, preamble="# hand written\n"):
+        path = identicon.key_path(self.tmp)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(f"{preamble}{key}\n")
+        return path
+
+    def test_an_unstamped_key_is_version_zero_and_hashes_to_itself(self):
+        """Keys written before the version existed are still out there. They
+        must keep drawing what they always drew, and they do because nothing
+        is added at hash time."""
+        self.assertEqual((0, self.SEED), identicon.parse_key(self.SEED))
+        self.assertEqual(identicon._digest(self.SEED),
+                         hashlib.md5(self.SEED.encode()).hexdigest())
+
+    def test_a_seed_containing_a_colon_is_not_mistaken_for_a_stamp(self):
+        for seed in ("ssh://git@host/x", "C:/src/project", "host:1234/x"):
+            with self.subTest(seed=seed):
+                self.assertEqual((0, seed), identicon.parse_key(seed))
+
+    def test_stamping_and_parsing_are_inverses(self):
+        for version in (0, 1, 17):
+            key = identicon.stamp_key(self.SEED, version)
+            self.assertEqual((version, self.SEED), identicon.parse_key(key))
+
+    def test_a_repository_on_a_withdrawn_mapping_is_refused(self):
+        """The cost of withdrawing a draft, stated as a test. An unstamped
+        repository predates the version and cannot be drawn by a build that
+        no longer carries that rule -- and it is refused rather than silently
+        redrawn, because redrawing it would move a mark nobody asked to move."""
+        self.write_key(self.SEED)
+        with self.assertRaises(identicon.UnknownMappingVersion) as caught:
+            identicon.install_into_repo(self.tmp, readme=False)
+        self.assertIn("remap", str(caught.exception),
+                      "the refusal must name the way out")
+
+    def test_the_key_file_is_left_byte_for_byte_alone(self):
+        """Including a preamble somebody edited. A run that rewrites this file
+        under you makes every run a diff, and this file's job is to be the
+        thing that does not move."""
+        path = self.write_key(identicon.stamp_key(self.SEED),
+                              preamble="# mine, do not touch\n")
+        before = path.read_bytes()
+        identicon.install_into_repo(self.tmp, readme=False)
+        self.assertEqual(before, path.read_bytes())
+
+    def test_a_newer_mapping_strands_a_seeded_repository_until_it_remaps(self):
+        """True only while the mapping is a draft. Once a version reaches a
+        release its rule stays, and a bump leaves those repositories alone --
+        so this test is about the pre-release state and should be revisited
+        when `VERSION` leaves `0.0.*`."""
+        first = identicon.install_into_repo(self.tmp, readme=False)
+        self.assertEqual(identicon.MAPPING_VERSION, first["mapping_version"])
+        self.assertIsNone(first["mapping_drift"])
+
+        with mock.patch.object(identicon, "MAPPING_VERSION",
+                               identicon.MAPPING_VERSION + 1):
+            with self.assertRaises(identicon.UnknownMappingVersion):
+                identicon.install_into_repo(self.tmp, readme=False)
+
+    def test_remap_is_what_moves_it_and_keeps_the_seed(self):
+        first = identicon.install_into_repo(self.tmp, readme=False)
+        with mock.patch.object(identicon, "MAPPING_VERSION",
+                               identicon.MAPPING_VERSION + 1):
+            after = identicon.install_into_repo(self.tmp, remap=True,
+                                                readme=False)
+        self.assertEqual(self.SEED, after["seed"])
+        self.assertNotEqual(first["key"], after["key"])
+        self.assertNotEqual(first["colour"], after["colour"])
+        self.assertEqual("updated", after["changes"]["key"])
+        self.assertIsNone(after["seed_drift"],
+                          "a remap is not a rename and must not read as one")
+
+    def test_remap_under_check_writes_nothing(self):
+        first = identicon.install_into_repo(self.tmp, readme=False)
+        with mock.patch.object(identicon, "MAPPING_VERSION",
+                               identicon.MAPPING_VERSION + 1):
+            identicon.install_into_repo(self.tmp, remap=True, readme=False,
+                                        check=True)
+        self.assertEqual(first["key"], identicon.recorded_key(self.tmp))
+
+    def test_the_read_only_commands_run_in_a_seeded_repository(self):
+        """Only an end-to-end run catches this: `show` once looked its source up
+        in a table that had never been told about the recorded key, so it
+        crashed in every seeded repository -- which is all of them after the
+        first run."""
+        identicon.install_into_repo(self.tmp, readme=False)
+        for command in (["show"], ["render", "--out", os.devnull],
+                        ["emit", "--style", "icon"]):
+            with self.subTest(command=command[0]):
+                done = subprocess.run(
+                    ["python3", str(ROOT / "repository-identicon.py"),
+                     *command, self.tmp],
+                    capture_output=True, text=True, timeout=60)
+                self.assertEqual(0, done.returncode, done.stderr)
+
+    def test_show_draws_what_apply_wrote(self):
+        """A seeded repository has one mark. The read-only commands resolve
+        through the same file, so they cannot report a different one."""
+        self.write_key(self.SEED)
+        key, source = identicon.resolve_key_for(self.tmp)
+        self.assertEqual(self.SEED, key)
+        self.assertEqual("key", source)
+
+
+# ---- The validator, and the pair of files ----
+
+class TestTheValidatorOfferedToPorts(unittest.TestCase):
+    """The check this repository offers outward, rather than reaching inward.
+
+    A port in another language cannot run this suite, so `validate` runs the
+    port instead and compares it to the vectors. These tests stand in for a
+    port with a fake one, because the thing under test is the validator.
+    """
+
+    # Echoes the pinned vector back; each negative test corrupts one field.
+    CONFORMING_PORT = (
+        'import json, sys\n'
+        'v = json.load(open({vectors!r}))\n'
+        'k = sys.argv[-1]\n'
+        'hit = [x for x in v["vectors"] if x["key"] == k][0]\n'
+        'print(json.dumps({{"grid": hit["grid"], "colour": hit["foreground"]}}))\n')
+
+    def port(self, body):
+        path = pathlib.Path(tempfile.mkdtemp()) / "port.py"
+        self.addCleanup(shutil.rmtree, path.parent, ignore_errors=True)
+        path.write_text(body.format(vectors=str(VECTORS)))
+        return ["python3", str(path)]
+
+    def run_validate(self, argv):
+        return identicon.validate_command(argv, vectors)
+
+    def test_a_port_that_reproduces_the_vectors_passes_every_one(self):
+        results = self.run_validate(self.port(self.CONFORMING_PORT))
+        self.assertEqual(len(vectors), len(results))
+        for result in results:
+            with self.subTest(key=result["key"]):
+                self.assertEqual([], result["problems"])
+
+    def test_a_wrong_colour_fails_and_says_which_key(self):
+        body = self.CONFORMING_PORT.replace('hit["foreground"]', '"#010203"')
+        failed = [r for r in self.run_validate(self.port(body)) if r["problems"]]
+        self.assertEqual(len(vectors), len(failed))
+        self.assertIn("#010203", failed[0]["problems"][0])
+
+    def test_a_wrong_grid_fails(self):
+        body = self.CONFORMING_PORT.replace('hit["grid"]', '["00000"] * 5')
+        failed = [r for r in self.run_validate(self.port(body)) if r["problems"]]
+        self.assertTrue(failed)
+        self.assertIn("grid", failed[0]["problems"][0])
+
+    def test_output_that_is_not_json_is_reported_rather_than_raised(self):
+        results = self.run_validate(self.port('print("not json")\n'))
+        self.assertTrue(all(r["problems"] for r in results))
+        self.assertIn("not JSON", results[0]["problems"][0])
+
+    def test_a_port_that_crashes_is_reported_with_its_exit_code(self):
+        results = self.run_validate(self.port('import sys\nsys.exit(3)\n'))
+        self.assertIn("exited 3", results[0]["problems"][0])
+
+    def test_the_grid_may_be_numbers_or_booleans_rather_than_strings(self):
+        """Failing a correct port over JSON shape is worse than no validator."""
+        for shape in ("[[int(c) for c in r] for r in hit[\"grid\"]]",
+                      "[[c == \"1\" for c in r] for r in hit[\"grid\"]]",
+                      "[[c for c in r] for r in hit[\"grid\"]]"):
+            with self.subTest(shape=shape):
+                body = self.CONFORMING_PORT.replace('hit["grid"]', shape)
+                results = self.run_validate(self.port(body))
+                self.assertEqual([], results[0]["problems"])
+
+    def test_the_command_line_exits_1_when_a_port_disagrees(self):
+        body = self.CONFORMING_PORT.replace('hit["foreground"]', '"#010203"')
+        completed = subprocess.run(
+            ["python3", str(ROOT / "repository-identicon.py"), "validate",
+             "--", *self.port(body)],
+            capture_output=True, text=True, timeout=120)
+        self.assertEqual(1, completed.returncode, completed.stdout)
+
+
+class TestTheTwoFilesAreAPair(unittest.TestCase):
+    """repository-identicon.py needs text-identicon.py for every text style.
+
+    `emit` swallows everything so a hook can never break a turn, which is what
+    would turn a missing sibling into a silent one. So the loader names the file
+    in its error and `doctor` reports it either way -- both checked against a
+    copy deployed alone, since in the tree the sibling is always there.
+    """
+
+    def setUp(self):
+        self.tmp = pathlib.Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.tmp, ignore_errors=True)
+        self.alone = self.tmp / "repository-identicon.py"
+        shutil.copy(ROOT / "repository-identicon.py", self.alone)
+
+    def doctor(self, script):
+        completed = subprocess.run(["python3", str(script), "doctor"],
+                                   capture_output=True, text=True, timeout=60)
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        return completed.stdout
+
+    def test_doctor_gives_the_path_when_the_sibling_is_there(self):
+        self.assertIn(str(ROOT / "text-identicon.py"),
+                      self.doctor(ROOT / "repository-identicon.py"))
+
+    def test_doctor_says_not_found_and_what_it_costs_when_it_is_not(self):
+        report = self.doctor(self.alone)
+        self.assertRegex(report, r"text-identicon\.py\s+NOT FOUND")
+        self.assertIn("text styles will print nothing", report)
+
+    def test_the_loader_names_the_file_rather_than_failing_on_a_bare_path(self):
+        spec = importlib.util.spec_from_file_location("alone", self.alone)
+        alone = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(alone)
+        with self.assertRaises(FileNotFoundError) as raised:
+            alone._text_module()
+        self.assertIn("text-identicon.py", str(raised.exception))
 
 
 if __name__ == "__main__":

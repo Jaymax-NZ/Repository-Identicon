@@ -18,14 +18,16 @@ arrive. No amount of hand-placing fixes that, because the channel is hue.
 
 ## The artifact
 
-`in-use.tsv` is the answer: fifty arcs tiling 0–360 with no gap and no overlap,
-each naming the three squares that stand for that band of hue, inner to outer.
+`in-use.tsv` is the answer: sixty-three blocks tiling 0–360 with no gap and no
+overlap, each naming the three squares that stand for that band of hue, inner to
+outer. It comes out as sixty-four rows, because the block straddling zero is
+split in two.
 
 ```
 # from	to	n	one	two	three	mark
-0.0	5.0	1	red	brown	black	🟥🟫⬛
-5.0	9.0	2	red	red	brown	🟥🟥🟫
-9.0	17.0	3	orange	purple	brown	🟧🟪🟫
+0.0	2.4	63	orange	purple	brown	🟧🟪🟫
+2.4	10.4	1	red	orange	purple	🟥🟧🟪
+10.4	14.4	2	orange	orange	purple	🟧🟧🟪
 ```
 
 A lookup is `from <= hue < to` and always hits exactly once. The block that
@@ -34,7 +36,7 @@ wrap, because a consumer that has to special-case one row eventually will not.
 Hue is the HSL hue `identicon.js` derives from the digest, at its fixed
 saturation 0.7 and lightness 0.5.
 
-It is **generated**, by `wheel.py --reference` from `bench.tsv`, so the table
+It is **generated**, by `wheel.py --reference` from `wheel.tsv`, so the table
 and the wheel cannot disagree. Do not edit it.
 
 ## How it was arrived at, and why not by search
@@ -46,40 +48,40 @@ wrong — green used to raise a channel, black on the brightest colour in the
 gamut, orange beside blue. 57.2% of the gamut broke at least one rule Justin
 could name on sight.
 
-Two attempts at a better algorithm followed, both kept here because the harness
-they were written against still governs what is admissible. The third answer was
-to stop writing algorithms: the ring is placed by hand, block by block, judged
-by eye against the gamut it sits beside.
+Two attempts at a better algorithm followed. The third answer was to stop
+writing algorithms: the ring is placed by hand, block by block, judged by eye
+against the gamut it sits beside.
 
 | file | what it is |
 |---|---|
-| `in-use.tsv` | **the mapping** — generated, the only file a consumer would read |
-| `bench.tsv` | the working document: every triple the vocabulary knows, in use or not, with where each is placed and how far it is stretched |
+| `wheel.tsv` | **the wheel** — all 165 triples, one line each, with where each one is |
+| `in-use.tsv` | **the mapping** — generated from it, the only file a consumer would read |
 | `wheel.py` | the renderer and the generator |
-| `shaped.py` | the shape channel — square or circle, laid over the triple |
 | `perceptual.py` | the harness — what is forbidden, and what must exist |
-| `mix.py` | what a given triple averages to, and where that reads |
 
-The anchored mapping, the target file it was fitted to, the contact sheets and
-sixty-one wheel renders have been deleted. They were the route, not the answer,
-and git has every one of them if a question needs re-opening. `wheel.py` no
-longer depends on any of it: `gamut_at` and `hue_of` are inlined, so the wheel
-needs only the reference implementation and the palette.
+Everything else has been deleted, and git has all of it if a question needs
+re-opening: the anchored mapping and the target file it was fitted to, the
+contact sheets, eighty wheel renders, the shape-channel and blend-inspection
+scripts, and `bench.tsv` — the version 1 roster, along with the tool that fed
+it and the seating machinery that consumed it. The arrangement is settled, so
+the apparatus of arriving at one is not needed to draw it.
 
 ## The wheel
 
 ```bash
-python3 wheel.py                  # render the next free wheelN.svg
-python3 wheel.py --reference      # regenerate in-use.tsv from bench.tsv
+python3 wheel.py --painted              # render the next free wheelN.svg
+python3 wheel.py --painted --ring-only  # the ring alone, tiers not drawn
+python3 wheel.py --reference            # regenerate in-use.tsv from wheel.tsv
 ```
 
-Reading outward: the drift ticks and their leaders, a narrow technical band
-carrying the stretch rules, the block numbers, the gamut, **the block ring**,
-and the trefoils on neutral ground.
+Reading outward: the tiers, stacked inward from the ring with the rejected set
+innermost; the drift ticks and their leaders in the gap inside the ring; **the
+block ring** itself; the block numbers in the corridor between it and the gamut;
+the gamut; and the trefoils on neutral ground.
 
-`--tables` restores the corner lists and the unused colours. They travel
-together because both are the apparatus of choosing, and it is off while there
-is nothing left to choose.
+`--ring-only` draws the ring and leaves the tiers and the roster off the page.
+It is a view and not a smaller wheel: everything is still read, still packed and
+still reported, and `wheel.tsv` is untouched.
 
 ### What the widths mean
 
@@ -88,10 +90,10 @@ arrangements and eight shape combinations — 48 marks — against a pair's 3×8
 three-of-a-kind's 1×8. Eight degrees, four and one price that, and it comes out
 to a constant six marks per degree.
 
-`mult` widens a block past its price where a stretch of the wheel has to carry
-more decision than the price allows. That is declared rather than hidden: a rule
-under the block as long as it ought to have been, one rule per half-step of
-stretch, so the class price stays readable under a block that has outgrown it.
+Every block is at its class price. Blocks used to be widened past it where a
+stretch of the wheel had to carry more decision than the price allowed, declared
+by a rule drawn underneath; nothing is stretched now, so there is nothing to
+declare.
 
 ### Coverage, as it stands
 
@@ -103,23 +105,27 @@ black in it is worth twelve marks and is drawn as wide as one worth forty-eight.
 
 | | assuming 8 | actually |
 |---|---|---|
-| marks reachable | 1,720 | **1,420** |
-| effective distinct | 1,549 | **1,003** |
-| 50% chance any pair collides at | 46 projects | **37 projects** |
+| marks reachable | 2,168 | **1,604** |
+| effective distinct | 2,166 | **1,307** |
+| 50% chance any pair collides at | 55 projects | **43 projects** |
 
-Twenty-three of the fifty blocks carry an achromatic. The fix is to price a
+Twenty-five of the sixty-three blocks carry an achromatic. The fix is to price a
 block by `arrangements × 2^circleable` rather than by class alone — which would
 make several current widths wrong, so it is a re-layout, not an edit.
 
-Measured over the gamut rather than over projects, `shaped.py` reports 214
-arrangements, 732 distinct marks with shape, 546 effective.
-
 ### Numbers are positional
 
-1–50 are in use, numbered clockwise from the top in the order they sit; 101+ are
-not in use, ordered by the hue their blend reads as. A block's number is its
-position, so removing or reordering one renumbers the rest. That is the cost of
-the number meaning something, and it is paid deliberately.
+A tile's number is the line it sits on in `wheel.tsv`, and the lines run
+clockwise from the top: the ring is 1–63 and walks the hue circle, the tiers
+follow outward-in, then the three sunk bands, then the six that average to a
+neutral and have no place at all. A number is a position, so moving a tile and
+re-sorting the file renumbers what follows it. That is the cost of the number
+meaning something, and it is paid deliberately — the ring is closed, so it is no
+longer paid often.
+
+The triple is on the line as well as the number, and neither is trusted alone:
+the engine reads the names, and the number is checked against its own position,
+so a dropped line says so instead of silently shifting everything after it.
 
 ## The findings worth keeping
 
@@ -129,16 +135,31 @@ must be refused, blue-green is *also* 120 degrees and must be allowed. Teal is
 an ordinary colour; reddish-green is not one at all. The check is a short list of
 opponent pairs, and it is biology rather than geometry.
 
+**Hashing an output of the mapping adds nothing to it.** The order of the three
+squares, and which of them are circles, were taken from a hash of `#rrggbb` — so
+that the shipped `.colour` file would be sufficient on its own, which is a real
+property and was argued for on real grounds. But the colour is what the mapping
+produces, so a channel derived from it cannot separate two projects the mapping
+has already put in the same place: over four thousand projects it yielded fewer
+distinct marks than there were distinct colours. The measurement that was
+supposed to catch this swept the gamut one sample per colour, which makes every
+mark look distinct by construction. **Measure over the population you have, not
+over the space it lives in.** Both now come from the grid, which is fifteen bits
+of the key's digest and already in hand wherever a mark is drawn.
+
 **Two domains must not be compared.** The palette is anchored on Unicode
 *names*, so `yellow` is nominally `#ffff00` — a colour no font paints and the
 gamut never reaches, since `identicon.js` fixes saturation at 0.7. Matching a
 70%-saturation target against 100%-saturation anchors forces a compensation
 square onto every colour. Every comparison here is made in the gamut's own terms.
 
-**A checker that only rejects is half a harness.** Blue-green went missing for
-three iterations because nothing emitted it, so nothing ever failed. `REQUIRED`
-is the other half: triples Justin has said should exist, with where he saw them.
-It caught four distinct defects the moment it was added.
+**A checker that only rejects cannot see an absence.** Blue-green went missing
+for three iterations because nothing emitted it, so nothing ever failed. The
+patch was `REQUIRED`, a list of triples that had to be reachable, and it caught
+four distinct defects the moment it was added. It is gone now, and the finding
+is what replaced it rather than the list: absence was only invisible while an
+algorithm was choosing. Every one of the 165 has a line saying where it is, so a
+triple missing from the ring is missing because somebody put it in a tier.
 
 **Hue angle, not distance.** Matching a blend to the gamut by Oklab *distance*
 is dominated by lightness, because a blend of three squares is always lighter and
@@ -173,12 +194,13 @@ fault and cannot be fixed by placement.
 
 - **The wedge widths are priced wrong** wherever a block contains black or
   white — see the coverage table above. Re-pricing changes the layout.
-- **`REQUIRED` now contradicts the ring.** The table violates nothing — zero of
-  1074 gamut colours break a rule, which is the first time that has been true —
-  but seven of the twelve required triples are not on it, and at least one of
-  them, `blue purple white`, was rejected by eye afterwards. The list records
-  what was wanted at the time it was written; the ring records what was chosen.
-  One of them has to give, and it is probably the list.
+- **The two-achromatic thresholds are calibrated against a gamut that no longer
+  exists**, and `LIGHT` sits above its maximum, so the two-white rule fires at
+  every hue and measures nothing. It is also right every time: all seven
+  two-white triples were sunk by eye, and six of the seven two-black ones are
+  flagged with the seventh sunk anyway. Refusing outright is what the eye did on
+  all fourteen, which argues for dropping the luminance test rather than
+  recalibrating it — a rule change, not a constant. See `HANDOVER.md`.
 - `SPEC.md` records this table as not yet normative. Adopting it means replacing
   the search in `../text-identicon.py`, pinning vectors for it, and saying so
   there.
@@ -186,13 +208,13 @@ fault and cannot be fixed by placement.
 ## Running it
 
 ```bash
-python3 wheel.py --reference
-python3 shaped.py
-python3 -c "import shaped, perceptual; perceptual.audit(shaped.triple, 'in-use')"
-python3 mix.py "yellow green orange"
+python3 wheel.py --painted
 ```
 
-`shaped.py` checks the shape channel across the whole gamut — determinism,
-arrangement untouched, no circled neutral, three characters out — and reports
-spread. The audit prints violations by kind and which required triples are
-missing. No network, no fonts, no human eyes.
+```bash
+python3 perceptual.py
+```
+
+The harness runs on its own, auditing the algorithm currently shipped in
+`../text-identicon.py`: violations by kind, with an example of each, and which
+required triples it never produces. No network, no fonts, no human eyes.

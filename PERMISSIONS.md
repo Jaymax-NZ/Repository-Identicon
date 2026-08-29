@@ -15,6 +15,11 @@ that the reason for a rule survives the prompt that requested it.
 That is all of it. Nothing installs, nothing writes outside this repository, and
 nothing reaches the network.
 
+**That claim is now true of the tool and not only of the test commands.** It was
+not while `install`, `profile` and `badge` were here, writing under
+`~/.local/share` and calling a running Konsole. Those went to `Console-Colophon`,
+whose own `PERMISSIONS.md` says what it writes and where.
+
 A specification should be implementable by reading it. If working in this
 repository ever needs network access or anything that writes outside it, that is
 a signal something has been designed wrong, not a rule to add.
