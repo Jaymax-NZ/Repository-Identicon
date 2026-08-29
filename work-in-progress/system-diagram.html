@@ -903,7 +903,7 @@ canvas — int, px — 5·block + 2·border. Always derived, never specified.</t
 <a href="#i2-11"><path d="M44,108 H418 V142 H44 L32,125.0 Z" class="bref"/><text x="54" y="129" class="refn">2.11</text><text x="88" y="129" class="reft">the grid and the colour, from page 2</text></a>
 <g id="i4-1" class="item">
 <title>rendering — bytes | str — Bytes for one medium, derived from the key. Not part of conformance.
-style — str, one of six — Which rendering a consumer asks for: icon, image, text, full, banner or line. Named by SPEC.md here, chosen in Console-Colophon.</title>
+style — str, one of six — Which rendering a consumer asks for: icon, image, text, full, banner or line. SPEC.md ranks the renderings; these names are Console-Colophon&#x27;s, and left with it.</title>
 <rect x="32" y="152" width="386" height="121.7" rx="5" class="bdata"/>
 <text x="44" y="172" class="badge">4.1</text>
 <text xml:space="preserve" x="78" y="172.0" class="tid">where § Scope cuts</text>
@@ -1499,7 +1499,7 @@ prior — file — stem.prior.suffix — the bytes a run replaced, kept one leve
 <line x1="936" y1="83" x2="1362" y2="83" class="rule"/>
 <g id="i7-1" class="item">
 <title>rendering — bytes | str — Bytes for one medium, derived from the key. Not part of conformance.
-style — str, one of six — Which rendering a consumer asks for: icon, image, text, full, banner or line. Named by SPEC.md here, chosen in Console-Colophon.</title>
+style — str, one of six — Which rendering a consumer asks for: icon, image, text, full, banner or line. SPEC.md ranks the renderings; these names are Console-Colophon&#x27;s, and left with it.</title>
 <rect x="32" y="88" width="426" height="121.7" rx="5" class="bdata"/>
 <text x="44" y="108" class="badge">7.1</text>
 <text xml:space="preserve" x="78" y="108.0" class="tid">SPEC.md § Terminal</text>
@@ -1543,7 +1543,7 @@ style — str, one of six — Which rendering a consumer asks for: icon, image, 
 </g>
 <g id="i7-4" class="item">
 <title>artifact — file, one of eleven — One of the eleven rendered files in .identicon/ — a cache with a canonical location, not a source.
-style — str, one of six — Which rendering a consumer asks for: icon, image, text, full, banner or line. Named by SPEC.md here, chosen in Console-Colophon.</title>
+style — str, one of six — Which rendering a consumer asks for: icon, image, text, full, banner or line. SPEC.md ranks the renderings; these names are Console-Colophon&#x27;s, and left with it.</title>
 <rect x="484" y="232.3" width="426" height="109.1" rx="5" class="bdata"/>
 <text x="496" y="252.3" class="badge">7.4</text>
 <text xml:space="preserve" x="530" y="252.3" class="tid">what a consumer does instead</text>
@@ -1844,7 +1844,7 @@ grid — 5×5 of bool — From digest characters 0–14, drawn down the centre c
 <text xml:space="preserve" x="948" y="248.49999999999997" class="sb">Reads a string cell by value, never by truthiness.</text>
 </g>
 </svg></div></section>
-<section id="terms"><h2><span class="pn">·</span>Terms</h2><p class="note">the words this repository uses in a particular way. No item on a page restates one of these; it points at them instead.</p><table class="gloss"><thead><tr><th>term</th><th>type</th><th>what it means here</th><th>where</th></tr></thead><tbody><tr class="g"><td colspan="4">Identity</td></tr>
+<section id="terms"><h2><span class="pn">·</span>Terms</h2><p class="note">the words this repository uses in a particular way, each with the shape of the thing it names. No item on a page restates one of these; it points at them instead.</p><table class="gloss"><thead><tr><th>term</th><th>type</th><th>what it means here</th><th>where</th></tr></thead><tbody><tr class="g"><td colspan="4">Identity</td></tr>
 <tr><td class="t">key</td><td class="ty">str</td><td class="d">The one string the mark depends on: &lt;mapping version&gt;:&lt;seed&gt;, hashed verbatim.</td><td class="n"><a href="#i1-16">1.16</a> · <a href="#i1-14">1.14</a></td></tr>
 <tr><td class="t">seed</td><td class="ty">str</td><td class="d">The identity alone, without the version: github.com/owner/repo.</td><td class="n"><a href="#i1-5">1.5</a> · <a href="#i1-12">1.12</a></td></tr>
 <tr><td class="t">mapping version</td><td class="ty">str, dotted</td><td class="d">The label stamped into the key saying which colour rule drew it. Currently 0.3 — the number the wheel it was solved against carries. Compared for equality, never ordered.</td><td class="n"><a href="#i1-15">1.15</a> · <a href="#i2-8">2.8</a></td></tr>
@@ -1879,7 +1879,7 @@ grid — 5×5 of bool — From digest characters 0–14, drawn down the centre c
 <tr><td class="t">current</td><td class="ty">bool</td><td class="d">True when every artifact already holds the bytes it should.</td><td class="n"><a href="#i6-1">6.1</a></td></tr>
 <tr class="g"><td colspan="4">Renderings</td></tr>
 <tr><td class="t">rendering</td><td class="ty">bytes | str</td><td class="d">Bytes for one medium, derived from the key. Not part of conformance.</td><td class="n"><a href="#i4-2">4.2</a></td></tr>
-<tr><td class="t">style</td><td class="ty">str, one of six</td><td class="d">Which rendering a consumer asks for: icon, image, text, full, banner or line. Named by SPEC.md here, chosen in Console-Colophon.</td><td class="n"><a href="#i7-1">7.1</a> · <a href="#i7-4">7.4</a></td></tr>
+<tr><td class="t">style</td><td class="ty">str, one of six</td><td class="d">Which rendering a consumer asks for: icon, image, text, full, banner or line. SPEC.md ranks the renderings; these names are Console-Colophon&#x27;s, and left with it.</td><td class="n"><a href="#i7-1">7.1</a> · <a href="#i7-4">7.4</a></td></tr>
 <tr><td class="t">lattice</td><td class="ty">(table, int, str, int)</td><td class="d">The subcell grid a pattern is drawn on, with the numbers that produce it: the table, its sub-rows, the blank, and the padding above.</td><td class="n"><a href="#i5-5">5.5</a></td></tr>
 <tr class="g"><td colspan="4">The text mark</td></tr>
 <tr><td class="t">octant</td><td class="ty">str, 1 char</td><td class="d">One of 256 patterns over a 2×4 lattice; one glyph carries a 2×4 patch of the grid.</td><td class="n"><a href="#i5-2">5.2</a> · <a href="#i5-4">5.4</a></td></tr>

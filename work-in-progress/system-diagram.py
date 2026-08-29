@@ -792,8 +792,7 @@ for p in PAGES:
                 f'<div class="scroll">{svg_for(p)}</div></section>')
 
 body.append('<section id="terms"><h2><span class="pn">·</span>Terms</h2>'
-            '<p class="note">the words this repository uses in a particular way. No item on '
-            'a page restates one of these; it points at them instead.</p>'
+            f'<p class="note">{esc(SECTION["terms"].notes()[0])}</p>'
             '<table class="gloss"><thead><tr><th>term</th><th>type</th>'
             '<th>what it means here</th>'
             '<th>where</th></tr></thead><tbody>' + "\n".join(gloss) + '</tbody></table></section>')

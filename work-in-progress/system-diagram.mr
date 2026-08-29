@@ -1618,7 +1618,7 @@
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ "0" or "1"
 ┋ ━ Terms
-┊┊ ┄ ⸆ the words this repository uses in a particular way, each with the shape of the thing it names
+┊┊ ┄ ⸆ the words this repository uses in a particular way, each with the shape of the thing it names. No item on a page restates one of these; it points at them instead.
 ┊┊ ┄ ⸖ $section=terms
 ┋┋ ━ Identity
 ┋┋┋ ━ key
@@ -1750,8 +1750,8 @@
 ┊┊┊┊ ┄ ⸆ Bytes for one medium, derived from the key. Not part of conformance.
 ┊┊┊┊ ┄ ⸖ $defines=4.2
 ┋┋┋ ━ style
+┊┊┊┊ ┄ ⸆ Which rendering a consumer asks for: icon, image, text, full, banner or line. SPEC.md ranks the renderings; these names are Console-Colophon's, and left with it.
 ┊┊┊┊ ┄ ⸖ $type=str, one of six
-┊┊┊┊ ┄ ⸆ Which rendering a consumer asks for: icon, image, text, full, banner or line. Named by SPEC.md here, chosen in Console-Colophon.
 ┊┊┊┊ ┄ ⸖ $defines=7.1
 ┊┊┊┊ ┄ ⸖ $defines=7.4
 ┋┋┋ ━ lattice
