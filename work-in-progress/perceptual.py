@@ -72,7 +72,7 @@ OPPONENTS = {
 # is on the largest gap between *adjacent* members, not on the total extent.
 MAX_GAP = 125.0
 
-# Relative luminance, ITU-R BT.709. How strong a claim an achromatic square
+# Relative luminance, ITU-R BT.709. How strong a claim an achromatic colour
 # makes depends on how many of them there are, so the threshold does too.
 #
 # **Two of them assert**, and answer to DARK and LIGHT -- `purple white white`
@@ -143,7 +143,7 @@ def separation(a, b):
 
 
 def chromatic(name, rgb):
-    """Is this square carrying a hue at all? Black and white never do."""
+    """Is this colour carrying a hue at all? Black and white never do."""
     if name in ACHROMATIC:
         return False
     return colorsys.rgb_to_hls(*[v / 255 for v in rgb])[2] > 0.05
@@ -155,8 +155,8 @@ def chromatic(name, rgb):
 def violations(rgb, indices):
     """Every rule the triple breaks for this target colour."""
     out = []
-    squares = [(text.PALETTE[k][1], text.PALETTE[k][3]) for k in indices]
-    names = [n for n, _ in squares]
+    colours = [(text.PALETTE[k][1], text.PALETTE[k][3]) for k in indices]
+    names = [n for n, _ in colours]
 
     for a in set(names):
         for b in set(names):
@@ -164,7 +164,7 @@ def violations(rgb, indices):
                 out.append(f"opponent {a} with {b}")
 
     # Largest gap between adjacent chromatic members, going round the circle.
-    hues = sorted({hue_of(c) for n, c in squares if chromatic(n, c)})
+    hues = sorted({hue_of(c) for n, c in colours if chromatic(n, c)})
     if len(hues) > 1:
         gaps = [hues[k + 1] - hues[k] for k in range(len(hues) - 1)]
         gaps.append(360 - hues[-1] + hues[0])
@@ -248,8 +248,8 @@ def audit(chooser, label):
 
 
 if __name__ == "__main__":
-    # `chosen_indices`, not `tricolour_indices`: which squares were chosen is a
+    # `chosen_indices`, not `tricolour_indices`: which colours were chosen is a
     # question about the colour alone, and the order comes from the grid and
-    # cannot break a rule -- the same three squares reordered are the same
+    # cannot break a rule -- the same three colours reordered are the same
     # colours.
     audit(text.chosen_indices, "current algorithm")

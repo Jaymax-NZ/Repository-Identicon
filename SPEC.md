@@ -296,9 +296,9 @@ quarter of the projects its width would otherwise give it. Measured over the
 whole draw, the hundred degrees from 165 to 265 fall from 27.8% of projects to
 11.0%.
 
-**Why that arc.** The emoji-square fallback has no square between green and
+**Why that arc.** The emoji fallback's palette has no colour between green and
 blue, so every mixture of the two reads at essentially one hue and whole bands
-there cannot be named at all. That is a property of the vocabulary and cannot be
+there cannot be named at all. That is a property of the palette and cannot be
 fixed by choosing better triples. Spending less of the draw there puts the
 projects saved where the fallback can tell them apart, at no cost to the other
 renderings, which could always draw the colour exactly.
@@ -389,7 +389,7 @@ Version 2's and 0.3's are the opposite: chosen, and defended above.
 
 **Version 0.3's three constants are the ones the wheel was solved against**, and
 the wheel is the argument for them: `work-in-progress/wheel.tsv` places all 165
-triples of the emoji-square fallback against the gamut, and the arc this warp
+triples of the emoji fallback against the gamut, and the arc this warp
 compresses is the one where that vocabulary has nothing to say. They are a
 judgement about a fallback rendering, made by eye, and they are recorded as such
 rather than derived.
@@ -491,7 +491,7 @@ what the mark was made from; it is what the mark is made from.
 .identicon/repository-identicon.svg            vector, same geometry
 .identicon/repository-identicon.colour         "#rrggbb\n", nothing else
 .identicon/repository-identicon.grid           five lines of "01010"
-.identicon/repository-identicon.tricolour      three emoji squares, the colour
+.identicon/repository-identicon.tricolour      three emoji, the colour
 .identicon/repository-identicon.sextant        the pattern on the 2×3 lattice
 .identicon/repository-identicon.octant         the pattern on the 2×4 lattice
 .identicon/repository-identicon.txt            .sextant and .tricolour, composed
@@ -764,7 +764,7 @@ mark is the message.
 ### Text, the fallback
 
 **The text rendering is two lines of block characters carrying the pattern,
-with three emoji squares carrying the colour.** The two parts are not
+with three emoji carrying the colour.** The two parts are not
 alternatives to each other and there is no useful intermediate.
 
 Why it comes out that way, since each constraint rules something out:
@@ -777,8 +777,8 @@ Why it comes out that way, since each constraint rules something out:
 - **The block characters are monochrome, and that is where colour has to come
   from.** The grid is one glyph per four or six cells, so a cell is not
   separately addressable and a foreground colour would tint the whole mark
-  rather than the pattern within it. The colour therefore rides in the emoji
-  squares, not in an escape sequence.
+  rather than the pattern within it. The colour therefore rides in the
+  tricolour, not in an escape sequence.
 - **Per-cell true-colour blocks are not worth pursuing.** It would mean one
   character per cell to make cells individually colourable, which is a 5×5 block
   of double-width glyphs — larger than the image it is standing in for, in a
@@ -836,14 +836,22 @@ Three caveats an implementation must handle rather than discover:
   wrong exclusion set it produces plausible, wrong glyphs, and past U+1CDE5 it
   walks into pictograms.
 
-#### Emoji squares, carrying the colour
+#### The tricolour, carrying the colour
 
 **The whole text rendering is a patch for when the identicon proper cannot be
 emitted.** Where an image can be sent, send the image: it is the grid, at full
 colour, in one glyph's worth of attention. Everything below is standing in for
-that, and the tricolour is the part standing in for 24 bits of colour with nine
-named squares — a lossy paraphrase that costs three double-width columns and
-carries semantic weight a coloured pattern does not.
+that, and the tricolour is the part standing in for 24 bits of colour with a
+palette of nine named colours — a lossy paraphrase that costs three
+double-width columns and carries semantic weight a coloured pattern does not.
+
+**A palette entry is a colour, not a square.** Each is drawn as one emoji, and
+the character an implementation emits today is the `LARGE … SQUARE` for that
+colour. But which shape carries a colour is a separate question from which
+colours are chosen, and square and circle are peers within it — see the shape
+bullet under *Colour vision*. So this section says *colour* wherever a choice
+among the nine is being made, and *square* only where the shape itself is the
+subject.
 
 It is nonetheless *the* colour channel here rather than a third-tier fallback,
 because both lattices are monochrome and nothing else can carry it. Palette of
@@ -859,10 +867,10 @@ $ python3 text-identicon.py --octant '#2692d9' '01010,01010,10001,10101,01010'
 𜶆𜶂🯦 🟦🟩🟦
 ```
 
-**Which three squares appear is a function of the colour; what order they appear
-in is a function of the grid.** Both are needed, and a caller rendering an
-identicon holds both, so `text-identicon.py` still takes a colour and a grid and
-nothing else — no key and no digest of its own.
+**Which three colours appear is a function of the colour; what order they
+appear in is a function of the grid.** Both are needed, and a caller rendering
+an identicon holds both, so `text-identicon.py` still takes a colour and a grid
+and nothing else — no key and no digest of its own.
 
 The order is the low digit of the grid's fifteen bits, read as a number: columns
 0–2 of each row, top to bottom, left to right, since columns 3 and 4 are the
@@ -878,12 +886,13 @@ projects it produced fewer distinct marks than there were distinct colours. The
 grid is fifteen bits of the key's digest, drawn from a slice disjoint from the
 hue's, so the order now separates projects that share a colour.
 
-**Which three squares stand for a colour is not yet normative.** The shipped
+**Which three of the nine stand for a colour is not yet normative.** The shipped
 chooser searches the palette for the mix nearest the target, which produces
 combinations that are numerically close and perceptually wrong. A replacement is
-settled but not adopted: `work-in-progress/in-use.tsv` is a hand-placed table of
-fifty arcs tiling 0–360, each naming its three squares, with `work-in-progress/`
-carrying how it was arrived at. It will land here, with vectors, once it ships.
+settled but not adopted: `work-in-progress/in-use.tsv` is a hand-placed table
+of fifty arcs tiling 0–360, each naming its three colours, with
+`work-in-progress/` carrying how it was arrived at. It will land here, with
+vectors, once it ships.
 
 #### Colour vision, stated plainly
 
@@ -893,8 +902,9 @@ is not a defect to be argued away; it is the cost of a channel whose entire job
 is to carry a hue through a medium that will not carry one.
 
 Simulating dichromatic vision (Viénot, Brettel and Mollon 1999) over the nine
-squares **as the emoji font actually paints them**, and calling a pair confusable
-below 0.10 in Oklab: all 36 pairs are distinct for normal trichromatic vision;
+colours **as the emoji font actually paints them**, and calling a pair
+confusable below 0.10 in Oklab: all 36 pairs are distinct for normal
+trichromatic vision;
 **7 pairs collapse under deuteranopia, 5 under protanopia, 4 under tritanopia.**
 
 | | worst collapses |
@@ -912,7 +922,7 @@ doing the work:
 - **Colour is never the only channel.** The grid is the identity; either lattice
   carries it with no colour at all, and it comes first. A reader who cannot
   separate red from green still has the full 5×5 pattern.
-- **Order is a channel, and it is colour-blind.** Which squares appear answers
+- **Order is a channel, and it is colour-blind.** Which three appear answers
   *what colour*; the order they appear in is separate information that survives
   any colour deficiency intact. It comes from the grid, so it is independent of
   the colour rather than derived from it — which is what makes it a second
@@ -932,4 +942,4 @@ identity and is legible with no colour at all, which is the property that lets
 this degrade at all.
 
 There is no colour-depth negotiation in this rendering: both lattices are
-monochrome by construction and the colour lives in the squares.
+monochrome by construction and the colour lives in the tricolour.

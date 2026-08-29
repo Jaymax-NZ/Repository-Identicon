@@ -411,9 +411,9 @@ MARK_CHROMA = 0.26
 # ---- The hue draw, compressed around blue-green ----
 #
 # **Every hue still exists; what changes is how many projects land on one.** The
-# draw off the digest is uniform over the circle, but the emoji-square
-# vocabulary has nothing between green and blue, so every mixture of the two
-# reads at essentially one hue. That is a fact about the palette, not about the
+# draw off the digest is uniform over the circle, but the emoji palette has no
+# colour between green and blue, so every mixture of the two reads at
+# essentially one hue. That is a fact about the palette, not about the
 # colour, and it cannot be fixed by placement -- see
 # `work-in-progress/README.md`.
 #
@@ -888,7 +888,7 @@ def artifact_bytes(key, block=ARTIFACT_BLOCK, **render_kwargs):
     inside a blob, and `$(cat …/*.colour)` has to stay a cat.
 
     **The text rendering is written in parts and whole.** `.tricolour` is the
-    three emoji squares, `.sextant` and `.octant` are the pattern on each
+    three emoji, `.sextant` and `.octant` are the pattern on each
     lattice, and `.txt` is the sextant lattice with the tricolour ending its
     lower line. A consumer that wants the mark runs `cat` on `.txt`; one that
     is building a line of its own -- a prompt, a tab title, a status field --

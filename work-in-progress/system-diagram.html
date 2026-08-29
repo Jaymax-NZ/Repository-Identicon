@@ -575,7 +575,7 @@ grid — 5×5 of bool — From digest characters 0–14, drawn down the centre c
 <g id="i2-4" class="item">
 <title>the warp — float° → float° — The raised-cosine reweighting that makes the hue advance faster through the blue-green arc.
 hue — float, [0, 1) — A fraction of a turn, from the last seven digest characters.
-the triple — str, 3 emoji — Three emoji squares standing for the colour, where neither an image nor an escape sequence survives.</title>
+the triple — 3 of 9 colours — Three of the palette&#x27;s nine colours standing for the mark&#x27;s colour, where neither an image nor an escape sequence survives. One emoji each.</title>
 <rect x="434" y="64" width="376" height="71.3" rx="5" class="bfn"/>
 <text x="446" y="84" class="badge">2.4</text>
 <text xml:space="preserve" x="480" y="84.0" class="ti">warp_hue(degrees, warp=HUE_WARP)</text>
@@ -1038,11 +1038,11 @@ rendering — bytes | str — Bytes for one medium, derived from the key. Not pa
 <text x="32" y="77" class="hn">about its fonts and not about the mark. `text` draws sextants unless told</text>
 <text x="32" y="89" class="hn">otherwise.</text>
 <line x1="32" y1="95" x2="428" y2="95" class="rule"/>
-<text x="454" y="51" class="hd">WHICH THREE SQUARES</text>
+<text x="454" y="51" class="hd">WHICH THREE COLOURS</text>
 <line x1="454" y1="59" x2="830" y2="59" class="rule"/>
 <text x="856" y="51" class="hd">IN WHAT ORDER</text>
-<text x="856" y="65" class="hn">Which squares is a function of the colour; what order is a function of</text>
-<text x="856" y="77" class="hn">the grid. Two inputs, and they must stay two.</text>
+<text x="856" y="65" class="hn">Which colours is a function of the colour asked for; what order is a</text>
+<text x="856" y="77" class="hn">function of the grid. Two inputs, and they must stay two.</text>
 <line x1="856" y1="83" x2="1252" y2="83" class="rule"/>
 <text x="1278" y="51" class="hd">PUBLIC SURFACE, NOT CALLED FROM HERE</text>
 <line x1="1278" y1="59" x2="1644" y2="59" class="rule"/>
@@ -1052,7 +1052,7 @@ rendering — bytes | str — Bytes for one medium, derived from the key. Not pa
 <path d="M230.0,296.6 L230.0,306.6" fill="none" stroke="#5c636b" stroke-width="1.15" stroke-linejoin="round" marker-end="url(#a0p5)"/>
 <path d="M230.0,377.90000000000003 L230.0,519.6" fill="none" stroke="#9aa2ab" stroke-width="1.15" stroke-dasharray="4 3" stroke-linejoin="round" marker-end="url(#a5p5)"/>
 <path d="M230.0,509.6 L230.0,519.6" fill="none" stroke="#9aa2ab" stroke-width="1.15" stroke-dasharray="4 3" stroke-linejoin="round" marker-end="url(#a5p5)"/>
-<path d="M642.0,135.3 L642.0,145.3" fill="none" stroke="#5c636b" stroke-width="1.15" stroke-linejoin="round" marker-end="url(#a0p5)"/>
+<path d="M566.8,135.3 L566.8,145.3" fill="none" stroke="#5c636b" stroke-width="1.15" stroke-linejoin="round" marker-end="url(#a0p5)"/>
 <path d="M773.6,204.0 L773.6,214.0" fill="none" stroke="#9aa2ab" stroke-width="1.15" stroke-dasharray="4 3" stroke-linejoin="round" marker-end="url(#a5p5)"/>
 <path d="M830,243.3 H843.0 V311.2 H454" fill="none" stroke="#5c636b" stroke-width="1.15" stroke-linejoin="round" marker-end="url(#a0p5)"/>
 <path d="M566.8,354.0 V344.4 H974.8 V334.8" fill="none" stroke="#9aa2ab" stroke-width="1.15" stroke-dasharray="4 3" stroke-linejoin="round" marker-end="url(#a5p5)"/>
@@ -1061,7 +1061,7 @@ rendering — bytes | str — Bytes for one medium, derived from the key. Not pa
 <path d="M974.8,256.1 L974.8,266.1" fill="none" stroke="#1d4ed8" stroke-width="1.8" stroke-linejoin="round" marker-end="url(#a1p5)"/>
 <a href="#i6-5"><path d="M44,100 H428 V134 H44 L32,117.0 Z" class="bref"/><text x="54" y="121" class="refn">6.5</text><text x="88" y="121" class="reft">four artifacts come from this file</text></a>
 <g id="i5-1" class="item">
-<title>the triple — str, 3 emoji — Three emoji squares standing for the colour, where neither an image nor an escape sequence survives.
+<title>the triple — 3 of 9 colours — Three of the palette&#x27;s nine colours standing for the mark&#x27;s colour, where neither an image nor an escape sequence survives. One emoji each.
 sextant — str, 1 char — One of 64 patterns over a 2×3 lattice; four years older in Unicode, so more fonts have it, and what .txt is drawn on.
 octant — str, 1 char — One of 256 patterns over a 2×4 lattice; one glyph carries a 2×4 patch of the grid.
 lattice — (table, int, str, int) — The subcell grid a pattern is drawn on, with the numbers that produce it: the table, its sub-rows, the blank, and the padding above.</title>
@@ -1122,25 +1122,25 @@ lattice — (table, int, str, int) — The subcell grid a pattern is drawn on, w
 <text xml:space="preserve" x="44" y="604.5" class="sbd">goes above so the lower line is all grid.</text>
 </g>
 <g id="i5-6" class="item">
-<title>the triple — str, 3 emoji — Three emoji squares standing for the colour, where neither an image nor an escape sequence survives.
-the palette — 9 rows — The nine Unicode colour squares, anchored on the colour word in the character&#x27;s name.</title>
+<title>the triple — 3 of 9 colours — Three of the palette&#x27;s nine colours standing for the mark&#x27;s colour, where neither an image nor an escape sequence survives. One emoji each.
+the palette — 9 colours — Nine colours, each anchored on the colour word in the name of the character that carries it. A colour is drawn as a square here; shape is a separate channel.</title>
 <rect x="454" y="64" width="376" height="71.3" rx="5" class="bfn"/>
 <text x="466" y="84" class="badge">5.6</text>
 <text xml:space="preserve" x="500" y="84.0" class="ti">chosen_indices(rgb)</text>
 <text xml:space="preserve" x="466" y="98.5" class="ret">→ three palette indices, ascending</text>
-<text xml:space="preserve" x="466" y="111.1" class="sb">Picks the nearest square twice, plus the third that best corrects</text>
+<text xml:space="preserve" x="466" y="111.1" class="sb">Picks the nearest colour twice, plus the third that best corrects</text>
 <text xml:space="preserve" x="466" y="123.7" class="sb">the mix.</text>
 </g>
 <g id="i5-7" class="item">
-<title>the palette — 9 rows — The nine Unicode colour squares, anchored on the colour word in the character&#x27;s name.</title>
+<title>the palette — 9 colours — Nine colours, each anchored on the colour word in the name of the character that carries it. A colour is drawn as a square here; shape is a separate channel.</title>
 <rect x="454" y="145.3" width="376" height="58.7" rx="5" class="bfn"/>
 <text x="466" y="165.3" class="badge">5.7</text>
-<text xml:space="preserve" x="500" y="165.3" class="ti">nearest_square(rgb)</text>
+<text xml:space="preserve" x="500" y="165.3" class="ti">nearest_colour(rgb)</text>
 <text xml:space="preserve" x="466" y="179.8" class="ret">→ one palette index</text>
 <text xml:space="preserve" x="466" y="192.4" class="sb">Breaks ties towards the lower index.</text>
 </g>
 <g id="i5-8" class="item">
-<title>the palette — 9 rows — The nine Unicode colour squares, anchored on the colour word in the character&#x27;s name.</title>
+<title>the palette — 9 colours — Nine colours, each anchored on the colour word in the name of the character that carries it. A colour is drawn as a square here; shape is a separate channel.</title>
 <rect x="454" y="214.0" width="376" height="58.7" rx="5" class="bfn"/>
 <text x="466" y="234.0" class="badge">5.8</text>
 <text xml:space="preserve" x="500" y="234.0" class="ti">_mix(indices)</text>
@@ -1148,28 +1148,28 @@ the palette — 9 rows — The nine Unicode colour squares, anchored on the colo
 <text xml:space="preserve" x="466" y="261.1" class="sb">Averages in linear light, which is what optical mixing does.</text>
 </g>
 <g id="i5-9" class="item">
-<title>the palette — 9 rows — The nine Unicode colour squares, anchored on the colour word in the character&#x27;s name.</title>
+<title>the palette — 9 colours — Nine colours, each anchored on the colour word in the name of the character that carries it. A colour is drawn as a square here; shape is a separate channel.</title>
 <rect x="454" y="282.7" width="376" height="71.3" rx="5" class="bdata"/>
 <text x="466" y="302.7" class="badge">5.9</text>
 <text xml:space="preserve" x="500" y="302.7" class="tid">PALETTE</text>
 <text xml:space="preserve" x="466" y="317.2" class="ret">→ nine (character, name, codepoint, rgb) rows</text>
-<text xml:space="preserve" x="466" y="329.8" class="sbd">Nine squares, each with the RGB its Unicode colour word</text>
-<text xml:space="preserve" x="466" y="342.4" class="sbd">names.</text>
+<text xml:space="preserve" x="466" y="329.8" class="sbd">Nine colours, each with the RGB the colour word in its</text>
+<text xml:space="preserve" x="466" y="342.4" class="sbd">character&#x27;s name means.</text>
 </g>
 <g id="i5-10" class="item">
-<title>the triple — str, 3 emoji — Three emoji squares standing for the colour, where neither an image nor an escape sequence survives.
-arrangement — tuple of 3 int — The order the three squares are laid out in, taken from the grid and never from the colour.</title>
+<title>the triple — 3 of 9 colours — Three of the palette&#x27;s nine colours standing for the mark&#x27;s colour, where neither an image nor an escape sequence survives. One emoji each.
+arrangement — tuple of 3 int — The order the three colours are laid out in, taken from the grid and never from the colour.</title>
 <rect x="856" y="88" width="396" height="86.8" rx="5" class="bfn"/>
 <text x="868" y="108" class="badge">5.10</text>
 <text xml:space="preserve" x="902" y="108.0" class="ti">tricolour(rgb, grid)</text>
 <text xml:space="preserve" x="868" y="123.5" class="ti">          tricolour_indices(rgb, grid)</text>
 <text xml:space="preserve" x="868" y="138.0" class="ret">→ three emoji — what `.tricolour` holds</text>
-<text xml:space="preserve" x="868" y="150.6" class="sb">Combines the chosen squares with the order the grid puts them in.</text>
+<text xml:space="preserve" x="868" y="150.6" class="sb">Combines the chosen colours with the order the grid puts them in.</text>
 <text xml:space="preserve" x="868" y="163.2" class="sb">`tricolour_indices` stops one step short, at the indices.</text>
 </g>
 <g id="i5-11" class="item">
-<title>arrangement — tuple of 3 int — The order the three squares are laid out in, taken from the grid and never from the colour.
-the triple — str, 3 emoji — Three emoji squares standing for the colour, where neither an image nor an escape sequence survives.</title>
+<title>arrangement — tuple of 3 int — The order the three colours are laid out in, taken from the grid and never from the colour.
+the triple — 3 of 9 colours — Three of the palette&#x27;s nine colours standing for the mark&#x27;s colour, where neither an image nor an escape sequence survives. One emoji each.</title>
 <rect x="856" y="184.8" width="396" height="71.3" rx="5" class="bfn"/>
 <text x="868" y="204.8" class="badge">5.11</text>
 <text xml:space="preserve" x="902" y="204.8" class="ti">arrange(indices, grid)</text>
@@ -1179,7 +1179,7 @@ the triple — str, 3 emoji — Three emoji squares standing for the colour, whe
 </g>
 <g id="i5-12" class="item">
 <title>grid — 5×5 of bool — From digest characters 0–14, drawn down the centre column and mirrored outwards.
-arrangement — tuple of 3 int — The order the three squares are laid out in, taken from the grid and never from the colour.</title>
+arrangement — tuple of 3 int — The order the three colours are laid out in, taken from the grid and never from the colour.</title>
 <rect x="856" y="266.1" width="396" height="58.7" rx="5" class="bfn"/>
 <text x="868" y="286.1" class="badge">5.12</text>
 <text xml:space="preserve" x="902" y="286.1" class="ti">grid_bits(grid)</text>
@@ -1196,7 +1196,7 @@ arrangement — tuple of 3 int — The order the three squares are laid out in, 
 <text xml:space="preserve" x="868" y="397.40000000000003" class="sb">Converts between sRGB, linear light and Oklab.</text>
 </g>
 <g id="i5-14" class="item">
-<title>the triple — str, 3 emoji — Three emoji squares standing for the colour, where neither an image nor an escape sequence survives.
+<title>the triple — 3 of 9 colours — Three of the palette&#x27;s nine colours standing for the mark&#x27;s colour, where neither an image nor an escape sequence survives. One emoji each.
 vendoring — a practice — Carrying your own copy of the derivation rather than depending on this one.</title>
 <rect x="1278" y="64" width="366" height="102.3" rx="5" class="bfn"/>
 <text x="1290" y="84" class="badge">5.14</text>
@@ -1218,7 +1218,7 @@ vendoring — a practice — Carrying your own copy of the derivation rather tha
 <g id="i5-16" class="item">
 <title>octant — str, 1 char — One of 256 patterns over a 2×4 lattice; one glyph carries a 2×4 patch of the grid.
 sextant — str, 1 char — One of 64 patterns over a 2×3 lattice; four years older in Unicode, so more fonts have it, and what .txt is drawn on.
-the palette — 9 rows — The nine Unicode colour squares, anchored on the colour word in the character&#x27;s name.</title>
+the palette — 9 colours — Nine colours, each anchored on the colour word in the name of the character that carries it. A colour is drawn as a square here; shape is a separate channel.</title>
 <rect x="1278" y="245.0" width="366" height="86.8" rx="5" class="bfn"/>
 <text x="1290" y="265.0" class="badge">5.16</text>
 <text xml:space="preserve" x="1324" y="265.0" class="ti">selftest() · _recover(lines, lattice)</text>
@@ -1353,7 +1353,7 @@ recorded key — str | None — The payload line of the key file, which outranks
 <g id="i6-5" class="item">
 <title>artifact — file, one of eleven — One of the eleven rendered files in .identicon/ — a cache with a canonical location, not a source.
 block — int, px — The pixel edge of one grid cell — the specified quantity.
-the triple — str, 3 emoji — Three emoji squares standing for the colour, where neither an image nor an escape sequence survives.
+the triple — 3 of 9 colours — Three of the palette&#x27;s nine colours standing for the mark&#x27;s colour, where neither an image nor an escape sequence survives. One emoji each.
 octant — str, 1 char — One of 256 patterns over a 2×4 lattice; one glyph carries a 2×4 patch of the grid.
 sextant — str, 1 char — One of 64 patterns over a 2×3 lattice; four years older in Unicode, so more fonts have it, and what .txt is drawn on.</title>
 <rect x="474" y="201.39999999999998" width="386" height="58.7" rx="5" class="bfn"/>
@@ -1411,7 +1411,7 @@ prior — file — stem.prior.suffix — the bytes a run replaced, kept one leve
 <text xml:space="preserve" x="1290" y="148.9" class="sbe">repository-identicon.svg       the same geometry</text>
 <text xml:space="preserve" x="1290" y="161.5" class="sbe">repository-identicon.colour    &quot;#rrggbb\n&quot;</text>
 <text xml:space="preserve" x="1290" y="174.1" class="sbe">repository-identicon.grid      five lines of 01010</text>
-<text xml:space="preserve" x="1290" y="186.7" class="sbe">repository-identicon.tricolour three emoji squares</text>
+<text xml:space="preserve" x="1290" y="186.7" class="sbe">repository-identicon.tricolour three emoji, the colour</text>
 <text xml:space="preserve" x="1290" y="199.3" class="sbe">repository-identicon.sextant   the 2×3 lattice</text>
 <text xml:space="preserve" x="1290" y="211.89999999999998" class="sbe">repository-identicon.octant    the 2×4 lattice</text>
 <text xml:space="preserve" x="1290" y="224.5" class="sbe">repository-identicon.txt       sextant and tricolour</text>
@@ -1884,9 +1884,9 @@ grid — 5×5 of bool — From digest characters 0–14, drawn down the centre c
 <tr class="g"><td colspan="4">The text mark</td></tr>
 <tr><td class="t">octant</td><td class="ty">str, 1 char</td><td class="d">One of 256 patterns over a 2×4 lattice; one glyph carries a 2×4 patch of the grid.</td><td class="n"><a href="#i5-2">5.2</a> · <a href="#i5-4">5.4</a></td></tr>
 <tr><td class="t">sextant</td><td class="ty">str, 1 char</td><td class="d">One of 64 patterns over a 2×3 lattice; four years older in Unicode, so more fonts have it, and what .txt is drawn on.</td><td class="n"><a href="#i5-2">5.2</a> · <a href="#i5-4">5.4</a></td></tr>
-<tr><td class="t">the triple</td><td class="ty">str, 3 emoji</td><td class="d">Three emoji squares standing for the colour, where neither an image nor an escape sequence survives.</td><td class="n"><a href="#i5-10">5.10</a> · <a href="#i5-6">5.6</a></td></tr>
-<tr><td class="t">arrangement</td><td class="ty">tuple of 3 int</td><td class="d">The order the three squares are laid out in, taken from the grid and never from the colour.</td><td class="n"><a href="#i5-11">5.11</a> · <a href="#i5-12">5.12</a></td></tr>
-<tr><td class="t">the palette</td><td class="ty">9 rows</td><td class="d">The nine Unicode colour squares, anchored on the colour word in the character&#x27;s name.</td><td class="n"><a href="#i5-9">5.9</a></td></tr>
+<tr><td class="t">the triple</td><td class="ty">3 of 9 colours</td><td class="d">Three of the palette&#x27;s nine colours standing for the mark&#x27;s colour, where neither an image nor an escape sequence survives. One emoji each.</td><td class="n"><a href="#i5-10">5.10</a> · <a href="#i5-6">5.6</a></td></tr>
+<tr><td class="t">arrangement</td><td class="ty">tuple of 3 int</td><td class="d">The order the three colours are laid out in, taken from the grid and never from the colour.</td><td class="n"><a href="#i5-11">5.11</a> · <a href="#i5-12">5.12</a></td></tr>
+<tr><td class="t">the palette</td><td class="ty">9 colours</td><td class="d">Nine colours, each anchored on the colour word in the name of the character that carries it. A colour is drawn as a square here; shape is a separate channel.</td><td class="n"><a href="#i5-9">5.9</a></td></tr>
 <tr class="g"><td colspan="4">Conformance</td></tr>
 <tr><td class="t">vector</td><td class="ty">dict of 4</td><td class="d">One pinned (key, md5, grid, foreground) in vectors.json.</td><td class="n"><a href="#i9-3">9.3</a> · <a href="#i9-2">9.2</a></td></tr>
 <tr><td class="t">port</td><td class="ty">an implementation</td><td class="d">Another implementation of the specification, in any language.</td><td class="n"><a href="#i9-4">9.4</a> · <a href="#i9-5">9.5</a></td></tr>
@@ -1952,7 +1952,7 @@ grid — 5×5 of bool — From digest characters 0–14, drawn down the centre c
 <tr><td class="n"><a href="#i5-4">5.4</a></td><td class="s">OCTANTS · SEXTANTS</td><td class="w">—</td></tr>
 <tr><td class="n"><a href="#i5-5">5.5</a></td><td class="s">OCTANT_LATTICE · SEXTANT_LATTICE</td><td class="w">—</td></tr>
 <tr><td class="n"><a href="#i5-6">5.6</a></td><td class="s">chosen_indices(rgb)</td><td class="w">text-identicon.py:261</td></tr>
-<tr><td class="n"><a href="#i5-7">5.7</a></td><td class="s">nearest_square(rgb)</td><td class="w">text-identicon.py:250</td></tr>
+<tr><td class="n"><a href="#i5-7">5.7</a></td><td class="s">nearest_colour(rgb)</td><td class="w">text-identicon.py:257</td></tr>
 <tr><td class="n"><a href="#i5-8">5.8</a></td><td class="s">_mix(indices)</td><td class="w">text-identicon.py:236</td></tr>
 <tr><td class="n"><a href="#i5-9">5.9</a></td><td class="s">PALETTE</td><td class="w">—</td></tr>
 <tr><td class="n"><a href="#i5-10">5.10</a></td><td class="s">tricolour(rgb, grid)</td><td class="w">text-identicon.py:362</td></tr>

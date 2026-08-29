@@ -978,27 +978,27 @@
 ┊┊┊┊┊ ┄ ⸖ $term=octant
 ┊┊┊┊┊ ┄ ⸖ $term=sextant
 ┊┊┊┊┊ ┄ ⸖ $term=lattice
-┋┋┋ ━ WHICH THREE SQUARES
+┋┋┋ ━ WHICH THREE COLOURS
 ┋┋┋┋ ━ chosen_indices(rgb)
+┊┊┊┊┊ ┄ ⸆ Picks the nearest colour twice, plus the third that best corrects the mix.
 ┊┊┊┊┊ ┄ ⸖ $number=5.6
 ┊┊┊┊┊ ┄ ⸖ $fn=chosen_indices
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
 ┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:261
-┊┊┊┊┊ ┄ ⸆ Picks the nearest square twice, plus the third that best corrects the mix.
 ┊┊┊┊┊ ┄ ⸖ $term=the triple
 ┊┊┊┊┊ ┄ ⸖ $term=the palette
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ three palette indices, ascending
-┊┊┊┊┊ ┄ ⸖ $edge=nearest_square
+┊┊┊┊┊ ┄ ⸖ $edge=nearest_colour
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
-┋┋┋┋ ━ nearest_square(rgb)
-┊┊┊┊┊ ┄ ⸖ $number=5.7
-┊┊┊┊┊ ┄ ⸖ $fn=nearest_square
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:250
+┋┋┋┋ ━ nearest_colour(rgb)
 ┊┊┊┊┊ ┄ ⸆ Breaks ties towards the lower index.
+┊┊┊┊┊ ┄ ⸖ $number=5.7
+┊┊┊┊┊ ┄ ⸖ $fn=nearest_colour
+┊┊┊┊┊ ┄ ⸖ $kind=fn
+┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:257
 ┊┊┊┊┊ ┄ ⸖ $term=the palette
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
@@ -1020,10 +1020,10 @@
 ┊┊┊┊┊ ┄ ⸖ $sides=rl
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
 ┋┋┋┋ ━ PALETTE
+┊┊┊┊┊ ┄ ⸆ Nine colours, each with the RGB the colour word in its character's name means.
 ┊┊┊┊┊ ┄ ⸖ $number=5.9
 ┊┊┊┊┊ ┄ ⸖ $fn=PALETTE
 ┊┊┊┊┊ ┄ ⸖ $kind=data
-┊┊┊┊┊ ┄ ⸆ Nine squares, each with the RGB its Unicode colour word names.
 ┊┊┊┊┊ ┄ ⸖ $term=the palette
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
@@ -1032,14 +1032,14 @@
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=weak dashed
 ┋┋┋ ━ IN WHAT ORDER
-┊┊┊┊ ┄ ⸆ Which squares is a function of the colour; what order is a function of the grid. Two inputs, and they must stay two.
+┊┊┊┊ ┄ ⸆ Which colours is a function of the colour asked for; what order is a function of the grid. Two inputs, and they must stay two.
 ┋┋┋┋ ━ tricolour(rgb, grid)
+┊┊┊┊┊ ┄ ⸆ Combines the chosen colours with the order the grid puts them in. `tricolour_indices` stops one step short, at the indices.
 ┊┊┊┊┊ ┄ ⸖ $signature=tricolour_indices(rgb, grid)
 ┊┊┊┊┊ ┄ ⸖ $number=5.10
 ┊┊┊┊┊ ┄ ⸖ $fn=tricolour
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
 ┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:362
-┊┊┊┊┊ ┄ ⸆ Combines the chosen squares with the order the grid puts them in. `tricolour_indices` stops one step short, at the indices.
 ┊┊┊┊┊ ┄ ⸖ $term=the triple
 ┊┊┊┊┊ ┄ ⸖ $term=arrangement
 ┋┋┋┋┋ ━ returns
@@ -1052,11 +1052,11 @@
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=grid
 ┋┋┋┋ ━ arrange(indices, grid)
+┊┊┊┊┊ ┄ ⸆ Selects the permutation with the fifteen grid bits, never with the colour.
 ┊┊┊┊┊ ┄ ⸖ $number=5.11
 ┊┊┊┊┊ ┄ ⸖ $fn=arrange
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
 ┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:306
-┊┊┊┊┊ ┄ ⸆ Selects the permutation with the fifteen grid bits, never with the colour.
 ┊┊┊┊┊ ┄ ⸖ $term=arrangement
 ┊┊┊┊┊ ┄ ⸖ $term=the triple
 ┋┋┋┋┋ ━ returns
@@ -1313,7 +1313,7 @@
 ┊┊┊┊┊ ┄ ⸆ repository-identicon.svg       the same geometry
 ┊┊┊┊┊ ┄ ⸆ repository-identicon.colour    "#rrggbb\n"
 ┊┊┊┊┊ ┄ ⸆ repository-identicon.grid      five lines of 01010
-┊┊┊┊┊ ┄ ⸆ repository-identicon.tricolour three emoji squares
+┊┊┊┊┊ ┄ ⸆ repository-identicon.tricolour three emoji, the colour
 ┊┊┊┊┊ ┄ ⸆ repository-identicon.sextant   the 2×3 lattice
 ┊┊┊┊┊ ┄ ⸆ repository-identicon.octant    the 2×4 lattice
 ┊┊┊┊┊ ┄ ⸆ repository-identicon.txt       sextant and tricolour
@@ -1770,18 +1770,18 @@
 ┊┊┊┊ ┄ ⸖ $defines=5.2
 ┊┊┊┊ ┄ ⸖ $defines=5.4
 ┋┋┋ ━ the triple
-┊┊┊┊ ┄ ⸖ $type=str, 3 emoji
-┊┊┊┊ ┄ ⸆ Three emoji squares standing for the colour, where neither an image nor an escape sequence survives.
+┊┊┊┊ ┄ ⸆ Three of the palette's nine colours standing for the mark's colour, where neither an image nor an escape sequence survives. One emoji each.
+┊┊┊┊ ┄ ⸖ $type=3 of 9 colours
 ┊┊┊┊ ┄ ⸖ $defines=5.10
 ┊┊┊┊ ┄ ⸖ $defines=5.6
 ┋┋┋ ━ arrangement
+┊┊┊┊ ┄ ⸆ The order the three colours are laid out in, taken from the grid and never from the colour.
 ┊┊┊┊ ┄ ⸖ $type=tuple of 3 int
-┊┊┊┊ ┄ ⸆ The order the three squares are laid out in, taken from the grid and never from the colour.
 ┊┊┊┊ ┄ ⸖ $defines=5.11
 ┊┊┊┊ ┄ ⸖ $defines=5.12
 ┋┋┋ ━ the palette
-┊┊┊┊ ┄ ⸖ $type=9 rows
-┊┊┊┊ ┄ ⸆ The nine Unicode colour squares, anchored on the colour word in the character's name.
+┊┊┊┊ ┄ ⸆ Nine colours, each anchored on the colour word in the name of the character that carries it. A colour is drawn as a square here; shape is a separate channel.
+┊┊┊┊ ┄ ⸖ $type=9 colours
 ┊┊┊┊ ┄ ⸖ $defines=5.9
 ┋┋ ━ Conformance
 ┋┋┋ ━ vector

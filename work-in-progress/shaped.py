@@ -8,7 +8,8 @@ Order alone cannot separate every colour: ordered triples of nine colours reach
 and a circle among squares is found without search.
 
 **Black and white stay square.** Unicode names their circles MEDIUM BLACK CIRCLE
-and MEDIUM WHITE CIRCLE where every palette square is LARGE, and the palette is
+and MEDIUM WHITE CIRCLE where every palette colour's square is LARGE, and the
+palette is
 anchored on those names — the size word is part of the definition, not a
 rendering detail. A MEDIUM neutral among LARGE chromatics reads ragged, and
 white alone lands on 53 colours. Justin's direction, 2026-08-19.
@@ -58,7 +59,7 @@ for _line in (S / "in-use.tsv").read_text().splitlines():
         continue
     _f = _line.split("\t")
     # Through the palette and back, so an unknown name raises here rather than
-    # drawing the wrong square. The names tuple is shared by every lookup;
+    # drawing the wrong colour. The names tuple is shared by every lookup;
     # `arrange` does not mutate its argument.
     _ARCS.append((float(_f[0]), float(_f[1]),
                   tuple(text.PALETTE[wheel.ORDER[n]][1] for n in _f[3:6])))
@@ -89,7 +90,7 @@ def draw_of(rgb):
 def triple(rgb, grid, draw=None):
     """The three palette indices for `rgb`, in laid-out order.
 
-    Which three squares is a table lookup on the draw; what order they go in is
+    Which three colours is a table lookup on the draw; what order they go in is
     `text.arrange` on the grid, whose docstring argues why.
     """
     at = draw_of(rgb) if draw is None else draw % 360.0
@@ -99,7 +100,7 @@ def triple(rgb, grid, draw=None):
 
 # ---- The glyph vocabulary ----
 #
-# `glyphs.py` lists the same nine squares and seven circles by codepoint; the
+# `glyphs.py` lists the same nine colours as squares and seven as circles; the
 # two must stay in step.
 
 # Never circled. See the module docstring: their circles are MEDIUM where every
@@ -179,7 +180,7 @@ def emoji(rgb, grid):
 
 
 def names(rgb, grid):
-    """The three squares as `colour` or `colour-circle`, in laid-out order."""
+    """The three colours as `colour` or `colour-circle`, in laid-out order."""
     arranged, flags = mark(rgb, grid)
     return tuple(f"{text.PALETTE[i][1]}{'-circle' if c else ''}"
                  for i, c in zip(arranged, flags))
@@ -205,7 +206,9 @@ def _selftest():
     N = 4000
     rows = []
     for k in range(N):
-        key_ = identicon.stamp_key(f"github.com/example/project-{k:05d}", 3)
+        # No version argument: `stamp_key` reads the current one, so this
+        # sweep follows a renumbering instead of pinning a withdrawn draft.
+        key_ = identicon.stamp_key(f"github.com/example/project-{k:05d}")
         rows.append((identicon.identicon_colour(key_),
                      identicon.identicon_grid(key_),
                      identicon.identicon_hue(key_) * 360.0))

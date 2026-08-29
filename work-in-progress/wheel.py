@@ -48,12 +48,13 @@ NOMINAL = {name: "#{:02x}{:02x}{:02x}".format(*rgb)
            for _e, name, _cp, rgb in text.PALETTE}
 ORDER = {name: k for k, (_e, name, _cp, _rgb) in enumerate(text.PALETTE)}
 
-# What the squares are actually painted, averaged across the vendor sets by the
+# What the nine are actually painted, averaged across the vendor sets by the
 # share of developers likely to be reading through each -- from
-# `../emoji-square-colours.md`, which samples seven sets and states its own
-# weighting. The palette proper stays anchored on the Unicode names, because
-# there is no single truth to anchor on: seven vendors disagree by up to twenty
-# degrees of hue on one square, so any vendor's values would be wrong for
+# `../emoji-square-colours.md`, which samples the square glyphs across seven
+# sets and states its own weighting. The palette proper stays anchored on the
+# Unicode names, because there is no single truth to anchor on: seven vendors
+# disagree by up to twenty degrees of hue on one colour, so any vendor's
+# values would be wrong for
 # everybody else's reader. These are for asking a different question -- what a
 # triple looks like where it is actually read -- and `--painted` asks it.
 #
@@ -70,18 +71,18 @@ PAINTED = {
 AS_PAINTED = False       # --painted
 
 
-def square_rgb(name):
-    """The colour to treat this square as, under whichever palette is in force."""
+def colour_rgb(name):
+    """What to treat this palette colour as, under whichever palette is in force."""
     return PAINTED[name] if AS_PAINTED else text.PALETTE[ORDER[name]][3]
 
 
-def square_hex(name):
-    """Hex for a square under whichever palette is in force."""
-    return text.hex_colour(square_rgb(name))
+def colour_hex(name):
+    """Hex for a palette colour under whichever palette is in force."""
+    return text.hex_colour(colour_rgb(name))
 
 
 def multiset(names):
-    """Order-free form, for asking whether two triples use the same squares."""
+    """Order-free form, for asking whether two triples use the same colours."""
     return tuple(sorted(names, key=lambda n: ORDER[n]))
 
 
@@ -171,7 +172,7 @@ def sector(r0, r1, a0, a1):
 
 
 # A wedge is as wide as the identity its triple affords. Three distinct
-# squares give six arrangements and eight shape combinations -- forty-eight
+# colours give six arrangements and eight shape combinations -- forty-eight
 # marks -- against a pair's three-by-eight and three-of-a-kind's one-by-eight.
 # Eight degrees, four and one price that, near enough, and make the picture
 # say what each entry is worth rather than merely that it exists.
@@ -426,7 +427,7 @@ def tsv_lines():
         parts = line.split()
         n, verb, where, triple = parts[0], parts[1], parts[2], parts[3:]
         if len(triple) != 3:
-            print(f"  not three squares: {line.strip()}")
+            print(f"  not three colours: {line.strip()}")
             continue
         if not n.isdigit() or int(n) != len(_LINES) + 1:
             print(f"  #{n} sits on line {len(_LINES) + 1}: {line.strip()}")
@@ -632,7 +633,7 @@ def ring(out):
 
 # White pulls less weight than the physics says it should. A rendered white
 # square is not #ffffff -- it carries a border and the glyph is not a flat
-# field -- and next to two saturated squares the eye discounts it further,
+# field -- and next to two saturated neighbours the eye discounts it further,
 # reading it as a lightener rather than as a third of the colour. Halving it
 # is Justin's calibration against what he can see, not a claim about optics,
 # and it is the one place in this file where the model is deliberately not
@@ -641,7 +642,7 @@ WHITE_WEIGHT = 0.5
 
 
 def mix_rgb(names):
-    """The three squares averaged in linear light, back as sRGB.
+    """The three colours averaged in linear light, back as sRGB.
 
     Linear light because that is what optical mixing does; averaging the sRGB
     numbers directly comes out too dark. White is weighted down -- see
@@ -649,7 +650,7 @@ def mix_rgb(names):
     """
     weights = [WHITE_WEIGHT if n == "white" else 1.0 for n in names]
     total = sum(weights)
-    linear = [tuple(text._linear(v) for v in square_rgb(n)) for n in names]
+    linear = [tuple(text._linear(v) for v in colour_rgb(n)) for n in names]
     return tuple(text._encode(sum(w * c[k] for w, c in zip(weights, linear)) / total)
                  for k in range(3))
 
@@ -675,7 +676,7 @@ _GAMUT_HUE = [(h, colour, hue_angle(colour)) for h, colour in _GAMUT]
 def nearest_gamut(rgb):
     """Which gamut hue this blend reads as, by hue and not by proximity.
 
-    **Not by Oklab distance.** A blend of three squares is always lighter and
+    **Not by Oklab distance.** A blend of three colours is always lighter and
     duller than the gamut, so the nearest colour outright gets chosen mostly on
     lightness, pale blends matching the cyans and dark ones the oranges
     regardless of hue: `blue blue white` came out at 198 degrees when its hue
@@ -881,7 +882,7 @@ DOT_MIN = 0.5             # below this a dot is a smudge, and nothing is drawn
 
 
 def constituents(out, names, at, radius, span):
-    """The three squares themselves, in order, inside the tile they make.
+    """The three colours themselves, in order, inside the tile they make.
 
     The tile is the mixture; these are what it is a mixture of, in the order
     they would be shown. Drawn where the tile is rather than out on the
@@ -910,7 +911,7 @@ def constituents(out, names, at, radius, span):
         # thicker than the small dots were wide, so three colours read as one
         # white pill.
         out.append(f'<circle cx="{x:.2f}" cy="{y:.2f}" r="{rad:.2f}" '
-                   f'fill="{square_hex(name)}" stroke="#ffffff" '
+                   f'fill="{colour_hex(name)}" stroke="#ffffff" '
                    f'stroke-width="{min(0.35, rad * 0.2):.2f}"/>')
 
 
@@ -954,7 +955,7 @@ def width_of(row):
 # ---------------------------------------------------------------------------
 
 # The trefoil is a Venn diagram, not three separate discs. Separate discs said
-# only which squares go in; overlapping them puts the two-way mixes and the
+# only which colours go in; overlapping them puts the two-way mixes and the
 # three-way mix on the page as well, which is where the question "what does
 # this actually average to" is being asked. Inner borders are dropped: a stroke
 # on each lens would out-draw the fills at this size.
@@ -1009,7 +1010,7 @@ def venn(out, names, top, hue, radius=None):
     for k in range(3):
         out.append(disc(k, ' fill="none" stroke="#777" stroke-width="0.9"'))
     for k in range(3):
-        out.append(disc(k, f' fill="{square_hex(names[k])}"'))
+        out.append(disc(k, f' fill="{colour_hex(names[k])}"'))
     for a, b in ((0, 1), (1, 2), (0, 2)):
         out.append(overlap([centres[a], centres[b]],
                            mix_rgb((names[a], names[b])), rad))
@@ -1107,7 +1108,7 @@ def table(out, rows, columns):
                        f'stroke="#666" stroke-width="0.7"/>')
             for s, name in enumerate(names):
                 out.append(f'<rect x="{x0 + 26 + s * (SW + GAP)}" y="{y}" '
-                           f'width="{SW}" height="{SW}" fill="{square_hex(name)}" '
+                           f'width="{SW}" height="{SW}" fill="{colour_hex(name)}" '
                            f'stroke="#aaa" stroke-width="0.5"/>')
             where = "  --  " if reads is None else f"{reads:.1f}&#176;"
             out.append(f'<text x="{x0 + 78}" y="{drop}" text-anchor="end">'
@@ -1251,7 +1252,7 @@ def reference():
 
     `wheel.tsv` is a working document: it carries what was rejected, what sits
     in a tier unused, and which band each of those is in. None of that is
-    wanted by something deciding which three squares a project gets. This is
+    wanted by something deciding which three colours a project gets. This is
     the other artifact -- the mapping and nothing else, derived from the same
     file so the two cannot disagree.
 
@@ -1287,7 +1288,7 @@ def reference():
     out = [
         f"# Colour mapping wheel {WHEEL_VERSION}.",
         "#",
-        "# The mapping, and nothing else: which three squares stand for a hue.",
+        "# The mapping, and nothing else: which three colours stand for a hue.",
         "#",
         "# Generated by `wheel.py --reference` from wheel.tsv. Do not edit by",
         "# hand -- edit wheel.tsv and regenerate, or the wheel and the table",
@@ -1295,16 +1296,16 @@ def reference():
         "#",
         "# **Indexed by the draw, not by the hue.** The number to look up is the",
         "# raw 28 bits from the digest as degrees -- `hexval(h[-7:]) / 0xfffffff",
-        "# * 360` -- before any mapping version's colour rule touches it. Under",
-        "# version 3 the hue is that value warped, so the two are different",
-        "# numbers and indexing by the wrong one silently shifts every triple",
-        "# around the blue-greens. The ring these rows come from is placed in the",
-        "# same coordinate, which is why they agree.",
+        "# * 360` -- before any mapping version's colour rule touches it.",
+        "# Under version 0.3 the hue is that value warped, so the two are",
+        "# different numbers, and indexing by the wrong one silently shifts",
+        "# every triple around the blue-greens. The ring these rows come from",
+        "# is placed in the same coordinate, which is why they agree.",
         "#",
         "# Rows tile 0 to 360 with no gap and no overlap: the row to use is the",
         "# one where `from <= draw < to`, and there is always exactly one.",
         "#",
-        "# The squares are given inner to outer, already in the order they are",
+        "# The colours are given inner to outer, already in the order they are",
         "# to be shown. Arrangement and square-versus-circle are a separate",
         f"# channel and are not in this file. {len(rows)} blocks.",
         "#",
@@ -1363,7 +1364,7 @@ def main(argv):
     flagged = sum(1 for r in rows if r[7])
     print(f"{path} {len(svg)} bytes")
     # Which palette: the two make pictures easily mistaken for each other.
-    print(f"  {'squares as the vendors paint them, weighted' if AS_PAINTED else 'squares as Unicode names them'}"
+    print(f"  {'colours as the vendors paint them, weighted' if AS_PAINTED else 'colours as Unicode names them'}"
           f"{f', tiles at {WIDTH_SCALE:g}x' if WIDTH_SCALE != 1 else ''}"
           f"{', ring only -- the tiers are packed and reported, not drawn' if RING_ONLY else ''}")
     print(f"  catalogue {len(rows)} triples, {depth} tiers deep, "
