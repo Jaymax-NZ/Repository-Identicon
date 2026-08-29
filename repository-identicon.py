@@ -2,24 +2,30 @@
 """Reference implementation of the repository identicon specification.
 
 A key -- `<mapping version>:host/owner/repo` -- becomes a 5x5 grid and one
-colour, plus the artifacts a repository commits and the renderings a terminal
-can show. Run `python3 repository-identicon.py apply` inside a repository.
+colour, and then the eight files a repository commits. Run
+`python3 repository-identicon.py apply` inside a repository.
 
-  repository  apply, show, render, validate, doctor
-  hook        emit, hooks
+  apply     write .identicon/, and put the mark in the README
+  show      the derived names and a preview
+  render    one image, to a file or stdout
+  validate  run another implementation against the pinned vectors
+  doctor    what this depends on that is not in this file
 
-**Nothing here writes outside the repository it is run in.** Putting the mark
-on a desktop -- the XDG icon theme, a Konsole tab -- is a side effect, which
-SPEC.md's Scope section puts out of the specification; that half lives in
-Console-Colophon and is reached by vendoring this derivation, not by importing
-it. `work-in-progress/scope-split.md` records where each symbol went.
+**Nothing here writes outside the repository it is run in, and nothing here
+addresses a terminal.** Putting the mark on a desktop or into an escape
+sequence is a side effect, which SPEC.md's Scope section puts out of the
+specification; that half lives in Console-Colophon and is reached by vendoring
+this derivation, not by importing it. `work-in-progress/scope-split.md` records
+where each routine went.
+
+`text-identicon.py` must sit beside this file: four of the eight artifacts come
+from its sextant table and emoji palette.
 
 Standard library only. The only subprocess is git, invoked with an argument
 list.
 """
 
 import argparse
-import base64
 import hashlib
 import json
 import math
@@ -705,50 +711,13 @@ def render_ansi(key):
     return "\n".join(lines)
 
 
-# ---- Terminal colour ----
-
-TRUECOLOR = "truecolor"
-INDEXED = "256"
-NONE = "none"
-COLOUR_DEPTHS = (TRUECOLOR, INDEXED, NONE)
-
-
-def resolve_colour_depth(requested=None, environ=None):
-    """Pick a colour depth. NO_COLOR wins over everything, per no-color.org."""
-    environ = os.environ if environ is None else environ
-    if environ.get("NO_COLOR") is not None:
-        return NONE
-    if requested and requested != "auto":
-        return requested
-    if environ.get("COLORTERM", "").lower() in ("truecolor", "24bit"):
-        return TRUECOLOR
-    return INDEXED
-
-
-def _xterm256(rgb):
-    """Nearest colour in the xterm 6x6x6 cube."""
-    red, green, blue = (int(component * 5 / 255 + 0.5) for component in rgb)
-    return 16 + 36 * red + 6 * green + blue
-
-
-def _fg(rgb, depth):
-    if depth == NONE:
-        return ""
-    if depth == TRUECOLOR:
-        return "\033[38;2;{};{};{}m".format(*rgb)
-    return f"\033[38;5;{_xterm256(rgb)}m"
-
-
-RESET = "\033[0m"
-
-CHIP = "█"
-
 # The text rendering lives in text-identicon.py, which takes a grid and a colour
 # and nothing else. Loaded by path because the file name carries a hyphen.
 #
 # **These two files are a pair and must be deployed together**: the sextant
-# table and the emoji palette live next door. `doctor` reports whether the
-# sibling is present, because `emit` swallows every error and exits 0.
+# table and the emoji palette live next door. `apply` cannot write `.tricolour`,
+# `.sextant`, `.octant` or `.txt` without it, so `doctor` reports whether it is
+# there.
 TEXT_MODULE = "text-identicon.py"
 _TEXT = None
 
@@ -772,154 +741,16 @@ def _text_module():
     return _TEXT
 
 
-def render_text(key, chroma=MARK_CHROMA, lightness=MARK_LIGHTNESS):
-    """The identicon as two lines of three characters: the sextant grid, then
-    the tricolour.
-
-    One glyph covers six cells, so a cell is not separately addressable and the
-    colour lives in the emoji squares rather than in an escape sequence.
-    """
-    grid = identicon_grid(key)
-    colour = identicon_colour(key, chroma, lightness)
-    return _text_module().text(grid, colour).split("\n")
-
-
-def render_banner(key, source=None, depth=TRUECOLOR, **kwargs):
-    """The identicon with the project name beside it."""
-    rows = render_text(key, kwargs.get("chroma", MARK_CHROMA),
-                       kwargs.get("lightness", MARK_LIGHTNESS))
-    colour = _colour_for(key, kwargs)
-    name = project_name(key)
-    if depth != NONE:
-        name = f"{_fg(colour, depth)}{name}{RESET}"
-    labels = [name, key if source != "path" else ""]
-    return [f"{row}  {label}".rstrip() for row, label in zip(rows, labels)]
-
-
-def render_line(key, depth=TRUECOLOR, **kwargs):
-    """One line: the colour, then the project name. For the tightest prompts.
-
-    The grid cannot be one line -- five rows over either lattice is two text
-    lines and no arrangement makes it one -- so anything that affords a single
-    line loses the pattern and keeps only the colour. A coloured chip where
-    escape sequences work, the tricolour where they do not.
-
-    The tricolour takes the grid as well as the colour, because its order comes
-    from the grid. Calling it with the colour alone raised `TypeError` on every
-    `--colour none` run, which is the one path this branch exists to serve.
-    """
-    colour = _colour_for(key, kwargs)
-    mark = (f"{_fg(colour, depth)}{CHIP}{RESET}" if depth != NONE
-            else _text_module().tricolour(colour, identicon_grid(key)))
-    return [f"{mark} {project_name(key)}"]
-
-
-# ---- Inline images ----
+# **The escape-sequence renderings are in `Console-Colophon`**, with `emit`.
+# SPEC.md §§ Renderings, Terminal and Text still define and rank them -- inline
+# image, then a lattice with the tricolour, then the tricolour alone -- and
+# `artifact_bytes` below writes every one of them to a file. What is not here is
+# wrapping those bytes for a particular terminal: the iTerm2 and kitty
+# protocols, the ANSI foreground colours, the environment sniffing that picks
+# between them. § Scope puts all of that on the far side of the line, because
+# choosing what this terminal can read is a decision about somebody's terminal.
 #
-# The blocks above are an approximation. Where the terminal can take a real
-# image, send the PNG itself, base64 in an escape sequence.
-#
-# Konsole implements the iTerm2 file protocol: Vt102Emulation::osc_put matches
-# the literal "1337;File=" and then waits for the ":" terminator, so arguments
-# between the two are tolerated and ignored. It also handles kitty APC graphics
-# and sixel.
-
-ITERM2 = "iterm2"
-KITTY = "kitty"
-TEXT = "text"
-PROTOCOLS = (ITERM2, KITTY, TEXT)
-
-# Native pixel size for the inline image. Konsole ignores the protocol's own
-# width and height arguments, so the PNG's own size is what decides how big it
-# lands: five cells of eight pixels, about two text rows tall.
-INLINE_SIZE = 40
-
-
-def resolve_protocol(requested=None, environ=None):
-    """Pick a graphics protocol from the environment.
-
-    Detection is by environment variable rather than by querying the terminal,
-    because a hook that waits on a terminal reply can hang a turn if nothing
-    answers.
-    """
-    environ = os.environ if environ is None else environ
-    if requested and requested != "auto":
-        return requested
-    if environ.get("NO_COLOR") is not None:
-        return TEXT
-    if environ.get("KITTY_WINDOW_ID") or "kitty" in environ.get("TERM", "").lower():
-        return KITTY
-    if environ.get("KONSOLE_VERSION") or environ.get("KONSOLE_DBUS_SESSION"):
-        return ITERM2
-    if environ.get("TERM_PROGRAM", "") in ("iTerm.app", "WezTerm", "ghostty", "vscode"):
-        return ITERM2
-    return TEXT
-
-
-def iterm2_image(png):
-    """OSC 1337 File, the iTerm2 inline image protocol.
-
-    No argument may contain a colon, since the colon is what terminates the
-    argument list and begins the payload.
-    """
-    payload = base64.b64encode(png).decode("ascii")
-    args = ";".join(["inline=1", f"size={len(png)}", "preserveAspectRatio=1"])
-    return f"\033]1337;File={args}:{payload}\a"
-
-
-def kitty_image(png, chunk_size=4096):
-    """APC _G, the kitty graphics protocol. Chunked, as the protocol requires."""
-    payload = base64.b64encode(png).decode("ascii")
-    chunks = [payload[i:i + chunk_size] for i in range(0, len(payload), chunk_size)] or [""]
-    out = []
-    for index, chunk in enumerate(chunks):
-        more = 1 if index < len(chunks) - 1 else 0
-        control = f"a=T,f=100,m={more}" if index == 0 else f"m={more}"
-        out.append(f"\033_G{control};{chunk}\033\\")
-    return "".join(out)
-
-
-def render_inline(key, protocol, size=INLINE_SIZE, **kwargs):
-    """The identicon as a real image, or None if the protocol cannot carry one."""
-    if protocol not in (ITERM2, KITTY):
-        return None
-    png = render_png(key, fit_block(size), edge=size, **kwargs)
-    return iterm2_image(png) if protocol == ITERM2 else kitty_image(png)
-
-
-# The lambdas normalise the signatures: `render` hands every style `source` and
-# `depth`, and only `banner` wants both.
-_TEXT_STYLES = {
-    TEXT: lambda key, source=None, depth=TRUECOLOR, **kw: render_text(
-        key, kw.get("chroma", MARK_CHROMA), kw.get("lightness", MARK_LIGHTNESS)),
-    "full": lambda key, source=None, depth=TRUECOLOR, **kw: render_ansi(key).splitlines(),
-    "banner": render_banner,
-    "line": lambda key, source=None, depth=TRUECOLOR, **kw: render_line(key, depth, **kw),
-}
-
-STYLES = ("icon", "image", TEXT, "full", "banner", "line")
-
-
-def render(key, style="icon", source=None, depth=TRUECOLOR, protocol=TEXT,
-           size=INLINE_SIZE, **kwargs):
-    """Return everything to write for one identicon, trailing newline included.
-
-    The default is the icon and nothing else — no project name, no key. The
-    identicon is the message; anything beside it is the terminal's own business.
-    """
-    if style == "icon":
-        inline = render_inline(key, protocol, size, **kwargs)
-        if inline is not None:
-            return inline + "\n"
-        style = TEXT
-
-    if style == "image":
-        inline = render_inline(key, protocol if protocol != TEXT else ITERM2,
-                               size, **kwargs)
-        return (inline or "") + "\n"
-
-    lines = _TEXT_STYLES[style](key, source=source, depth=depth, **kwargs)
-    return "".join(line + "\n" for line in lines)
+# `.txt` is what a consumer in that position needs from here. It is `cat`.
 
 
 # ---- Installing the identicon into a repository ----
@@ -1411,98 +1242,15 @@ def cmd_apply(args):
     return 0 if result["current"] or not args.check else 1
 
 
-# Hook events at which control comes back to the human. Notification is left
-# out deliberately: idle_prompt fires exactly 60s after Stop, so registering it
-# would print the same identicon twice, a minute apart.
-RETURN_OF_CONTROL_EVENTS = ("Stop", "PermissionRequest", "Elicitation", "SessionEnd")
-
-
-def payload_cwd(stream):
-    """The cwd from a hook payload on stdin, or None.
-
-    Every hook payload carries cwd, session_id and hook_event_name — the probe
-    confirmed that across 27 records. Nothing else here is read, and in
-    particular nothing that could carry prompt or tool text.
-    """
-    try:
-        payload = json.load(stream)
-    except (ValueError, OSError, UnicodeDecodeError):
-        return None
-    if not isinstance(payload, dict):
-        return None
-    cwd = payload.get("cwd")
-    return cwd if isinstance(cwd, str) and cwd else None
-
-
-def open_output():
-    """The controlling terminal if there is one, else stdout.
-
-    A hook's stdout is not reliably shown, and for some events it is fed back to
-    the model instead. The terminal is where a return-of-control marker belongs,
-    so go there directly when it exists.
-    """
-    try:
-        return open("/dev/tty", "w"), True
-    except OSError:
-        return sys.stdout, False
-
-
-def cmd_emit(args):
-    """Print the identicon. Intended for a return-of-control hook.
-
-    Exits 0 whatever happens. A hook that fails must not disturb the session,
-    and a missing identicon is not worth a broken turn.
-    """
-    try:
-        path = args.path
-        if not path and not sys.stdin.isatty():
-            path = payload_cwd(sys.stdin)
-        key, source = resolve_key_for(path, args.seed)
-
-        text = render(
-            key,
-            style=args.style,
-            source=source,
-            depth=resolve_colour_depth(args.colour),
-            protocol=resolve_protocol(args.protocol),
-            size=args.size,
-            chroma=args.chroma,
-            lightness=args.lightness,
-        )
-
-        stream, is_tty = open_output()
-        try:
-            stream.write(text)
-            stream.flush()
-        finally:
-            if is_tty:
-                stream.close()
-    except Exception:  # noqa: BLE001 - a hook must never break the session
-        pass
-    return 0
-
-
-def cmd_hooks(args):
-    """Print the registration to paste into settings, rather than writing it.
-
-    Deliberately not self-installing. The Phase 0 probe is registered on these
-    same events right now, and silently editing settings from here could not be
-    tested against a running Claude Code.
-    """
-    command = str(pathlib.Path(__file__).resolve())
-    entry = {
-        "hooks": [{
-            "type": "command",
-            "command": command,
-            "args": ["emit", "--style", args.style],
-        }]
-    }
-    print(json.dumps({event: [entry] for event in RETURN_OF_CONTROL_EVENTS}, indent=2))
-    print()
-    print("Merge into the hooks object in ~/.claude/settings.json.")
-    print("Notification is omitted on purpose: idle_prompt fires 60s after Stop,")
-    print("so registering both prints the same identicon twice.")
-    print()
+# **There was a Claude Code hook here**, and there is not any more: `emit`,
+# `hooks`, and the three helpers that read a cwd out of a hook payload, opened
+# the controlling terminal and swallowed every error to exit 0. A hook
+# registration is a side effect in somebody's settings file, which § Scope puts
+# out; the renderings it wrapped went to `Console-Colophon`.
+#
+# The plan had been for `Claude-Colophon` to take them. It shipped without a
+# hook at all -- the skill writes an instruction into the target's CLAUDE.md and
+# Claude reads it -- so nothing was ever going to call this.
     print("The Phase 0 probe is registered on these events too. Check for a")
     print("collision before adding these, per the README.")
     return 0
@@ -1682,7 +1430,8 @@ def cmd_doctor(args):
     """
     sibling = text_module_path()
     print(f"{TEXT_MODULE:16} " + (str(sibling) if sibling.is_file()
-                                  else "NOT FOUND - text styles will print nothing"))
+                                  else "NOT FOUND - apply cannot write the "
+                                       "text artifacts"))
     vectors = vectors_path()
     print(f"{VECTORS_NAME:16} " + (str(vectors) if vectors.is_file()
                                    else "NOT FOUND - validate cannot run"))
@@ -1762,26 +1511,6 @@ def build_parser():
     render.add_argument("--format", choices=("png", "svg"), default="png")
     render.add_argument("--out", default="-", help="output file, or - for stdout")
     render.set_defaults(func=cmd_render)
-
-    emit = sub.add_parser(
-        "emit",
-        help="print the identicon; for a return-of-control hook",
-        description="Reads a hook payload on stdin and uses its cwd. Writes to "
-                    "the controlling terminal when there is one. Always exits 0.",
-    )
-    add_common(emit, render=True)
-    emit.add_argument("--style", choices=STYLES, default="icon",
-                      help="icon sends a real image where the terminal takes one")
-    emit.add_argument("--protocol", choices=("auto", *PROTOCOLS), default="auto")
-    emit.add_argument("--size", type=int, default=INLINE_SIZE,
-                      help="inline image side in pixels")
-    emit.add_argument("--colour", choices=("auto", *COLOUR_DEPTHS), default="auto")
-    emit.set_defaults(func=cmd_emit)
-
-    hooks = sub.add_parser("hooks", help="print the hook registration to paste")
-    add_common(hooks, path=False)
-    hooks.add_argument("--style", choices=STYLES, default="icon")
-    hooks.set_defaults(func=cmd_hooks)
 
     validate = sub.add_parser(
         "validate",

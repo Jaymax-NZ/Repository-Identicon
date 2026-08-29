@@ -913,7 +913,7 @@ class TestTheKeyFileWins(unittest.TestCase):
         first run."""
         identicon.install_into_repo(self.tmp, readme=False)
         for command in (["show"], ["render", "--out", os.devnull],
-                        ["emit", "--style", "icon"]):
+                        ["doctor"]):
             with self.subTest(command=command[0]):
                 done = subprocess.run(
                     ["python3", str(ROOT / "repository-identicon.py"),
@@ -1005,12 +1005,13 @@ class TestTheValidatorOfferedToPorts(unittest.TestCase):
 
 
 class TestTheTwoFilesAreAPair(unittest.TestCase):
-    """repository-identicon.py needs text-identicon.py for every text style.
+    """repository-identicon.py needs text-identicon.py to write four artifacts.
 
-    `emit` swallows everything so a hook can never break a turn, which is what
-    would turn a missing sibling into a silent one. So the loader names the file
-    in its error and `doctor` reports it either way -- both checked against a
-    copy deployed alone, since in the tree the sibling is always there.
+    `.tricolour`, `.sextant`, `.octant` and `.txt` all come from the sibling, so
+    a deployment missing it writes a partial `.identicon/` rather than failing
+    outright. The loader names the file in its error and `doctor` reports it
+    either way -- both checked against a copy deployed alone, since in the tree
+    the sibling is always there.
     """
 
     def setUp(self):
@@ -1032,7 +1033,7 @@ class TestTheTwoFilesAreAPair(unittest.TestCase):
     def test_doctor_says_not_found_and_what_it_costs_when_it_is_not(self):
         report = self.doctor(self.alone)
         self.assertRegex(report, r"text-identicon\.py\s+NOT FOUND")
-        self.assertIn("text styles will print nothing", report)
+        self.assertIn("cannot write the text artifacts", report)
 
     def test_the_loader_names_the_file_rather_than_failing_on_a_bare_path(self):
         spec = importlib.util.spec_from_file_location("alone", self.alone)
@@ -1041,6 +1042,50 @@ class TestTheTwoFilesAreAPair(unittest.TestCase):
         with self.assertRaises(FileNotFoundError) as raised:
             alone._text_module()
         self.assertIn("text-identicon.py", str(raised.exception))
+
+
+class TestScope(unittest.TestCase):
+    """SPEC.md § Scope: a pure function from key to bytes, name or string is in;
+    a side effect is out. Both halves are checked, because a rule only stated in
+    prose is a rule that drifts."""
+
+    def test_nothing_here_addresses_a_terminal(self):
+        """These went to Console-Colophon with `emit`. An escape sequence is
+        addressed to one terminal, and picking which one it can read is a
+        decision about somebody's terminal, not about the mark."""
+        for gone in ("render", "render_inline", "render_text", "render_banner",
+                     "render_line", "iterm2_image", "kitty_image",
+                     "resolve_protocol", "resolve_colour_depth", "_fg",
+                     "_xterm256", "STYLES", "PROTOCOLS", "INLINE_SIZE"):
+            self.assertFalse(hasattr(identicon, gone),
+                             f"{gone} belongs to Console-Colophon")
+
+    def test_nothing_here_registers_a_hook(self):
+        """The Claude Code hook is gone entirely rather than moved: a hook
+        registration writes to somebody's settings file, and Claude-Colophon
+        shipped without one."""
+        for gone in ("cmd_emit", "cmd_hooks", "payload_cwd", "open_output",
+                     "RETURN_OF_CONTROL_EVENTS"):
+            self.assertFalse(hasattr(identicon, gone), f"{gone} should be gone")
+        source = (ROOT / "repository-identicon.py").read_text(encoding="utf-8")
+        self.assertNotIn("/dev/tty", source)
+
+    def test_the_commands_are_the_ones_the_readme_documents(self):
+        """A subcommand that survives a split without being documented is how
+        the last one grew three jobs."""
+        completed = subprocess.run(
+            ["python3", str(ROOT / "repository-identicon.py"), "--help"],
+            capture_output=True, text=True, timeout=60)
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        self.assertIn("{apply,show,render,validate,doctor}", completed.stdout)
+
+    def test_the_renderings_still_reach_a_file(self):
+        """Losing the escape sequences must not lose the renderings. SPEC.md
+        mandates them, so every one still has to arrive as bytes on disk."""
+        wanted = identicon.artifact_bytes(
+            f"{identicon.MAPPING_VERSION}:github.com/someone/a-project")
+        for name in ("png", "svg", "tricolour", "sextant", "octant", "txt"):
+            self.assertIn(name, wanted)
 
 
 if __name__ == "__main__":

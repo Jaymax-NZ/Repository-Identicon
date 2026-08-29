@@ -116,8 +116,8 @@ not survive being cloned. `apply` says so, and the fix is a
 | `SPEC.md` | the specification: how to derive the key, and how a key becomes a pattern and a colour |
 | `CONTRIBUTING.md` | how to write a conforming port, and what "a repository identicon" means |
 | `vectors.json` | pinned test vectors — the part that makes the spec unambiguous |
-| `repository-identicon.py` | the reference implementation, standard library only |
-| `text-identicon.py` | the text rendering, for media that display no image |
+| `repository-identicon.py` | the reference implementation, standard library only. Five commands: `apply`, `show`, `render`, `validate`, `doctor` |
+| `text-identicon.py` | the two lattices and the emoji palette, for media that display no image. A pair with the file above, and four artifacts come from it |
 | `reference/` | the library the derivation conforms to, committed rather than fetched, and the harness that regenerates the vectors from it |
 | `tests/` | the implementation against the vectors, and the vectors against the library |
 | `work-in-progress/` | what is settled but not yet adopted: the emoji-square mapping, a fallback for media that can show neither an image nor styled text, and `scope-split.md`, which says where each half of `repository-identicon.py` belongs; nothing here is imported by anything |
@@ -156,10 +156,11 @@ decoding and no resampling to argue about.
 
 Three consumers exist, and each carries its own copy of the derivation:
 
-- [`Console-Colophon`](../Console-Colophon) — the XDG icon theme and Konsole
-  tabs. This half used to be in this repository; `SPEC.md` § Scope puts every
-  side effect out, so it left. Its copy is held to `vectors.json` by its own
-  test suite, and `validate` can check it from outside.
+- [`Console-Colophon`](../Console-Colophon) — the XDG icon theme, Konsole tabs,
+  and `emit`, which writes the mark to a terminal in an escape sequence. All
+  three used to be in this repository; `SPEC.md` § Scope puts every side effect
+  out, so they left. Its copy is held to `vectors.json` by its own test suite,
+  and `validate` can check it from outside.
 - [`Claude-State-Panel`](../Claude-State-Panel) — panel glyphs and a terminal
   banner. Its copy differs in one line, `ICON_PREFIX`, which the specification
   explicitly leaves to the implementing tool.

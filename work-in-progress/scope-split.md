@@ -164,13 +164,46 @@ that at no point does a working feature exist nowhere:
    byte-for-byte against this implementation across all ten vectors first.
 2. ~~`Claude-Colophon` takes `emit` and `hooks`.~~ Dead. It shipped without a
    hook, so nothing is waiting and nothing would have to be rewritten.
-3. `repository-identicon.py` drops the hook half of `emit` and the whole of
-   `hooks`, in one commit that also deletes `_bg`. **Undecided**, and it is the
-   only thing this document is still holding.
+3. ~~`repository-identicon.py` drops the hook half of `emit` and the whole of
+   `hooks`.~~ Done, and it went further: **every rendering that addresses a
+   terminal went to `Console-Colophon`**, not just the hook. See below.
 
 The ordering rule those three were written to satisfy — that no working feature
-exists nowhere — is met either way now. `Claude-Colophon` delivers a mark at the
-end of every turn; it just does not do it with a hook.
+exists nowhere — was met at every step. `Claude-Colophon` delivers a mark at the
+end of every turn without a hook; `Console-Colophon` had the renderings, checked,
+before this repository dropped them.
+
+### What actually moved, and the gap it left
+
+`Console-Colophon` took 21 routines and constants: `render`, `render_inline`,
+`iterm2_image`, `kitty_image`, `render_text`, `render_banner`, `render_line`,
+`_fg`, `_xterm256`, `_TEXT_STYLES`, `STYLES`, `INLINE_SIZE`, the protocol and
+colour-depth constants, and `resolve_protocol` and `resolve_colour_depth`. It
+vendors `text-identicon.py` beside its own script, because the text styles need
+the sextant table. **Checked byte-for-byte first**: ten vectors × six styles ×
+three protocols × three colour depths × three source values, plus both
+resolvers over eleven environments — 1730 comparisons, zero differences.
+
+Five went nowhere, because they were properties of one caller rather than of a
+rendering: `cmd_emit`'s payload-and-tty half, `cmd_hooks`,
+`RETURN_OF_CONTROL_EVENTS`, `payload_cwd`, `open_output`.
+
+**The gap: `--style icon` was the only producer of a 40 px raster, and no
+artifact holds one.** The committed sizes are 27 (block 5), 104 (`@4x`), 128 and
+256. 40 is five cells of eight, chosen because Konsole ignores the protocol's
+own width and height arguments, so the PNG's own pixel size is what decides how
+big the mark lands — about two text rows. A consumer wanting the inline image
+must re-derive or resample.
+
+Everything else `emit` wrote is now a file or a composition of files: `--style
+text` is byte-identical to `.txt`, `full` is `.grid` and `.colour`, `banner` is
+`.txt` with names from `.key`, `line`'s colourless form is `.tricolour`.
+
+**Two ideas for later, neither started.** A way to ask for a raster at an
+arbitrary size, and a set of extra sizes recorded in the key file so a
+repository can declare which ones it keeps. Both are about the same thing: the
+artifact set is currently four fixed rasters chosen here, and a consumer with a
+different constraint has no way to say so.
 
 A fourth item, from checking the third: **`Claude-Colophon`'s vendored
 derivation needs a `vectors.json` and a conformance test**, and then needs to be

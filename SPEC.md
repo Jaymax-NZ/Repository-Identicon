@@ -32,6 +32,16 @@ project's colour would be worse than none of them having one.
 any tool chooses to display the result, and what it does with the rest of its
 interface.
 
+That line runs through the renderings rather than around them, and this is
+where it falls. Turning a key into bytes is in: this specification defines the
+raster, the vector, the colour, the grid, the tricolour and both lattices, and
+the reference implementation writes every one of them to a file. Addressing
+those bytes to a particular terminal is out — the iTerm2 and kitty escape
+sequences, ANSI foreground colour, and the environment sniffing that decides
+between them are specified here and implemented in
+[`Console-Colophon`](../Console-Colophon), because which of them a terminal can
+read is a fact about that terminal.
+
 ## The key
 
 Everything derives from one string. Getting the key right matters more than
@@ -697,6 +707,12 @@ empty edge. So `@4x` is not a magnification of the whole canvas, and an
 implementation MUST NOT produce it by rendering at four times the canvas size.
 
 ### Terminal
+
+**This section is specified here and implemented in `Console-Colophon`.** It is
+the one part of the specification with no reference implementation in this
+repository, because an escape sequence is addressed to a particular terminal
+and § Scope puts that out. `console-colophon.py emit` is the reference for
+everything below.
 
 **Send the real image where the terminal can take one.** The text rendering is
 an approximation of a 5×5 grid and a colour; an inline image is both, exactly.
