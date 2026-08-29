@@ -2,7 +2,7 @@
 """Reference implementation of the repository identicon specification.
 
 A key -- `<mapping version>:host/owner/repo` -- becomes a 5x5 grid and one
-colour, and then the eight files a repository commits. Run
+colour, and then the eleven files a repository commits. Run
 `python3 repository-identicon.py apply` inside a repository.
 
   apply     write .identicon/, and put the mark in the README
@@ -18,8 +18,9 @@ specification; that half lives in Console-Colophon and is reached by vendoring
 this derivation, not by importing it. `work-in-progress/scope-split.md` records
 where each routine went.
 
-`text-identicon.py` must sit beside this file: four of the eight artifacts come
-from its sextant table and emoji palette.
+`text-identicon.py` must sit beside this file: four of the eleven artifacts --
+`.tricolour`, `.sextant`, `.octant` and `.txt` -- come from its lattices and
+emoji palette.
 
 Standard library only. The only subprocess is git, invoked with an argument
 list.
@@ -1267,9 +1268,6 @@ def cmd_apply(args):
 # The plan had been for `Claude-Colophon` to take them. It shipped without a
 # hook at all -- the skill writes an instruction into the target's CLAUDE.md and
 # Claude reads it -- so nothing was ever going to call this.
-    print("The Phase 0 probe is registered on these events too. Check for a")
-    print("collision before adding these, per the README.")
-    return 0
 
 
 # ---- Conformance validator ----

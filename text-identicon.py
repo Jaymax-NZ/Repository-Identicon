@@ -306,7 +306,7 @@ def grid_bits(grid):
 def arrange(indices, grid):
     """Order the chosen squares, deterministically, from the grid.
 
-    `triple_indices` picks *which* squares; this picks the order they are laid
+    `chosen_indices` picks *which* squares; this picks the order they are laid
     out in, and the two carry different information.
 
     **Why order at all.** Which squares to use is a question about fidelity, and

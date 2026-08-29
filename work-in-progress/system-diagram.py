@@ -87,11 +87,13 @@ PAGE_WIDTH = _L.PAGE_WIDTH
 
 MAP_CAPTION = [
     "Reading the pages: 1 arrives at the key; 2 turns it into a pattern and a colour; "
-    "3 turns it into names and canvas sizes; 4 turns those into bytes for six media, "
-    "and 5 is the one of those",
-    "six that lives in its own file. 6 and 7 are the two places the mark is put in "
-    "front of a human. 8 is where the third one went. 9 touches none of the others: "
-    "it runs somebody else's implementation",
+    "3 turns it into names and canvas sizes; 4 turns those into bytes, and 5 is the "
+    "half of that which",
+    "lives in its own file. 6 is the only place the mark is put in front of a human, "
+    "and it does it by writing files. 7 and 8 are records of what left for "
+    "Console-Colophon and why —",
+    "the terminal half and the desktop half — kept at their page numbers so nothing "
+    "renumbers. 9 touches none of the others: it runs somebody else's implementation "
     "and compares it with vectors.json.",
     "",
     "Hover any item for the meaning of the terms it uses. Out of scope and drawn "
@@ -100,9 +102,9 @@ MAP_CAPTION = [
 
 # Items whose id is not the name of the routine they stand for. None means the
 # item is a file, a value or a summary and has no single definition.
-ALIAS = {"argh": "_key_from_args", "emit_seq": "cmd_emit", "hooks_cmd": "cmd_hooks",
-         "t_text": "T:text", "t_encode": "T:_encode", "OCTANTS": None,
-         "PALETTE": None, "RETURN_OF_CONTROL_EVENTS": None, "moved": None}
+ALIAS = {"argh": "_key_from_args", "t_text": "T:text",
+         "t_encode": "T:_encode", "OCTANTS": None, "PALETTE": None,
+         "LATTICES": None, "scope_line": None, "moved": None}
 
 
 # ======================================================================= API =
@@ -256,10 +258,11 @@ class Page:
         x, w = self.colx[i]
         return x + w + self.gutter / 2
 
-    def head(self, x, y, text, note=""):
+    def head(self, x, y, text, notes=()):
         self.draw.append(f'<text x="{x}" y="{y}" class="hd">{esc(text)}</text>')
-        if note:
-            self.draw.append(f'<text x="{x}" y="{y+14}" class="hn">{esc(note)}</text>')
+        for i, line in enumerate(notes):
+            self.draw.append(f'<text x="{x}" y="{y+14+i*12}" class="hn">'
+                             f'{esc(line)}</text>')
 
     def caption(self, x, y, lines):
         """Loose prose on a page. Recorded against the group it follows, because
@@ -300,9 +303,12 @@ class Col:
         return n
 
     def head(self, text, note="", gap=8):
+        # Wrapped to the column, like a caption: a heading note is prose, and
+        # an unwrapped one ran off the right edge of the page in silence.
+        lines = wrap_caption(note, self.w) if note else []
         self.p.group(text, note)
-        self.p.head(self.x, self.y + 11, text, note)
-        self.y += 16 + (12 if note else 0)
+        self.p.head(self.x, self.y + 11, text, lines)
+        self.y += 16 + 12 * len(lines)
         self.p.draw.append(f'<line x1="{self.x}" y1="{self.y+3}" '
                            f'x2="{self.x+self.w}" y2="{self.y+3}" class="rule"/>')
         self.y += gap
@@ -421,12 +427,14 @@ SECTION = {n.attr("$section"): n for n in DOC if n.attr("$section")}
 for group in SECTION["terms"].kids():
     entries = []
     for term in group.kids():
-        entries.append((term.text, (term.notes() or [""])[0],
-                        term.attrs("$defines")))
+        entries.append((term.text, term.attr("$type", ""),
+                        (term.notes() or [""])[0], term.attrs("$defines")))
     TERMS.append((group.text, entries))
 for _g, _entries in TERMS:
-    for _t, _m, _ in _entries:
-        TIPS[_t] = _m
+    for _t, _ty, _m, _ in _entries:
+        if not _ty:
+            WARNINGS.append(f"glossary entry with no $type: {_t}")
+        TIPS[_t] = f"{_ty} — {_m}" if _ty else _m
 
 
 def carries(value):
@@ -515,7 +523,7 @@ def build_process_pages():
 def build_map():
     """Page 0: the modules, and the command line, both hand-placed."""
     page = Page(0, "The map",
-                "the modules, the seven subcommands, and which page each lands on",
+                "the modules, the five subcommands, and which page each lands on",
                 PAGE_WIDTH[0])
     placed = PLACED[0]
     for section, depth in (("subcommands", 2), ("overview", 1)):
@@ -568,15 +576,22 @@ build_process_pages()
 
 # The one defect the diagram marks, and the only annotation that is neither
 # content nor layout: a claim about the code that the code disagrees with.
-_p4 = next(p for p in PAGES if p.num == 4)
-_rl = _p4.nodes["render_line"]
-_p4.over.append(f'<circle cx="{_rl["x"]+_rl["w"]-16}" cy="{_rl["y"]+16}" r="8" '
+_p6 = next(p for p in PAGES if p.num == 6)
+_ii = _p6.nodes["install_into_repo"]
+_p6.over.append(f'<circle cx="{_ii["x"]+_ii["w"]-16}" cy="{_ii["y"]+16}" r="8" '
                 f'fill="{WARN}"/>')
-_p4.over.append(f'<text x="{_rl["x"]+_rl["w"]-16}" y="{_rl["y"]+20.5}" '
+_p6.over.append(f'<text x="{_ii["x"]+_ii["w"]-16}" y="{_ii["y"]+20.5}" '
                 f'class="wt">!</text>')
-_p4.over.append(f'<text x="{_rl["x"]}" y="{_rl["y"]+_rl["h"]+13}" class="wn">'
-                '! calls emoji_triple(colour) with one argument; 5.4 takes '
-                '(rgb, grid)</text>')
+# Under the column rather than under the box: the item it marks has three more
+# below it, and an unwrapped line there struck through all of them.
+_below = max(n["y"] + n["h"] for n in _p6.nodes.values()
+             if n["x"] == _ii["x"]) + 20
+for _i, _line in enumerate(wrap_caption(
+        "! mapping_drift is computed after the raise that rules it out, so it "
+        "is always None, and the report cmd_apply prints from it is "
+        "unreachable", _ii["w"])):
+    _p6.over.append(f'<text x="{_ii["x"]}" y="{_below+_i*12}" class="wn">'
+                    f'{esc(_line)}</text>')
 
 
 # =================================================================== RENDER ==
@@ -730,9 +745,11 @@ def term_where(numbers):
 
 gloss = []
 for group, entries in TERMS:
-    gloss.append(f'<tr class="g"><td colspan="3">{esc(group)}</td></tr>')
-    for term, meaning, keys in entries:
-        gloss.append(f'<tr><td class="t">{esc(term)}</td><td class="d">{esc(meaning)}</td>'
+    gloss.append(f'<tr class="g"><td colspan="4">{esc(group)}</td></tr>')
+    for term, type_, meaning, keys in entries:
+        gloss.append(f'<tr><td class="t">{esc(term)}</td>'
+                     f'<td class="ty">{esc(type_)}</td>'
+                     f'<td class="d">{esc(meaning)}</td>'
                      f'<td class="n">{term_where(keys)}</td></tr>')
 
 rows = []
@@ -777,7 +794,8 @@ for p in PAGES:
 body.append('<section id="terms"><h2><span class="pn">·</span>Terms</h2>'
             '<p class="note">the words this repository uses in a particular way. No item on '
             'a page restates one of these; it points at them instead.</p>'
-            '<table class="gloss"><thead><tr><th>term</th><th>what it means here</th>'
+            '<table class="gloss"><thead><tr><th>term</th><th>type</th>'
+            '<th>what it means here</th>'
             '<th>where</th></tr></thead><tbody>' + "\n".join(gloss) + '</tbody></table></section>')
 
 trs = "\n".join(f'<tr><td class="n"><a href="#{a}">{esc(lbl)}</a></td>'
@@ -842,6 +860,10 @@ td.t {{ font-family: ui-monospace, monospace; font-weight: 600; white-space: now
 td.d {{ font-size: 12.5px; line-height: 1.5; color: {MUTED}; padding: 6px 24px 6px 0;
         max-width: 92ch; }}
 table.gloss td.n {{ vertical-align: top; padding-top: 7px; font-weight: 400; }}
+table.gloss td.ty {{ vertical-align: top; padding-top: 7px; font-weight: 400;
+                     font-family: ui-monospace, "DejaVu Sans Mono", monospace;
+                     font-size: 11px; color: {MUTED};
+                     white-space: nowrap; padding-right: 16px; }}
 """
 
 doc = ("<title>Repository-Identicon system diagram</title>\n"
