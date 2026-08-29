@@ -29,12 +29,26 @@ It derives the key from the git remote and writes these:
 .identicon/repository-identicon.svg            vector, same geometry
 .identicon/repository-identicon.colour         "#rrggbb\n", nothing else
 .identicon/repository-identicon.grid           five lines of "01010"
-.identicon/repository-identicon.txt            the text rendering, ready to cat
+.identicon/repository-identicon.tricolour      three emoji squares, the colour
+.identicon/repository-identicon.sextant        the pattern on the 2×3 lattice
+.identicon/repository-identicon.octant         the pattern on the 2×4 lattice
+.identicon/repository-identicon.txt            .sextant and .tricolour, composed
 .identicon/repository-identicon.key            the key, hashed exactly as it reads
 ```
 
 `.colour` and `.grid` are the mark as text — enough to draw it with no PNG
 decoder and no SVG parser.
+
+`.tricolour`, `.sextant` and `.octant` are it already drawn, for a medium that
+will take neither an image nor an escape sequence. `.txt` is the whole mark:
+`cat` it. The three parts are there for a caller with room for only one — a
+shell prompt, a tab title, a status field — so that nothing has to split a file
+to use half of it.
+
+Both lattices are written because which one a host can draw depends on its
+fonts. Sextants are Unicode 13.0 and octants 16.0, so the sextant set is the
+safer default and is what `.txt` uses; octants are squarer where the glyphs
+exist.
 
 One file each. The mark holds its brightness right around the colour wheel, so
 the same image sits on a white page and on a near-black one and the project

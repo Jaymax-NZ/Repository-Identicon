@@ -746,9 +746,9 @@ CHIP = "█"
 # The text rendering lives in text-identicon.py, which takes a grid and a colour
 # and nothing else. Loaded by path because the file name carries a hyphen.
 #
-# **These two files are a pair and must be deployed together**: the octant table
-# and the emoji palette live next door. `doctor` reports whether the sibling is
-# present, because `emit` swallows every error and exits 0.
+# **These two files are a pair and must be deployed together**: the sextant
+# table and the emoji palette live next door. `doctor` reports whether the
+# sibling is present, because `emit` swallows every error and exits 0.
 TEXT_MODULE = "text-identicon.py"
 _TEXT = None
 
@@ -765,7 +765,7 @@ def _text_module():
         if not path.is_file():
             raise FileNotFoundError(
                 f"{TEXT_MODULE} must sit beside {pathlib.Path(__file__).name}; "
-                f"the text renderings need its octant table")
+                f"the text renderings need its sextant table")
         spec = importlib.util.spec_from_file_location("text_identicon", path)
         _TEXT = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(_TEXT)
@@ -773,11 +773,11 @@ def _text_module():
 
 
 def render_text(key, chroma=MARK_CHROMA, lightness=MARK_LIGHTNESS):
-    """The identicon as two lines of three characters: the octant grid, then
-    the emoji triple.
+    """The identicon as two lines of three characters: the sextant grid, then
+    the tricolour.
 
-    One glyph covers four cells, so the colour lives in the emoji squares
-    rather than in an escape sequence.
+    One glyph covers six cells, so a cell is not separately addressable and the
+    colour lives in the emoji squares rather than in an escape sequence.
     """
     grid = identicon_grid(key)
     colour = identicon_colour(key, chroma, lightness)
@@ -799,14 +799,18 @@ def render_banner(key, source=None, depth=TRUECOLOR, **kwargs):
 def render_line(key, depth=TRUECOLOR, **kwargs):
     """One line: the colour, then the project name. For the tightest prompts.
 
-    The grid cannot be one line -- five rows over a two-by-four lattice is two
-    text lines and no arrangement makes it one -- so anything that affords a
-    single line loses the pattern and keeps only the colour. A coloured chip
-    where escape sequences work, the emoji triple where they do not.
+    The grid cannot be one line -- five rows over either lattice is two text
+    lines and no arrangement makes it one -- so anything that affords a single
+    line loses the pattern and keeps only the colour. A coloured chip where
+    escape sequences work, the tricolour where they do not.
+
+    The tricolour takes the grid as well as the colour, because its order comes
+    from the grid. Calling it with the colour alone raised `TypeError` on every
+    `--colour none` run, which is the one path this branch exists to serve.
     """
     colour = _colour_for(key, kwargs)
     mark = (f"{_fg(colour, depth)}{CHIP}{RESET}" if depth != NONE
-            else _text_module().emoji_triple(colour))
+            else _text_module().tricolour(colour, identicon_grid(key)))
     return [f"{mark} {project_name(key)}"]
 
 
@@ -951,6 +955,9 @@ def artifact_names():
     yield "svg", f"{ARTIFACT_STEM}.svg"
     yield "colour", f"{ARTIFACT_STEM}.colour"
     yield "grid", f"{ARTIFACT_STEM}.grid"
+    yield "tricolour", f"{ARTIFACT_STEM}.tricolour"
+    yield "sextant", f"{ARTIFACT_STEM}.sextant"
+    yield "octant", f"{ARTIFACT_STEM}.octant"
     yield "txt", f"{ARTIFACT_STEM}.txt"
 
 
@@ -1032,11 +1039,15 @@ def artifact_bytes(key, block=ARTIFACT_BLOCK, **render_kwargs):
     Separate files rather than one blob: a README cannot address a fragment
     inside a blob, and `$(cat …/*.colour)` has to stay a cat.
 
-    `.txt` is the text rendering, for a medium that will take neither an image
-    nor an escape sequence. `text-identicon.py` is named for this artifact
-    rather than for its technique, and then nothing wrote it: the installer was
-    built around the three files that already existed, so the module and the
-    directory disagreed about what the set was.
+    **The text rendering is written in parts and whole.** `.tricolour` is the
+    three emoji squares, `.sextant` and `.octant` are the pattern on each
+    lattice, and `.txt` is the sextant lattice with the tricolour ending its
+    lower line. A consumer that wants the mark runs `cat` on `.txt`; one that
+    is building a line of its own -- a prompt, a tab title, a status field --
+    takes the part it has room for and does not have to split anything.
+
+    Both lattices are written because which one renders is a fact about the
+    host's fonts, not about the mark, and this file cannot know it.
     """
     wanted = {
         "png": render_png(key, block, **render_kwargs),
@@ -1050,9 +1061,14 @@ def artifact_bytes(key, block=ARTIFACT_BLOCK, **render_kwargs):
                                             border=large_border, **render_kwargs)
     colour = _colour_for(key, render_kwargs)
     grid = identicon_grid(key)
+    text = _text_module()
     wanted["colour"] = (hex_colour(colour) + "\n").encode("utf-8")
     wanted["grid"] = (grid_text(grid) + "\n").encode("utf-8")
-    wanted["txt"] = (_text_module().text(grid, colour) + "\n").encode("utf-8")
+    wanted["tricolour"] = (text.tricolour(colour, grid) + "\n").encode("utf-8")
+    for name, lines in (("sextant", text.sextant(grid)),
+                        ("octant", text.octant(grid))):
+        wanted[name] = ("\n".join(lines) + "\n").encode("utf-8")
+    wanted["txt"] = (text.text(grid, colour) + "\n").encode("utf-8")
     return wanted
 
 

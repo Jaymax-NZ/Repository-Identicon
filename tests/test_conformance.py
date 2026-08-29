@@ -167,9 +167,25 @@ class TestTheTextRendering(unittest.TestCase):
                 lines = text_identicon.text(grid, colour).split("\n")
                 self.assertEqual(2, len(lines))
 
+    def test_both_lattices_hold_the_whole_grid(self):
+        """Neither lattice is a reduced version of the other. That is what
+        makes the choice between them the host's and not the mark's, so it is
+        checked on the pinned keys rather than asserted in prose."""
+        for vector in vectors:
+            grid = identicon.identicon_grid(vector["key"])
+            for name, draw in (("sextant", text_identicon.sextant),
+                               ("octant", text_identicon.octant)):
+                with self.subTest(key=vector["key"], lattice=name):
+                    lines = draw(grid)
+                    self.assertEqual(2, len(lines))
+                    self.assertEqual(
+                        grid,
+                        text_identicon._recover(lines, getattr(
+                            text_identicon, f"{name.upper()}_LATTICE")))
+
     def test_its_own_selftest_passes(self):
-        """It re-derives the whole 230-character octant table from the Unicode
-        database, which is the only way that table is checkable at all."""
+        """It re-derives both tables -- 230 octants and 60 sextants -- from the
+        Unicode database, which is the only way they are checkable at all."""
         result = subprocess.run(
             ["python3", str(ROOT / "text-identicon.py"), "--selftest"],
             capture_output=True, text=True, timeout=60)
@@ -403,9 +419,9 @@ class TestTheColourRule(unittest.TestCase):
         """One file per artifact -- what one brightness across the wheel buys."""
         wanted = identicon.artifact_bytes(self.KEY)
         for name in ("png", "png4x", "png128", "png256", "svg", "colour",
-                     "grid", "txt"):
+                     "grid", "tricolour", "sextant", "octant", "txt"):
             self.assertIn(name, wanted)
-        self.assertEqual(8, len(wanted))
+        self.assertEqual(11, len(wanted))
 
 
 class TestTheArtifactSet(unittest.TestCase):
@@ -491,11 +507,38 @@ class TestInstallingIntoARepository(unittest.TestCase):
         self.assertEqual(f"{identicon.MAPPING_VERSION}:github.com/someone/a-project",
                          result["key"])
         self.assertEqual("remote", result["source"])
-        for name in ("png", "png4x", "svg", "colour", "grid", "txt"):
+        for name in ("png", "png4x", "svg", "colour", "grid", "tricolour",
+                     "sextant", "octant", "txt"):
             with self.subTest(artifact=name):
                 path = pathlib.Path(result["files"][name])
                 self.assertTrue(path.is_file(), path)
                 self.assertEqual("created", result["changes"][name])
+
+    def test_the_txt_artifact_is_its_own_parts(self):
+        """`.txt` composes `.sextant` and `.tricolour`, and a consumer that
+        takes one part must get the same characters as one that takes the
+        whole. Three files that can drift is what having them separately
+        costs, so the composition is checked rather than described."""
+        result = identicon.install_into_repo(self.tmp)
+        read = lambda name: pathlib.Path(
+            result["files"][name]).read_text(encoding="utf-8")
+        sextant = read("sextant").rstrip("\n").split("\n")
+        whole = read("txt").rstrip("\n").split("\n")
+        self.assertEqual(sextant[0], whole[0])
+        self.assertEqual(f"{sextant[1]} {read('tricolour').rstrip(chr(10))}",
+                         whole[1])
+
+    def test_both_lattices_are_written_and_differ(self):
+        """The point of writing both: a host that has one set of glyphs and
+        not the other still gets a mark."""
+        result = identicon.install_into_repo(self.tmp)
+        bodies = {}
+        for name in ("sextant", "octant"):
+            body = pathlib.Path(
+                result["files"][name]).read_text(encoding="utf-8")
+            self.assertEqual(2, len(body.rstrip("\n").split("\n")), name)
+            bodies[name] = body
+        self.assertNotEqual(bodies["sextant"], bodies["octant"])
 
     def test_the_text_artifact_is_the_text_rendering(self):
         """text-identicon.py is named for this file. Nothing wrote it until

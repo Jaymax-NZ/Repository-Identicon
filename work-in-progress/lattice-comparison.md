@@ -1,5 +1,9 @@
 # Octants against sextants, on real keys
 
+**Resolved: both ship.** `apply` writes `.sextant` and `.octant`, and `.txt`
+composes the sextant lattice. This file is the comparison that settled it and
+is kept as the evidence, not as an open question.
+
 Both renderings are lossless: every one below reconstructs its grid exactly,
 checked over all ten pinned vectors. The mark beside each is the same key as
 the specification draws it, at the exact 128 px geometry.
@@ -9,6 +13,12 @@ characters by two lines, so the footprint is identical. The difference is
 proportion and font coverage, not fidelity: five rows span 1.25 cell-heights
 on octants against 1.67 on sextants, so the sextant mark is a third taller
 for the same width.
+
+Neither wins outright, which is why neither was dropped. Octants are squarer,
+a terminal cell being about twice as tall as it is wide. Sextants are Unicode
+13.0 against the octants' 16.0, so more fonts have them and a host without the
+glyphs draws the whole mark as tofu — which is what makes sextants the default
+and what `.txt` holds.
 
 ## claude-state-panel
 

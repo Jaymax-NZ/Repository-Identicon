@@ -465,7 +465,10 @@ what the mark was made from; it is what the mark is made from.
 .identicon/repository-identicon.svg            vector, same geometry
 .identicon/repository-identicon.colour         "#rrggbb\n", nothing else
 .identicon/repository-identicon.grid           five lines of "01010"
-.identicon/repository-identicon.txt            the text rendering, ready to cat
+.identicon/repository-identicon.tricolour      three emoji squares, the colour
+.identicon/repository-identicon.sextant        the pattern on the 2×3 lattice
+.identicon/repository-identicon.octant         the pattern on the 2×4 lattice
+.identicon/repository-identicon.txt            .sextant and .tricolour, composed
 .identicon/repository-identicon.key            the key, hashed exactly as it reads
 ```
 
@@ -520,10 +523,23 @@ integration, and `$(cat .identicon/repository-identicon.colour)` is a whole
 parser. Each is usable by a consumer that knows nothing about this
 specification.
 
-`.txt` is the rendering from *Text, the fallback* below — two lines of octants
-with the emoji triple carrying the colour — for a medium that will take neither
-an image nor an escape sequence. Committing it means a consumer in that
-position needs no Unicode tables and no palette of its own: it needs `cat`.
+`.tricolour`, `.sextant`, `.octant` and `.txt` are the rendering from *Text, the
+fallback* below, for a medium that will take neither an image nor an escape
+sequence. Committing them means a consumer in that position needs no Unicode
+tables and no palette of its own: it needs `cat`.
+
+**The parts are written as well as the whole.** `.txt` is `.sextant` with
+`.tricolour` ending its lower line — one space between them — and a consumer
+that wants the mark reads only that file. The parts are for a caller with room
+for one line and not two, or for colour and not pattern: a shell prompt, a tab
+title, a status field. Splitting a file to use half of it is a parser, and this
+directory exists so that nothing needs one.
+
+**Both lattices are written.** Which one a host can draw is a fact about its
+fonts, and neither the key nor this specification knows it. An implementation
+MUST write both, and MUST compose `.txt` from the sextant lattice: sextants are
+Unicode 13.0 against the octants' 16.0, so the default is the one more fonts
+have.
 
 **Each filename repeats the directory deliberately.** The directory is context,
 and context is what does not travel: copied out, fetched from a raw URL or
@@ -693,10 +709,10 @@ An implementation SHOULD prefer, in order:
    begins the payload.
 2. **kitty graphics protocol**, `APC _G`. `a=T,f=100`, base64 payload chunked at
    4096 characters, every chunk but the last carrying `m=1`.
-3. **Octants plus the emoji triple**, below. Two lines, always: the grid does
+3. **A lattice plus the tricolour**, below. Two lines, always: the grid does
    not fit in one. Where the medium affords only one line — a tab title, a
-   session name, a status field — send the triple alone or the badge label, and
-   accept that the pattern is lost.
+   session name, a status field — send the tricolour alone or the badge label,
+   and accept that the pattern is lost.
 
 Konsole implements the iTerm2 protocol: `Vt102Emulation::osc_put` matches the
 literal `1337;File=` and then waits for the `:` terminator, so arguments between
@@ -715,28 +731,29 @@ mark is the message.
 
 ### Text, the fallback
 
-**The text rendering is one thing, not a menu: two lines of octants carrying the
-pattern, with three emoji squares carrying the colour.** They are not
+**The text rendering is two lines of block characters carrying the pattern,
+with three emoji squares carrying the colour.** The two parts are not
 alternatives to each other and there is no useful intermediate.
 
 Why it comes out that way, since each constraint rules something out:
 
-- **The grid cannot be one line.** Five rows over a 2×4 lattice is two text
+- **The grid cannot be one line.** Five rows over either lattice is two text
   lines, and there is no arrangement that makes it one. Any medium that affords
   a single line — prefixing a session name, a tab title, a status field — cannot
-  take the grid at all. Its only option is the triple alone, or the badge label.
-- **The octants are monochrome, and that is where colour has to come from.** The
-  grid is one glyph per four cells, so a cell is not separately addressable and
-  a foreground colour would tint the whole mark rather than the pattern within
-  it. The colour therefore rides in the emoji squares, not in an escape
-  sequence.
-- **Per-cell true-colour octants are not worth pursuing.** It would mean one
+  take the grid at all. Its only option is the tricolour alone, or the badge
+  label.
+- **The block characters are monochrome, and that is where colour has to come
+  from.** The grid is one glyph per four or six cells, so a cell is not
+  separately addressable and a foreground colour would tint the whole mark
+  rather than the pattern within it. The colour therefore rides in the emoji
+  squares, not in an escape sequence.
+- **Per-cell true-colour blocks are not worth pursuing.** It would mean one
   character per cell to make cells individually colourable, which is a 5×5 block
   of double-width glyphs — larger than the image it is standing in for, in a
   medium chosen because it could not show the image.
 
-So an implementation SHOULD prefer, in order: **inline image**; **octants plus
-the emoji triple**; **the emoji triple alone** where only one line is available.
+So an implementation SHOULD prefer, in order: **inline image**; **a lattice plus
+the tricolour**; **the tricolour alone** where only one line is available.
 Escape-sequence colour is not part of this rendering.
 
 Both parts are implemented in `text-identicon.py`, which takes a colour and a
@@ -745,43 +762,67 @@ into a tool with no identicon machinery. The grid feeds the arrangement as well
 as the pattern, and it was already being passed in, so that property is
 unaffected.
 
-#### Octants, carrying the pattern
+#### The two lattices, carrying the pattern
 
-Four grid cells per character, drawn with the **`BLOCK OCTANT-n`** set at
-U+1CD00–U+1CDE5: a character is a 2×4 lattice of subcells, so five grid rows
-fit in two text lines. Bit `i` of a pattern is subcell (`row i // 2`,
-`col i % 2`), top to bottom, which is the order Unicode numbers the octants in.
-Eight subcell rows hold a five-row grid with three to spare; all three go
-**above**, which fills the lower line completely and lets anything appended sit
+There are two, an implementation MUST provide both, and **neither is a
+degraded version of the other**. Both put the whole 5×5 grid in three
+characters by two lines, and both reconstruct it exactly; what separates them is
+the host, not the mark.
+
+| | subcells | set | since | five rows span |
+|---|---|---|---|---|
+| **sextant** | 2×3 | `BLOCK SEXTANT-n`, U+1FB00–U+1FB3B | Unicode 13.0, 2020 | 1.67 cell-heights |
+| **octant** | 2×4 | `BLOCK OCTANT-n`, U+1CD00–U+1CDE5 | Unicode 16.0, 2024 | 1.25 cell-heights |
+
+**Sextants are the default**, because a host missing the glyphs draws the whole
+mark as tofu and the older set is in more fonts. Octants are squarer, a terminal
+cell being roughly twice as tall as it is wide, so they are what to send where
+the glyphs are known to exist. An implementation MUST compose `.txt` from
+sextants and MUST NOT make the choice from anything in the key: it is a fact
+about the receiving host.
+
+Bit `i` of a pattern is subcell (`row i // 2`, `col i % 2`), top to bottom, in
+both — the order Unicode numbers the octants 1–8 and the sextants 1–6 in. Six or
+eight subcell rows hold a five-row grid with one or three to spare; all of them
+go **above**, which fills the lower line completely and lets the tricolour sit
 flush against it.
 
-Two caveats an implementation must handle rather than discover:
+Three caveats an implementation must handle rather than discover:
 
 - The all-blank pattern is `U+0020 SPACE`, which is genuinely correct and
-  single-width where every other octant is double. Emit **two** spaces at the
-  point of rendering, so a blank in the middle of a line does not skew the mark
-  against the line below. The table stays canonical; the compensation does not.
-- Twenty-six of the 256 patterns are quadrants and block elements that already
-  existed and were not re-encoded when Unicode 16 specified the set. They are
-  the right characters, but fonts commonly do not harmonise them with the 230
-  drawn in 2024, and the seam is visible within one mark. There is no alternative
-  encoding for most of them, so do not substitute lookalikes.
+  single-width. Sextants are single-width too, so emit **one** space. Every
+  octant but that one is double-width, so there emit **two**, or a blank in the
+  middle of a line skews the mark against the line below. The tables stay
+  canonical; the compensation does not.
+- Some patterns are quadrants and block elements that already existed and were
+  not re-encoded when the set was specified: 26 of the 256 octant patterns, and
+  4 of the 64 sextant patterns — SPACE, LEFT HALF BLOCK, RIGHT HALF BLOCK and
+  FULL BLOCK. They are the right characters, but fonts commonly do not harmonise
+  them with the ones drawn later, and the seam is visible within one mark. There
+  is no alternative encoding for most of them, so do not substitute lookalikes.
+- Do not build either table by offset arithmetic from the block start. With the
+  wrong exclusion set it produces plausible, wrong glyphs, and past U+1CDE5 it
+  walks into pictograms.
 
 #### Emoji squares, carrying the colour
 
 **The whole text rendering is a patch for when the identicon proper cannot be
 emitted.** Where an image can be sent, send the image: it is the grid, at full
 colour, in one glyph's worth of attention. Everything below is standing in for
-that, and the triple is the part standing in for 24 bits of colour with nine
+that, and the tricolour is the part standing in for 24 bits of colour with nine
 named squares — a lossy paraphrase that costs three double-width columns and
 carries semantic weight a coloured pattern does not.
 
 It is nonetheless *the* colour channel here rather than a third-tier fallback,
-because the octants are monochrome and nothing else can carry it. Palette of
+because both lattices are monochrome and nothing else can carry it. Palette of
 nine: red, orange, yellow, green, blue, purple, brown, black, white.
 
 ```
 $ python3 text-identicon.py '#2692d9' '01010,01010,10001,10101,01010'
+🬦🬦
+🬣🬢🬄 🟦🟩🟦
+
+$ python3 text-identicon.py --octant '#2692d9' '01010,01010,10001,10101,01010'
 𜺠𜺠
 𜶆𜶂🯦 🟦🟩🟦
 ```
@@ -814,7 +855,7 @@ carrying how it was arrived at. It will land here, with vectors, once it ships.
 
 #### Colour vision, stated plainly
 
-**The emoji triple encodes colour and only colour, so it is the weakest part of
+**The tricolour encodes colour and only colour, so it is the weakest part of
 this specification for anyone who does not see colour the way it assumes.** That
 is not a defect to be argued away; it is the cost of a channel whose entire job
 is to carry a hue through a medium that will not carry one.
@@ -836,8 +877,8 @@ twelve, so this is a common case rather than an edge one.
 Three things limit the damage, and an implementation should understand which is
 doing the work:
 
-- **Colour is never the only channel.** The grid is the identity; the octants
-  carry it with no colour at all, and they come first. A reader who cannot
+- **Colour is never the only channel.** The grid is the identity; either lattice
+  carries it with no colour at all, and it comes first. A reader who cannot
   separate red from green still has the full 5×5 pattern.
 - **Order is a channel, and it is colour-blind.** Which squares appear answers
   *what colour*; the order they appear in is separate information that survives
@@ -847,16 +888,16 @@ doing the work:
 - **Shape, where it is used, is preattentive and independent of hue.** A circle
   among squares is found without search whatever the reader's cone response.
 
-What is *not* claimed: that the triple names a colour reliably for a dichromat.
-It does not, and an implementation that needs colour to be legible for everyone
-should send the image or use the octants.
+What is *not* claimed: that the tricolour names a colour reliably for a
+dichromat. It does not, and an implementation that needs colour to be legible
+for everyone should send the image or send the pattern alone.
 
 #### NO_COLOR
 
 `NO_COLOR` set in the environment, per no-color.org, suppresses inline images
-and the emoji triple. The octants remain and are emitted alone: the grid is the
+and the tricolour. The lattice remains and is emitted alone: the grid is the
 identity and is legible with no colour at all, which is the property that lets
 this degrade at all.
 
-There is no colour-depth negotiation in this rendering: the octants are
+There is no colour-depth negotiation in this rendering: both lattices are
 monochrome by construction and the colour lives in the squares.

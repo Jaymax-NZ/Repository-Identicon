@@ -248,7 +248,8 @@ def audit(chooser, label):
 
 
 if __name__ == "__main__":
-    # `triple_indices`, not `triple`: which squares were chosen is a question
-    # about the colour alone, and the order comes from the grid and cannot break
-    # a rule -- the same three squares reordered are the same colours.
-    audit(text.triple_indices, "current algorithm")
+    # `chosen_indices`, not `tricolour_indices`: which squares were chosen is a
+    # question about the colour alone, and the order comes from the grid and
+    # cannot break a rule -- the same three squares reordered are the same
+    # colours.
+    audit(text.chosen_indices, "current algorithm")

@@ -3,12 +3,12 @@
 Not adopted. The shipped mapping is still the search in `../text-identicon.py`,
 and nothing here is imported by anything. Committed so it survives the machine.
 
-**Keep the stakes straight.** All of this is about a *patch* — the triple exists
-only where an image cannot be sent and text cannot be styled, so the colour
-would otherwise be lost entirely. The core of the specification is the key, the
-generator library the derivation conforms to, and the grid; then the octants;
-then this. The triple has been the hardest part to settle and is the least
-load-bearing, and those two facts are unrelated.
+**Keep the stakes straight.** All of this is about a *patch* — the tricolour
+exists only where an image cannot be sent and text cannot be styled, so the
+colour would otherwise be lost entirely. The core of the specification is the
+key, the generator library the derivation conforms to, and the grid; then the
+two lattices; then this. The tricolour has been the hardest part to settle and
+is the least load-bearing, and those two facts are unrelated.
 
 **It also serves colour-blind readers worst, by construction.** Measured over
 the nine squares as the font paints them, seven of thirty-six pairs collapse
