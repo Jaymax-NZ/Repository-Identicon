@@ -126,6 +126,20 @@ not survive being cloned. `apply` says so, and the fix is a
 python3 -m unittest discover -s tests -t tests
 ```
 
+## The system diagram
+
+**[Every top-level routine, one page per module][diagram]** — what each one is
+for, what it hands back, and which other one calls it, with a typed glossary of
+the words this repository uses in a particular way.
+
+[diagram]: https://justin-maxwell.github.io/Repository-Identicon/
+
+Its source is `work-in-progress/system-diagram.mr`, a MarkRight document that
+knows nothing about pixels; `system-diagram-layout.py` says where things go and
+`system-diagram.py` draws them. The published page is generated from that source
+on every push to `main`, so it cannot be a version of the diagram nobody
+generated.
+
 Writing an implementation elsewhere? `validate` runs it against the pinned
 vectors, so you do not have to build a harness to find out whether you agree:
 

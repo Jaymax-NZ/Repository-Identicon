@@ -1,3 +1,8 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Repository-Identicon system diagram</title>
 <style>
 * { box-sizing: border-box; }
@@ -58,6 +63,8 @@ table.gloss td.ty { vertical-align: top; padding-top: 7px; font-weight: 400;
                      font-size: 11px; color: #6b7280;
                      white-space: nowrap; padding-right: 16px; }
 </style>
+</head>
+<body>
 <h1>Repository-Identicon — the production system</h1>
 <p class="lede">Every top-level routine in <code>repository-identicon.py</code> and
 <code>text-identicon.py</code>, one page per module. Each item gives its signature, what it
@@ -94,16 +101,16 @@ points the way the work goes. Out of scope and drawn nowhere:
  .hd { font-size: 12px; font-weight: 700; fill: #6b7280; letter-spacing: .1em; }
  .hn { font-size: 11px; fill: #9aa2ab; }
  .rule { stroke: #e4e9ee; stroke-width: 1; }
- .bfn { fill: #f7f8fa; stroke: #ccd2d9; stroke-width: 1; }
- .bext { fill: #fdf6e7; stroke: #a8761a; stroke-width: 1; stroke-dasharray: 4 2.5; }
- .bdata { fill: #eff1f4; stroke: #aeb6bf; stroke-width: 1; }
- .bval { fill: #15181c; stroke: #15181c; }
- .bcmd { fill: #ffffff; stroke: #15181c; stroke-width: 1.3; }
- .bthin { fill: #ffffff; stroke: #ccd2d9; stroke-width: 1; }
- .bgrid { fill: #eef2ff; stroke: #1d4ed8; stroke-width: 1.3; }
- .bcol { fill: #fff3ea; stroke: #c2410c; stroke-width: 1.3; }
- .bref { fill: #eef1f5; stroke: #7c8794; stroke-width: 1.2; }
- .bmod { fill: #ffffff; stroke: #15181c; stroke-width: 1.4; }
+ .bfn { fill: #f7f8fa; fill-opacity: 0.86; stroke: #ccd2d9; stroke-width: 1; }
+ .bext { fill: #fdf6e7; fill-opacity: 0.86; stroke: #a8761a; stroke-width: 1; stroke-dasharray: 4 2.5; }
+ .bdata { fill: #eff1f4; fill-opacity: 0.86; stroke: #aeb6bf; stroke-width: 1; }
+ .bval { fill: #15181c; fill-opacity: 0.94; stroke: #15181c; }
+ .bcmd { fill: #ffffff; fill-opacity: 0.86; stroke: #15181c; stroke-width: 1.3; }
+ .bthin { fill: #ffffff; fill-opacity: 0.86; stroke: #ccd2d9; stroke-width: 1; }
+ .bgrid { fill: #eef2ff; fill-opacity: 0.86; stroke: #1d4ed8; stroke-width: 1.3; }
+ .bcol { fill: #fff3ea; fill-opacity: 0.86; stroke: #c2410c; stroke-width: 1.3; }
+ .bref { fill: #eef1f5; fill-opacity: 0.86; stroke: #7c8794; stroke-width: 1.2; }
+ .bmod { fill: #ffffff; fill-opacity: 0.86; stroke: #15181c; stroke-width: 1.4; }
  .item[data-t] { cursor: help; }
  .modn { font-size: 11px; font-weight: 700; fill: #9aa2ab; letter-spacing: .12em; }
  .modt { font-size: 15px; font-weight: 650; fill: #15181c; }
@@ -239,16 +246,16 @@ points the way the work goes. Out of scope and drawn nowhere:
  .hd { font-size: 12px; font-weight: 700; fill: #6b7280; letter-spacing: .1em; }
  .hn { font-size: 11px; fill: #9aa2ab; }
  .rule { stroke: #e4e9ee; stroke-width: 1; }
- .bfn { fill: #f7f8fa; stroke: #ccd2d9; stroke-width: 1; }
- .bext { fill: #fdf6e7; stroke: #a8761a; stroke-width: 1; stroke-dasharray: 4 2.5; }
- .bdata { fill: #eff1f4; stroke: #aeb6bf; stroke-width: 1; }
- .bval { fill: #15181c; stroke: #15181c; }
- .bcmd { fill: #ffffff; stroke: #15181c; stroke-width: 1.3; }
- .bthin { fill: #ffffff; stroke: #ccd2d9; stroke-width: 1; }
- .bgrid { fill: #eef2ff; stroke: #1d4ed8; stroke-width: 1.3; }
- .bcol { fill: #fff3ea; stroke: #c2410c; stroke-width: 1.3; }
- .bref { fill: #eef1f5; stroke: #7c8794; stroke-width: 1.2; }
- .bmod { fill: #ffffff; stroke: #15181c; stroke-width: 1.4; }
+ .bfn { fill: #f7f8fa; fill-opacity: 0.86; stroke: #ccd2d9; stroke-width: 1; }
+ .bext { fill: #fdf6e7; fill-opacity: 0.86; stroke: #a8761a; stroke-width: 1; stroke-dasharray: 4 2.5; }
+ .bdata { fill: #eff1f4; fill-opacity: 0.86; stroke: #aeb6bf; stroke-width: 1; }
+ .bval { fill: #15181c; fill-opacity: 0.94; stroke: #15181c; }
+ .bcmd { fill: #ffffff; fill-opacity: 0.86; stroke: #15181c; stroke-width: 1.3; }
+ .bthin { fill: #ffffff; fill-opacity: 0.86; stroke: #ccd2d9; stroke-width: 1; }
+ .bgrid { fill: #eef2ff; fill-opacity: 0.86; stroke: #1d4ed8; stroke-width: 1.3; }
+ .bcol { fill: #fff3ea; fill-opacity: 0.86; stroke: #c2410c; stroke-width: 1.3; }
+ .bref { fill: #eef1f5; fill-opacity: 0.86; stroke: #7c8794; stroke-width: 1.2; }
+ .bmod { fill: #ffffff; fill-opacity: 0.86; stroke: #15181c; stroke-width: 1.4; }
  .item[data-t] { cursor: help; }
  .modn { font-size: 11px; font-weight: 700; fill: #9aa2ab; letter-spacing: .12em; }
  .modt { font-size: 15px; font-weight: 650; fill: #15181c; }
@@ -475,16 +482,16 @@ mapping version — str, dotted — The label stamped into the key saying which 
  .hd { font-size: 12px; font-weight: 700; fill: #6b7280; letter-spacing: .1em; }
  .hn { font-size: 11px; fill: #9aa2ab; }
  .rule { stroke: #e4e9ee; stroke-width: 1; }
- .bfn { fill: #f7f8fa; stroke: #ccd2d9; stroke-width: 1; }
- .bext { fill: #fdf6e7; stroke: #a8761a; stroke-width: 1; stroke-dasharray: 4 2.5; }
- .bdata { fill: #eff1f4; stroke: #aeb6bf; stroke-width: 1; }
- .bval { fill: #15181c; stroke: #15181c; }
- .bcmd { fill: #ffffff; stroke: #15181c; stroke-width: 1.3; }
- .bthin { fill: #ffffff; stroke: #ccd2d9; stroke-width: 1; }
- .bgrid { fill: #eef2ff; stroke: #1d4ed8; stroke-width: 1.3; }
- .bcol { fill: #fff3ea; stroke: #c2410c; stroke-width: 1.3; }
- .bref { fill: #eef1f5; stroke: #7c8794; stroke-width: 1.2; }
- .bmod { fill: #ffffff; stroke: #15181c; stroke-width: 1.4; }
+ .bfn { fill: #f7f8fa; fill-opacity: 0.86; stroke: #ccd2d9; stroke-width: 1; }
+ .bext { fill: #fdf6e7; fill-opacity: 0.86; stroke: #a8761a; stroke-width: 1; stroke-dasharray: 4 2.5; }
+ .bdata { fill: #eff1f4; fill-opacity: 0.86; stroke: #aeb6bf; stroke-width: 1; }
+ .bval { fill: #15181c; fill-opacity: 0.94; stroke: #15181c; }
+ .bcmd { fill: #ffffff; fill-opacity: 0.86; stroke: #15181c; stroke-width: 1.3; }
+ .bthin { fill: #ffffff; fill-opacity: 0.86; stroke: #ccd2d9; stroke-width: 1; }
+ .bgrid { fill: #eef2ff; fill-opacity: 0.86; stroke: #1d4ed8; stroke-width: 1.3; }
+ .bcol { fill: #fff3ea; fill-opacity: 0.86; stroke: #c2410c; stroke-width: 1.3; }
+ .bref { fill: #eef1f5; fill-opacity: 0.86; stroke: #7c8794; stroke-width: 1.2; }
+ .bmod { fill: #ffffff; fill-opacity: 0.86; stroke: #15181c; stroke-width: 1.4; }
  .item[data-t] { cursor: help; }
  .modn { font-size: 11px; font-weight: 700; fill: #9aa2ab; letter-spacing: .12em; }
  .modt { font-size: 15px; font-weight: 650; fill: #15181c; }
@@ -690,16 +697,16 @@ artifact — file, one of eleven — One of the eleven rendered files in .identi
  .hd { font-size: 12px; font-weight: 700; fill: #6b7280; letter-spacing: .1em; }
  .hn { font-size: 11px; fill: #9aa2ab; }
  .rule { stroke: #e4e9ee; stroke-width: 1; }
- .bfn { fill: #f7f8fa; stroke: #ccd2d9; stroke-width: 1; }
- .bext { fill: #fdf6e7; stroke: #a8761a; stroke-width: 1; stroke-dasharray: 4 2.5; }
- .bdata { fill: #eff1f4; stroke: #aeb6bf; stroke-width: 1; }
- .bval { fill: #15181c; stroke: #15181c; }
- .bcmd { fill: #ffffff; stroke: #15181c; stroke-width: 1.3; }
- .bthin { fill: #ffffff; stroke: #ccd2d9; stroke-width: 1; }
- .bgrid { fill: #eef2ff; stroke: #1d4ed8; stroke-width: 1.3; }
- .bcol { fill: #fff3ea; stroke: #c2410c; stroke-width: 1.3; }
- .bref { fill: #eef1f5; stroke: #7c8794; stroke-width: 1.2; }
- .bmod { fill: #ffffff; stroke: #15181c; stroke-width: 1.4; }
+ .bfn { fill: #f7f8fa; fill-opacity: 0.86; stroke: #ccd2d9; stroke-width: 1; }
+ .bext { fill: #fdf6e7; fill-opacity: 0.86; stroke: #a8761a; stroke-width: 1; stroke-dasharray: 4 2.5; }
+ .bdata { fill: #eff1f4; fill-opacity: 0.86; stroke: #aeb6bf; stroke-width: 1; }
+ .bval { fill: #15181c; fill-opacity: 0.94; stroke: #15181c; }
+ .bcmd { fill: #ffffff; fill-opacity: 0.86; stroke: #15181c; stroke-width: 1.3; }
+ .bthin { fill: #ffffff; fill-opacity: 0.86; stroke: #ccd2d9; stroke-width: 1; }
+ .bgrid { fill: #eef2ff; fill-opacity: 0.86; stroke: #1d4ed8; stroke-width: 1.3; }
+ .bcol { fill: #fff3ea; fill-opacity: 0.86; stroke: #c2410c; stroke-width: 1.3; }
+ .bref { fill: #eef1f5; fill-opacity: 0.86; stroke: #7c8794; stroke-width: 1.2; }
+ .bmod { fill: #ffffff; fill-opacity: 0.86; stroke: #15181c; stroke-width: 1.4; }
  .item[data-t] { cursor: help; }
  .modn { font-size: 11px; font-weight: 700; fill: #9aa2ab; letter-spacing: .12em; }
  .modt { font-size: 15px; font-weight: 650; fill: #15181c; }
@@ -837,16 +844,16 @@ canvas — int, px — 5·block + 2·border. Always derived, never specified.</t
  .hd { font-size: 12px; font-weight: 700; fill: #6b7280; letter-spacing: .1em; }
  .hn { font-size: 11px; fill: #9aa2ab; }
  .rule { stroke: #e4e9ee; stroke-width: 1; }
- .bfn { fill: #f7f8fa; stroke: #ccd2d9; stroke-width: 1; }
- .bext { fill: #fdf6e7; stroke: #a8761a; stroke-width: 1; stroke-dasharray: 4 2.5; }
- .bdata { fill: #eff1f4; stroke: #aeb6bf; stroke-width: 1; }
- .bval { fill: #15181c; stroke: #15181c; }
- .bcmd { fill: #ffffff; stroke: #15181c; stroke-width: 1.3; }
- .bthin { fill: #ffffff; stroke: #ccd2d9; stroke-width: 1; }
- .bgrid { fill: #eef2ff; stroke: #1d4ed8; stroke-width: 1.3; }
- .bcol { fill: #fff3ea; stroke: #c2410c; stroke-width: 1.3; }
- .bref { fill: #eef1f5; stroke: #7c8794; stroke-width: 1.2; }
- .bmod { fill: #ffffff; stroke: #15181c; stroke-width: 1.4; }
+ .bfn { fill: #f7f8fa; fill-opacity: 0.86; stroke: #ccd2d9; stroke-width: 1; }
+ .bext { fill: #fdf6e7; fill-opacity: 0.86; stroke: #a8761a; stroke-width: 1; stroke-dasharray: 4 2.5; }
+ .bdata { fill: #eff1f4; fill-opacity: 0.86; stroke: #aeb6bf; stroke-width: 1; }
+ .bval { fill: #15181c; fill-opacity: 0.94; stroke: #15181c; }
+ .bcmd { fill: #ffffff; fill-opacity: 0.86; stroke: #15181c; stroke-width: 1.3; }
+ .bthin { fill: #ffffff; fill-opacity: 0.86; stroke: #ccd2d9; stroke-width: 1; }
+ .bgrid { fill: #eef2ff; fill-opacity: 0.86; stroke: #1d4ed8; stroke-width: 1.3; }
+ .bcol { fill: #fff3ea; fill-opacity: 0.86; stroke: #c2410c; stroke-width: 1.3; }
+ .bref { fill: #eef1f5; fill-opacity: 0.86; stroke: #7c8794; stroke-width: 1.2; }
+ .bmod { fill: #ffffff; fill-opacity: 0.86; stroke: #15181c; stroke-width: 1.4; }
  .item[data-t] { cursor: help; }
  .modn { font-size: 11px; font-weight: 700; fill: #9aa2ab; letter-spacing: .12em; }
  .modt { font-size: 15px; font-weight: 650; fill: #15181c; }
@@ -995,16 +1002,16 @@ rendering — bytes | str — Bytes for one medium, derived from the key. Not pa
  .hd { font-size: 12px; font-weight: 700; fill: #6b7280; letter-spacing: .1em; }
  .hn { font-size: 11px; fill: #9aa2ab; }
  .rule { stroke: #e4e9ee; stroke-width: 1; }
- .bfn { fill: #f7f8fa; stroke: #ccd2d9; stroke-width: 1; }
- .bext { fill: #fdf6e7; stroke: #a8761a; stroke-width: 1; stroke-dasharray: 4 2.5; }
- .bdata { fill: #eff1f4; stroke: #aeb6bf; stroke-width: 1; }
- .bval { fill: #15181c; stroke: #15181c; }
- .bcmd { fill: #ffffff; stroke: #15181c; stroke-width: 1.3; }
- .bthin { fill: #ffffff; stroke: #ccd2d9; stroke-width: 1; }
- .bgrid { fill: #eef2ff; stroke: #1d4ed8; stroke-width: 1.3; }
- .bcol { fill: #fff3ea; stroke: #c2410c; stroke-width: 1.3; }
- .bref { fill: #eef1f5; stroke: #7c8794; stroke-width: 1.2; }
- .bmod { fill: #ffffff; stroke: #15181c; stroke-width: 1.4; }
+ .bfn { fill: #f7f8fa; fill-opacity: 0.86; stroke: #ccd2d9; stroke-width: 1; }
+ .bext { fill: #fdf6e7; fill-opacity: 0.86; stroke: #a8761a; stroke-width: 1; stroke-dasharray: 4 2.5; }
+ .bdata { fill: #eff1f4; fill-opacity: 0.86; stroke: #aeb6bf; stroke-width: 1; }
+ .bval { fill: #15181c; fill-opacity: 0.94; stroke: #15181c; }
+ .bcmd { fill: #ffffff; fill-opacity: 0.86; stroke: #15181c; stroke-width: 1.3; }
+ .bthin { fill: #ffffff; fill-opacity: 0.86; stroke: #ccd2d9; stroke-width: 1; }
+ .bgrid { fill: #eef2ff; fill-opacity: 0.86; stroke: #1d4ed8; stroke-width: 1.3; }
+ .bcol { fill: #fff3ea; fill-opacity: 0.86; stroke: #c2410c; stroke-width: 1.3; }
+ .bref { fill: #eef1f5; fill-opacity: 0.86; stroke: #7c8794; stroke-width: 1.2; }
+ .bmod { fill: #ffffff; fill-opacity: 0.86; stroke: #15181c; stroke-width: 1.4; }
  .item[data-t] { cursor: help; }
  .modn { font-size: 11px; font-weight: 700; fill: #9aa2ab; letter-spacing: .12em; }
  .modt { font-size: 15px; font-weight: 650; fill: #15181c; }
@@ -1241,16 +1248,16 @@ the palette — 9 colours — Nine colours, each anchored on the colour word in 
  .hd { font-size: 12px; font-weight: 700; fill: #6b7280; letter-spacing: .1em; }
  .hn { font-size: 11px; fill: #9aa2ab; }
  .rule { stroke: #e4e9ee; stroke-width: 1; }
- .bfn { fill: #f7f8fa; stroke: #ccd2d9; stroke-width: 1; }
- .bext { fill: #fdf6e7; stroke: #a8761a; stroke-width: 1; stroke-dasharray: 4 2.5; }
- .bdata { fill: #eff1f4; stroke: #aeb6bf; stroke-width: 1; }
- .bval { fill: #15181c; stroke: #15181c; }
- .bcmd { fill: #ffffff; stroke: #15181c; stroke-width: 1.3; }
- .bthin { fill: #ffffff; stroke: #ccd2d9; stroke-width: 1; }
- .bgrid { fill: #eef2ff; stroke: #1d4ed8; stroke-width: 1.3; }
- .bcol { fill: #fff3ea; stroke: #c2410c; stroke-width: 1.3; }
- .bref { fill: #eef1f5; stroke: #7c8794; stroke-width: 1.2; }
- .bmod { fill: #ffffff; stroke: #15181c; stroke-width: 1.4; }
+ .bfn { fill: #f7f8fa; fill-opacity: 0.86; stroke: #ccd2d9; stroke-width: 1; }
+ .bext { fill: #fdf6e7; fill-opacity: 0.86; stroke: #a8761a; stroke-width: 1; stroke-dasharray: 4 2.5; }
+ .bdata { fill: #eff1f4; fill-opacity: 0.86; stroke: #aeb6bf; stroke-width: 1; }
+ .bval { fill: #15181c; fill-opacity: 0.94; stroke: #15181c; }
+ .bcmd { fill: #ffffff; fill-opacity: 0.86; stroke: #15181c; stroke-width: 1.3; }
+ .bthin { fill: #ffffff; fill-opacity: 0.86; stroke: #ccd2d9; stroke-width: 1; }
+ .bgrid { fill: #eef2ff; fill-opacity: 0.86; stroke: #1d4ed8; stroke-width: 1.3; }
+ .bcol { fill: #fff3ea; fill-opacity: 0.86; stroke: #c2410c; stroke-width: 1.3; }
+ .bref { fill: #eef1f5; fill-opacity: 0.86; stroke: #7c8794; stroke-width: 1.2; }
+ .bmod { fill: #ffffff; fill-opacity: 0.86; stroke: #15181c; stroke-width: 1.4; }
  .item[data-t] { cursor: help; }
  .modn { font-size: 11px; font-weight: 700; fill: #9aa2ab; letter-spacing: .12em; }
  .modt { font-size: 15px; font-weight: 650; fill: #15181c; }
@@ -1447,16 +1454,16 @@ prior — file — stem.prior.suffix — the bytes a run replaced, kept one leve
  .hd { font-size: 12px; font-weight: 700; fill: #6b7280; letter-spacing: .1em; }
  .hn { font-size: 11px; fill: #9aa2ab; }
  .rule { stroke: #e4e9ee; stroke-width: 1; }
- .bfn { fill: #f7f8fa; stroke: #ccd2d9; stroke-width: 1; }
- .bext { fill: #fdf6e7; stroke: #a8761a; stroke-width: 1; stroke-dasharray: 4 2.5; }
- .bdata { fill: #eff1f4; stroke: #aeb6bf; stroke-width: 1; }
- .bval { fill: #15181c; stroke: #15181c; }
- .bcmd { fill: #ffffff; stroke: #15181c; stroke-width: 1.3; }
- .bthin { fill: #ffffff; stroke: #ccd2d9; stroke-width: 1; }
- .bgrid { fill: #eef2ff; stroke: #1d4ed8; stroke-width: 1.3; }
- .bcol { fill: #fff3ea; stroke: #c2410c; stroke-width: 1.3; }
- .bref { fill: #eef1f5; stroke: #7c8794; stroke-width: 1.2; }
- .bmod { fill: #ffffff; stroke: #15181c; stroke-width: 1.4; }
+ .bfn { fill: #f7f8fa; fill-opacity: 0.86; stroke: #ccd2d9; stroke-width: 1; }
+ .bext { fill: #fdf6e7; fill-opacity: 0.86; stroke: #a8761a; stroke-width: 1; stroke-dasharray: 4 2.5; }
+ .bdata { fill: #eff1f4; fill-opacity: 0.86; stroke: #aeb6bf; stroke-width: 1; }
+ .bval { fill: #15181c; fill-opacity: 0.94; stroke: #15181c; }
+ .bcmd { fill: #ffffff; fill-opacity: 0.86; stroke: #15181c; stroke-width: 1.3; }
+ .bthin { fill: #ffffff; fill-opacity: 0.86; stroke: #ccd2d9; stroke-width: 1; }
+ .bgrid { fill: #eef2ff; fill-opacity: 0.86; stroke: #1d4ed8; stroke-width: 1.3; }
+ .bcol { fill: #fff3ea; fill-opacity: 0.86; stroke: #c2410c; stroke-width: 1.3; }
+ .bref { fill: #eef1f5; fill-opacity: 0.86; stroke: #7c8794; stroke-width: 1.2; }
+ .bmod { fill: #ffffff; fill-opacity: 0.86; stroke: #15181c; stroke-width: 1.4; }
  .item[data-t] { cursor: help; }
  .modn { font-size: 11px; font-weight: 700; fill: #9aa2ab; letter-spacing: .12em; }
  .modt { font-size: 15px; font-weight: 650; fill: #15181c; }
@@ -1594,16 +1601,16 @@ conforming — bool — Reproduces the grid and the colour of every vector.</tit
  .hd { font-size: 12px; font-weight: 700; fill: #6b7280; letter-spacing: .1em; }
  .hn { font-size: 11px; fill: #9aa2ab; }
  .rule { stroke: #e4e9ee; stroke-width: 1; }
- .bfn { fill: #f7f8fa; stroke: #ccd2d9; stroke-width: 1; }
- .bext { fill: #fdf6e7; stroke: #a8761a; stroke-width: 1; stroke-dasharray: 4 2.5; }
- .bdata { fill: #eff1f4; stroke: #aeb6bf; stroke-width: 1; }
- .bval { fill: #15181c; stroke: #15181c; }
- .bcmd { fill: #ffffff; stroke: #15181c; stroke-width: 1.3; }
- .bthin { fill: #ffffff; stroke: #ccd2d9; stroke-width: 1; }
- .bgrid { fill: #eef2ff; stroke: #1d4ed8; stroke-width: 1.3; }
- .bcol { fill: #fff3ea; stroke: #c2410c; stroke-width: 1.3; }
- .bref { fill: #eef1f5; stroke: #7c8794; stroke-width: 1.2; }
- .bmod { fill: #ffffff; stroke: #15181c; stroke-width: 1.4; }
+ .bfn { fill: #f7f8fa; fill-opacity: 0.86; stroke: #ccd2d9; stroke-width: 1; }
+ .bext { fill: #fdf6e7; fill-opacity: 0.86; stroke: #a8761a; stroke-width: 1; stroke-dasharray: 4 2.5; }
+ .bdata { fill: #eff1f4; fill-opacity: 0.86; stroke: #aeb6bf; stroke-width: 1; }
+ .bval { fill: #15181c; fill-opacity: 0.94; stroke: #15181c; }
+ .bcmd { fill: #ffffff; fill-opacity: 0.86; stroke: #15181c; stroke-width: 1.3; }
+ .bthin { fill: #ffffff; fill-opacity: 0.86; stroke: #ccd2d9; stroke-width: 1; }
+ .bgrid { fill: #eef2ff; fill-opacity: 0.86; stroke: #1d4ed8; stroke-width: 1.3; }
+ .bcol { fill: #fff3ea; fill-opacity: 0.86; stroke: #c2410c; stroke-width: 1.3; }
+ .bref { fill: #eef1f5; fill-opacity: 0.86; stroke: #7c8794; stroke-width: 1.2; }
+ .bmod { fill: #ffffff; fill-opacity: 0.86; stroke: #15181c; stroke-width: 1.4; }
  .item[data-t] { cursor: help; }
  .modn { font-size: 11px; font-weight: 700; fill: #9aa2ab; letter-spacing: .12em; }
  .modt { font-size: 15px; font-weight: 650; fill: #15181c; }
@@ -1715,16 +1722,16 @@ icon theme name — str — &lt;tool prefix&gt;-&lt;short id&gt;. A name resolve
  .hd { font-size: 12px; font-weight: 700; fill: #6b7280; letter-spacing: .1em; }
  .hn { font-size: 11px; fill: #9aa2ab; }
  .rule { stroke: #e4e9ee; stroke-width: 1; }
- .bfn { fill: #f7f8fa; stroke: #ccd2d9; stroke-width: 1; }
- .bext { fill: #fdf6e7; stroke: #a8761a; stroke-width: 1; stroke-dasharray: 4 2.5; }
- .bdata { fill: #eff1f4; stroke: #aeb6bf; stroke-width: 1; }
- .bval { fill: #15181c; stroke: #15181c; }
- .bcmd { fill: #ffffff; stroke: #15181c; stroke-width: 1.3; }
- .bthin { fill: #ffffff; stroke: #ccd2d9; stroke-width: 1; }
- .bgrid { fill: #eef2ff; stroke: #1d4ed8; stroke-width: 1.3; }
- .bcol { fill: #fff3ea; stroke: #c2410c; stroke-width: 1.3; }
- .bref { fill: #eef1f5; stroke: #7c8794; stroke-width: 1.2; }
- .bmod { fill: #ffffff; stroke: #15181c; stroke-width: 1.4; }
+ .bfn { fill: #f7f8fa; fill-opacity: 0.86; stroke: #ccd2d9; stroke-width: 1; }
+ .bext { fill: #fdf6e7; fill-opacity: 0.86; stroke: #a8761a; stroke-width: 1; stroke-dasharray: 4 2.5; }
+ .bdata { fill: #eff1f4; fill-opacity: 0.86; stroke: #aeb6bf; stroke-width: 1; }
+ .bval { fill: #15181c; fill-opacity: 0.94; stroke: #15181c; }
+ .bcmd { fill: #ffffff; fill-opacity: 0.86; stroke: #15181c; stroke-width: 1.3; }
+ .bthin { fill: #ffffff; fill-opacity: 0.86; stroke: #ccd2d9; stroke-width: 1; }
+ .bgrid { fill: #eef2ff; fill-opacity: 0.86; stroke: #1d4ed8; stroke-width: 1.3; }
+ .bcol { fill: #fff3ea; fill-opacity: 0.86; stroke: #c2410c; stroke-width: 1.3; }
+ .bref { fill: #eef1f5; fill-opacity: 0.86; stroke: #7c8794; stroke-width: 1.2; }
+ .bmod { fill: #ffffff; fill-opacity: 0.86; stroke: #15181c; stroke-width: 1.4; }
  .item[data-t] { cursor: help; }
  .modn { font-size: 11px; font-weight: 700; fill: #9aa2ab; letter-spacing: .12em; }
  .modt { font-size: 15px; font-weight: 650; fill: #15181c; }
@@ -1993,3 +2000,5 @@ grid — 5×5 of bool — From digest characters 0–14, drawn down the centre c
 <tr><td class="n"><a href="#i9-6">9.6</a></td><td class="s">check_output(text, vector)</td><td class="w">repository-identicon.py:1349</td></tr>
 <tr><td class="n"><a href="#i9-7">9.7</a></td><td class="s">_normalise_grid(value)</td><td class="w">repository-identicon.py:1333</td></tr>
 <tr><td class="n"><a href="#i9-8">9.8</a></td><td class="s">_cell(value)</td><td class="w">repository-identicon.py:1317</td></tr></tbody></table></section>
+</body>
+</html>

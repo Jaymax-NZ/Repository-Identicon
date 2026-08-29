@@ -35,6 +35,13 @@ GRIDC, COLC = "#1d4ed8", "#c2410c"
 WARN = "#b3261e"
 BANDS = "#e4e9ee"
 
+# **Boxes are drawn over the edges, so they are slightly transparent.** An edge
+# that passes behind a box used to end at its border and start again on the far
+# side, which reads as two edges rather than one crossing. At this much fill a
+# line behind shows as a ghost -- enough to follow, not enough to compete with
+# the text over it. Strokes stay fully opaque so the borders keep their weight.
+BOX_FILL = 0.86
+
 MONO_T, MONO_S, SANS_S = 6.9, 6.02, 5.2
 SIG_H, LINE_H, PAD_T, PAD_B = 15.5, 12.6, 9, 9
 NOTE_LIMIT = 130                      # characters; longer is not one sentence
@@ -668,16 +675,16 @@ STYLE = f"""
  .hd {{ font-size: 12px; font-weight: 700; fill: {MUTED}; letter-spacing: .1em; }}
  .hn {{ font-size: 11px; fill: {FAINT}; }}
  .rule {{ stroke: {BANDS}; stroke-width: 1; }}
- .bfn {{ fill: {BOXF}; stroke: {BOXS}; stroke-width: 1; }}
- .bext {{ fill: {EXTF}; stroke: {EXTS}; stroke-width: 1; stroke-dasharray: 4 2.5; }}
- .bdata {{ fill: {DATF}; stroke: {DATS}; stroke-width: 1; }}
- .bval {{ fill: {VALF}; stroke: {VALF}; }}
- .bcmd {{ fill: #ffffff; stroke: {INK}; stroke-width: 1.3; }}
- .bthin {{ fill: #ffffff; stroke: {BOXS}; stroke-width: 1; }}
- .bgrid {{ fill: #eef2ff; stroke: {GRIDC}; stroke-width: 1.3; }}
- .bcol {{ fill: #fff3ea; stroke: {COLC}; stroke-width: 1.3; }}
- .bref {{ fill: {REFF}; stroke: {REFS}; stroke-width: 1.2; }}
- .bmod {{ fill: #ffffff; stroke: {INK}; stroke-width: 1.4; }}
+ .bfn {{ fill: {BOXF}; fill-opacity: {BOX_FILL}; stroke: {BOXS}; stroke-width: 1; }}
+ .bext {{ fill: {EXTF}; fill-opacity: {BOX_FILL}; stroke: {EXTS}; stroke-width: 1; stroke-dasharray: 4 2.5; }}
+ .bdata {{ fill: {DATF}; fill-opacity: {BOX_FILL}; stroke: {DATS}; stroke-width: 1; }}
+ .bval {{ fill: {VALF}; fill-opacity: 0.94; stroke: {VALF}; }}
+ .bcmd {{ fill: #ffffff; fill-opacity: {BOX_FILL}; stroke: {INK}; stroke-width: 1.3; }}
+ .bthin {{ fill: #ffffff; fill-opacity: {BOX_FILL}; stroke: {BOXS}; stroke-width: 1; }}
+ .bgrid {{ fill: #eef2ff; fill-opacity: {BOX_FILL}; stroke: {GRIDC}; stroke-width: 1.3; }}
+ .bcol {{ fill: #fff3ea; fill-opacity: {BOX_FILL}; stroke: {COLC}; stroke-width: 1.3; }}
+ .bref {{ fill: {REFF}; fill-opacity: {BOX_FILL}; stroke: {REFS}; stroke-width: 1.2; }}
+ .bmod {{ fill: #ffffff; fill-opacity: {BOX_FILL}; stroke: {INK}; stroke-width: 1.4; }}
  .item[data-t] {{ cursor: help; }}
  .modn {{ font-size: 11px; font-weight: 700; fill: {FAINT}; letter-spacing: .12em; }}
  .modt {{ font-size: 15px; font-weight: 650; fill: {INK}; }}
@@ -865,11 +872,22 @@ table.gloss td.ty {{ vertical-align: top; padding-top: 7px; font-weight: 400;
                      white-space: nowrap; padding-right: 16px; }}
 """
 
-doc = ("<title>Repository-Identicon system diagram</title>\n"
-       f"<style>{PAGE_CSS}</style>\n" + "\n".join(body))
+# A whole document rather than a fragment, because this is served over HTTP as
+# well as opened from disk: without the charset a browser is left to guess at
+# the box-drawing characters and the emoji, and without the viewport a phone
+# renders it at desktop width and shrinks it to nothing. Every page sits in an
+# `overflow-x: auto` box, so a narrow screen scrolls a sheet rather than the
+# document.
+doc = ('<!doctype html>\n<html lang="en">\n<head>\n'
+       '<meta charset="utf-8">\n'
+       '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
+       "<title>Repository-Identicon system diagram</title>\n"
+       f"<style>{PAGE_CSS}</style>\n</head>\n<body>\n"
+       + "\n".join(body) + "\n</body>\n</html>\n")
 
 
 target = pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else "system-diagram.html")
+target.parent.mkdir(parents=True, exist_ok=True)
 target.write_text(doc, encoding="utf-8")
 print(f"wrote {target}  pages={len(PAGES)} items={len(rows)} terms={len(TIPS)}")
 for w in WARNINGS:
