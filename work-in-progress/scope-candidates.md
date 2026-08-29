@@ -78,6 +78,7 @@ still work; nothing here needs them.
 | `icon_name` + `ICON_PREFIX` | the XDG icon theme installer | one line of `show` | 3 |
 | `fit_block` | the icon theme, and a terminal's pixel budget | `render --edge` only | 10 |
 | `discriminator` | — | **nothing**; no caller passes `length=6` | 0 |
+| `project_name` | `badge_label`, and the badge overlay behind it | `badge_label`, one line of `show` | 3 |
 
 **`render_ansi` is the one worth arguing about.** It emits
 `\x1b[48;2;r;g;bm` — an escape sequence, addressed to a terminal. The module
@@ -98,6 +99,35 @@ a basename" — and nothing in the tree produces one. It is `short_hash(key, 6)`
 and no call site passes 6. Either something should produce it or the row should
 go; a specification with a name nothing emits is a specification nobody has
 checked.
+
+**`project_name` is a substring, and it reads the wrong string.** It is in
+§ Derived names with the others, but nothing about it is derived: it is
+`os.path.basename(key)`, three lines, and a consumer holding the key already has
+it. Its only real consumer is `badge_label`, whose own consumer — the Konsole
+badge overlay — left; what remains is one line of `show`, printed directly under
+the whole key it is a substring of.
+
+It also takes the **key** rather than the seed, so when the seed contains no `/`
+the fallback returns the whole key, mapping version included:
+
+| key | project name | badge |
+|---|---|---|
+| `0.3:github.com/torvalds/linux` | `linux` | `LI` |
+| `0.3:a` | `0.3:a` | `03` |
+| `0.3:` | `0.3:` | `03` |
+| `0.3:my.project` | `0.3:my.project` | `03` |
+
+Two of those are pinned vectors. Every repository whose seed has no slash gets
+the badge `03` — they all collide, they all show the mapping version instead of
+the project, and they will all change at the next version bump, which is the one
+thing putting the version in the key was meant to stop leaking. A port that
+sensibly takes the basename of the *seed* disagrees with the reference here, so
+the specification's wording is an interoperability trap as well as a bug.
+
+Fixing it is a one-word change in the code and a one-word change in `SPEC.md`
+— the last segment of the *seed*, not the key — and it moves no mark, because
+`vectors.json` pins the grid and the colour and not the names. Worth doing
+whether or not `badge_label` survives; if it does not, both go together.
 
 **`icon_name` is the honest hard case.** `scope-split.md` kept it on the ground
 that § Derived names defines it, so it is the specification's rather than a
