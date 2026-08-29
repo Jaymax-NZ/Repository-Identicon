@@ -100,6 +100,53 @@ and no call site passes 6. Either something should produce it or the row should
 go; a specification with a name nothing emits is a specification nobody has
 checked.
 
+**Nobody here can say what a badge is any more, which is the finding.**
+Konsole draws a small text overlay on a terminal session and calls it a badge.
+This repository used to set it: a `badge` subcommand, `--label` and `--clear`,
+driving `setBadgeText` / `setBadgeEnabled` / `setBadgeColor` over D-Bus. The
+overlay fits one or two characters, so `badge_label` derived them from the
+project name — split on `-`, `_`, `.` and space, initials of the first two
+parts or else the first two characters, upper-cased. That is why this
+repository's own badge is `RI`.
+
+All of it left in `2694526`, *The desktop half leaves*: `cmd_badge`,
+`BADGE_METHODS` and the whole D-Bus route went to `Console-Colophon`.
+`badge_label` stayed behind for one reason — § Derived names had written it
+down.
+
+**Every citation of it is in a section this repository does not implement.**
+There are three: the consumer table in § Why it exists, row "Konsole session
+badge"; § Terminal, which opens "**This section is specified here and
+implemented in `Console-Colophon`**"; and one bullet in § Text about a medium
+that affords a single line. Nothing in scope cites it.
+
+**The precedent is already in the tree, decided the other way.**
+`scope-split.md` called `profile_name` a judgement call and resolved it by
+moving it out with the profile code, because "§ Derived names fixes the short
+id, the icon theme name and the badge label, but says nothing about how a
+terminal emulator names a profile". That sentence is the case for keeping
+`badge_label` — and the only difference between the two names is which document
+happened to mention it first. Not a difference in kind.
+
+**Specify a name when disagreement collides; not when it is cosmetic.**
+`icon_name` earns its clause: two tools writing different filenames into one
+shared icon theme actually break each other, which is why the prefix is left to
+the tool and the short id is fixed. A badge label is the project's own name,
+shortened. Two consumers shortening it differently costs nothing — neither the
+mark nor any identity is inconsistent — and any consumer can do it without being
+told how.
+
+**The honest cost of removing it.** The one-line medium is real and outlives
+Konsole: a tab title, a status field, a prompt segment. Drop `badge_label` and
+the only remaining answer for that case is the tricolour alone, which is three
+double-width cells and carries no pattern. That is a genuine loss, and it is
+small: what is lost is two letters that the consumer already knows, not anything
+derived from the key.
+
+If it goes, it takes `project_name` with it, the badge row out of § Why it
+exists, and the two one-line mentions rewritten to name the tricolour alone.
+`Console-Colophon`, which draws badges, keeps the rule.
+
 **`project_name` is a substring, and it reads the wrong string.** It is in
 § Derived names with the others, but nothing about it is derived: it is
 `os.path.basename(key)`, three lines, and a consumer holding the key already has
