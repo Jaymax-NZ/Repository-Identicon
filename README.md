@@ -80,7 +80,7 @@ Commit the lot. To read the colour anywhere else,
 `$(cat .identicon/repository-identicon.colour)` is the whole integration.
 
 **The key is recorded once and hashed verbatim after that.** It reads
-`1:github.com/owner/repo` — a mapping version, then the seed — and it is the
+`0.3:github.com/owner/repo` — a mapping version, then the seed — and it is the
 one thing the mark depends on. Re-running refreshes the artifacts from it, so a
 better renderer or a different size reaches every repository while leaving the
 identity alone.

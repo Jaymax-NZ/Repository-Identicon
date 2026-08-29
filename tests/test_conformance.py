@@ -47,6 +47,12 @@ def pinned_versions():
     return {identicon.parse_key(v["key"])[0] for v in vectors}
 
 
+# A mapping version this build does not draw, for the tests that need one. It
+# is named rather than computed from `MAPPING_VERSION`, because the version is
+# a label and not a number: there is no "the next one" to add 1 to.
+FOREIGN_VERSION = "9.99"
+
+
 # ---- The vectors and the implementation ----
 
 class TestTheVectorsThemselves(unittest.TestCase):
@@ -84,7 +90,7 @@ class TestTheVectorsThemselves(unittest.TestCase):
             _version, seed = identicon.parse_key(vector["key"])
             self.assertNotEqual(
                 identicon.identicon_grid(vector["key"]),
-                identicon.identicon_grid(f"{identicon.MAPPING_VERSION + 1}:{seed}"),
+                identicon.identicon_grid(f"{FOREIGN_VERSION}:{seed}"),
                 f"{seed}: restamping did not move the grid")
 
 
@@ -397,12 +403,13 @@ class TestTheColourRule(unittest.TestCase):
             self.assertEqual(value, round(value, 4))
 
     def test_a_withdrawn_version_is_refused_rather_than_redrawn(self):
-        """Versions 0 to 2 were drafts and no release carried them, so they are
-        gone. A key stamped at one must raise, not be quietly drawn with
+        """Every earlier rule was a draft and no release carried one, so they
+        are gone -- including the bare `3` this build's rule was renumbered
+        out of. A key stamped at one must raise, not be quietly drawn with
         today's rule -- that would move a mark nobody asked to move, which is
         the failure the stamp exists to prevent."""
         seed = "github.com/justin-maxwell/claude-state-panel"
-        for key in (seed, "0:" + seed, "1:" + seed, "2:" + seed):
+        for key in (seed, "0:" + seed, "1:" + seed, "2:" + seed, "3:" + seed):
             with self.subTest(key=key):
                 with self.assertRaises(identicon.UnknownMappingVersion):
                     identicon.identicon_colour(key)
@@ -412,8 +419,7 @@ class TestTheColourRule(unittest.TestCase):
         else's rule, and guessing at it draws a mark this build cannot vouch
         for."""
         with self.assertRaises(identicon.UnknownMappingVersion):
-            identicon.identicon_colour(
-                f"{identicon.MAPPING_VERSION + 1}:github.com/a/b")
+            identicon.identicon_colour(f"{FOREIGN_VERSION}:github.com/a/b")
 
     def test_there_is_one_of_each(self):
         """One file per artifact -- what one brightness across the wheel buys."""
@@ -836,17 +842,20 @@ class TestTheKeyFileWins(unittest.TestCase):
         """Keys written before the version existed are still out there. They
         must keep drawing what they always drew, and they do because nothing
         is added at hash time."""
-        self.assertEqual((0, self.SEED), identicon.parse_key(self.SEED))
+        self.assertEqual(("0", self.SEED), identicon.parse_key(self.SEED))
         self.assertEqual(identicon._digest(self.SEED),
                          hashlib.md5(self.SEED.encode()).hexdigest())
 
     def test_a_seed_containing_a_colon_is_not_mistaken_for_a_stamp(self):
-        for seed in ("ssh://git@host/x", "C:/src/project", "host:1234/x"):
+        for seed in ("ssh://git@host/x", "C:/src/project", "host:1234/x",
+                     "10.0.0.1:8080/x", "1.2.3.4:22/owner/repo"):
             with self.subTest(seed=seed):
-                self.assertEqual((0, seed), identicon.parse_key(seed))
+                self.assertEqual(("0", seed), identicon.parse_key(seed))
 
     def test_stamping_and_parsing_are_inverses(self):
-        for version in (0, 1, 17):
+        for version in ("0", "1", "17", "0.3", "0.10"):
+            # One dot at most: `1.2.3` is not a version this stamp recognises,
+            # and the key it would make parses as an unstamped seed.
             key = identicon.stamp_key(self.SEED, version)
             self.assertEqual((version, self.SEED), identicon.parse_key(key))
 
@@ -881,14 +890,14 @@ class TestTheKeyFileWins(unittest.TestCase):
         self.assertIsNone(first["mapping_drift"])
 
         with mock.patch.object(identicon, "MAPPING_VERSION",
-                               identicon.MAPPING_VERSION + 1):
+                               FOREIGN_VERSION):
             with self.assertRaises(identicon.UnknownMappingVersion):
                 identicon.install_into_repo(self.tmp, readme=False)
 
     def test_remap_is_what_moves_it_and_keeps_the_seed(self):
         first = identicon.install_into_repo(self.tmp, readme=False)
         with mock.patch.object(identicon, "MAPPING_VERSION",
-                               identicon.MAPPING_VERSION + 1):
+                               FOREIGN_VERSION):
             after = identicon.install_into_repo(self.tmp, remap=True,
                                                 readme=False)
         self.assertEqual(self.SEED, after["seed"])
@@ -901,7 +910,7 @@ class TestTheKeyFileWins(unittest.TestCase):
     def test_remap_under_check_writes_nothing(self):
         first = identicon.install_into_repo(self.tmp, readme=False)
         with mock.patch.object(identicon, "MAPPING_VERSION",
-                               identicon.MAPPING_VERSION + 1):
+                               FOREIGN_VERSION):
             identicon.install_into_repo(self.tmp, remap=True, readme=False,
                                         check=True)
         self.assertEqual(first["key"], identicon.recorded_key(self.tmp))

@@ -391,9 +391,10 @@ def sunk_at(names):
 # wheel.tsv: the wheel
 # ---------------------------------------------------------------------------
 
-# The wheel's own version, which is not the key's mapping version. The mapping
-# version says which colour rule drew a mark; this says which arrangement of
-# tricolours stands over it, and it moves when a tile moves.
+# The wheel's version, which is now also the key's mapping version -- `0.3` in
+# both places, one number for one thing. The colour rule and the arrangement of
+# tricolours standing over the gamut it produces were solved together, so a tile
+# moving and the rule moving are the same event and are numbered once.
 WHEEL_VERSION = "0.3"
 
 WHEEL_TSV = HERE / "wheel.tsv"

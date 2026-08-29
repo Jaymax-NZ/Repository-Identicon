@@ -4,8 +4,13 @@
 composes the sextant lattice. This file is the comparison that settled it and
 is kept as the evidence, not as an open question.
 
+The keys below are the pre-renumbering `3:` spellings, and the marks are the
+ones they drew. `0.3:` is a different string and hashes to a different mark, so
+these no longer match `vectors.json`; what is being compared is the two
+lattices, which the marks are only a carrier for.
+
 Both renderings are lossless: every one below reconstructs its grid exactly,
-checked over all ten pinned vectors. The mark beside each is the same key as
+checked over all ten vectors pinned at the time. The mark beside each is the same key as
 the specification draws it, at the exact 128 px geometry.
 
 Octants are a 2×4 lattice, sextants 2×3. Both put a 5×5 grid in three

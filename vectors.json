@@ -1,124 +1,124 @@
 {
  "vectors": [
   {
-   "key": "3:github.com/justin-maxwell/claude-state-panel",
-   "md5": "eaadb0ab3338706c2a2f919dce467b23",
+   "key": "0.3:github.com/justin-maxwell/claude-state-panel",
+   "md5": "1015ef6009965a402fc380f4fc89fa12",
    "grid": [
-    "01110",
-    "11111",
-    "00100",
-    "10001",
-    "10001"
-   ],
-   "foreground": "#d117c1"
-  },
-  {
-   "key": "3:github.com/justin-maxwell/glyph-hunter",
-   "md5": "e29dffcd59b9a747f65ccfe863b01e17",
-   "grid": [
-    "00100",
-    "01110",
-    "10001",
-    "00000",
-    "10001"
-   ],
-   "foreground": "#bd6700"
-  },
-  {
-   "key": "3:github.com/justin-maxwell/sentry-mcp",
-   "md5": "d3077878ed33ef6f0a4fa63e2728ce77",
-   "grid": [
-    "01010",
     "00000",
     "11111",
-    "01010",
-    "10001"
-   ],
-   "foreground": "#808800"
-  },
-  {
-   "key": "3:github.com/justin-maxwell/markright",
-   "md5": "28d02bedfc80bba8dcf644df5a53274b",
-   "grid": [
-    "10101",
-    "11111",
-    "00000",
-    "00100",
-    "11111"
-   ],
-   "foreground": "#0083e1"
-  },
-  {
-   "key": "3:gitlab.com/justin-maxwell/claude-state-panel",
-   "md5": "6e7d6a2df5d7de41172039727f98d11c",
-   "grid": [
-    "01110",
-    "01110",
-    "00000",
-    "10001",
-    "10101"
-   ],
-   "foreground": "#e3008b"
-  },
-  {
-   "key": "3:github.com/torvalds/linux",
-   "md5": "01053d1478ffd50ca67142a857b9640e",
-   "grid": [
-    "00100",
-    "00000",
-    "01110",
-    "00000",
-    "11011"
-   ],
-   "foreground": "#708d00"
-  },
-  {
-   "key": "3:Code/Projects/MarkRight",
-   "md5": "1e4867dc90934da48989f26b88cfa0e0",
-   "grid": [
-    "00000",
-    "00100",
-    "11111",
-    "00100",
-    "11111"
-   ],
-   "foreground": "#009864"
-  },
-  {
-   "key": "3:/opt/checkouts/Thing",
-   "md5": "5f0aca2afef26e5a5339f5c9a786a765",
-   "grid": [
     "01010",
     "11011",
+    "10101"
+   ],
+   "foreground": "#a63df8"
+  },
+  {
+   "key": "0.3:github.com/justin-maxwell/glyph-hunter",
+   "md5": "9c0b4dd7e461ca7aec77115112d52458",
+   "grid": [
+    "10001",
+    "00100",
+    "10101",
+    "11011",
+    "01110"
+   ],
+   "foreground": "#cf5500"
+  },
+  {
+   "key": "0.3:github.com/justin-maxwell/sentry-mcp",
+   "md5": "a92d47893285e5d86dc7c4375fdfa1d4",
+   "grid": [
+    "10101",
+    "01010",
+    "10101",
+    "00000",
+    "01110"
+   ],
+   "foreground": "#e60080"
+  },
+  {
+   "key": "0.3:github.com/justin-maxwell/markright",
+   "md5": "5b1102c01379612359e54a4cffa6771f",
+   "grid": [
+    "01010",
+    "01010",
+    "11011",
+    "00000",
+    "10101"
+   ],
+   "foreground": "#e40089"
+  },
+  {
+   "key": "0.3:gitlab.com/justin-maxwell/claude-state-panel",
+   "md5": "3c16e6cfaf907fffb8cfa6235485a4cc",
+   "grid": [
+    "01010",
     "11111",
+    "00000",
+    "01110",
+    "00100"
+   ],
+   "foreground": "#af7100"
+  },
+  {
+   "key": "0.3:github.com/torvalds/linux",
+   "md5": "99800112457eb78ce3d27e7bdc9340b5",
+   "grid": [
+    "00000",
+    "10001",
+    "01110",
+    "01110",
+    "10101"
+   ],
+   "foreground": "#a73cf7"
+  },
+  {
+   "key": "0.3:Code/Projects/MarkRight",
+   "md5": "77d7bc6ae85db182b53e93223691c78e",
+   "grid": [
+    "01010",
+    "01010",
+    "01010",
+    "01010",
+    "11011"
+   ],
+   "foreground": "#8d8300"
+  },
+  {
+   "key": "0.3:/opt/checkouts/Thing",
+   "md5": "f0bce237e42c313e22ab730cd6773a81",
+   "grid": [
+    "11011",
+    "10101",
+    "00000",
+    "01110",
+    "01110"
+   ],
+   "foreground": "#8f8200"
+  },
+  {
+   "key": "0.3:",
+   "md5": "10b2ae5354bb4a5b3d4ea74e3718050d",
+   "grid": [
+    "01010",
+    "00100",
+    "10001",
     "10101",
     "01110"
    ],
-   "foreground": "#778b00"
+   "foreground": "#828700"
   },
   {
-   "key": "3:",
-   "md5": "cdee9bf40a070d58d14dfa3bb61e0032",
+   "key": "0.3:a",
+   "md5": "40fcabad9f89be398419f7ff7e173348",
    "grid": [
     "10101",
-    "00000",
-    "11111",
     "01110",
-    "01010"
-   ],
-   "foreground": "#957f00"
-  },
-  {
-   "key": "3:a",
-   "md5": "c9d1139bc4d9b0e5bd7fd4a8e6619398",
-   "grid": [
-    "00100",
     "00000",
-    "00000",
-    "11011",
-    "11011"
+    "10101",
+    "00100"
    ],
-   "foreground": "#908200"
+   "foreground": "#cd1dc8"
   }
  ]
 }
