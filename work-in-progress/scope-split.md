@@ -6,9 +6,29 @@ its own suite; `repository-identicon.py` has lost all thirty of those symbols,
 the eight subcommands that drove them, and `_bg`. `PERMISSIONS.md`, the README
 command list and `SPEC.md` § Derived names are reconciled.
 
-**Step 2 is still open**: `Claude-Colophon` has not taken `emit` and `hooks`.
-That repository exists and vendors the derivation, but carries neither, so
-those five symbols stay here until it does.
+**Step 2 is dead, not pending.** `Claude-Colophon` shipped, and it does not use
+a hook. Its `skills/repo-identicon/repo-identicon.py` is an installer — 33
+routines, a hand-rolled flag parser, no subcommands — and the mark reaches the
+end of a turn because the skill writes a base64 PNG and an instruction into the
+target's `CLAUDE.md`, which Claude reads. There is nothing there for `emit`,
+`hooks`, `payload_cwd`, `open_output` or `RETURN_OF_CONTROL_EVENTS` to attach
+to, and nothing that would have to be rewritten if they went. **What happens to
+those five is now a question about this repository alone**, answered by the rule
+below and not by waiting.
+
+**A worse finding came out of checking.** `Claude-Colophon` vendors the
+derivation and is held to nothing: there is no `vectors.json` beside it and no
+conformance test against one. It has drifted. For
+`github.com/justin-maxwell/claude-colophon` its own skill draws `#d926b8`; this
+build draws `#8d52ff`, which is also what that repository's committed
+`.identicon` holds, because the artifacts there were written by this tool and
+not by the skill that ships to users. It hashes the bare seed, so it is at the
+unstamped version 0 rule — a different grid, not only a different colour.
+
+That is exactly the failure *What `Console-Colophon` has to vendor* below was
+written to prevent, and `Console-Colophon` was checked byte-for-byte across all
+ten vectors before it was trusted. `Claude-Colophon` never was. **Fixing it is
+work in that repository**, and it is not started.
 
 Written because the file had grown three jobs and only one of them is this
 repository's.
@@ -54,16 +74,25 @@ This is the whole of what writes outside the repository. Once it is gone,
 `PERMISSIONS.md`'s claim that "nothing writes outside this repository" becomes
 true of the tool and not just of the test commands.
 
-### To `Claude-Colophon` — the return-of-control hook
+### The return-of-control hook — nowhere to send it
 
 `RETURN_OF_CONTROL_EVENTS`, `payload_cwd`, `open_output`, `cmd_emit`,
-`cmd_hooks`. Five symbols; the hook wiring and nothing else.
+`cmd_hooks`. Five symbols; the hook wiring and nothing else. This section
+proposed sending them to `Claude-Colophon`, which took a different design, so
+there is no recipient.
 
-Note how small this is. The text and inline-image rendering that `emit` uses
-does **not** go with it — `SPEC.md` §§ Renderings, Terminal and Text mandate the
-octants, the emoji triple, and the iTerm2 and kitty protocols, so they are the
-standard and stay here as reference. `Claude-Colophon` vendors them, as the
-README says implementations should.
+The text and inline-image rendering that `emit` uses was never going with them
+in any case — `SPEC.md` §§ Renderings, Terminal and Text mandate the two
+lattices, the tricolour, and the iTerm2 and kitty protocols, so they are the
+standard and stay here as reference.
+
+**`emit` is two jobs welded together, and the rule cuts between them.**
+Printing the mark in a chosen style is a pure function from key to string, so it
+is in; it is also the only command here that prints the terminal renderings at
+all, `show` printing a labelled report and `render` writing image files. Reading
+a cwd out of a hook payload on stdin, writing to `/dev/tty`, and swallowing
+every error to exit 0 are the hook, so they are out. `cmd_hooks` prints a
+registration for `~/.claude/settings.json` and is out entirely.
 
 ### Stays here
 
@@ -133,6 +162,17 @@ that at no point does a working feature exist nowhere:
 1. ~~`Console-Colophon` created, with the vendored core and its own conformance
    test against `vectors.json`.~~ Done. The vendored copy was checked
    byte-for-byte against this implementation across all ten vectors first.
-2. `Claude-Colophon` takes `emit` and `hooks`.
-3. Only then does `repository-identicon.py` lose them, in one commit that also
-   deletes `_bg` and reconciles `PERMISSIONS.md` and the README's command list.
+2. ~~`Claude-Colophon` takes `emit` and `hooks`.~~ Dead. It shipped without a
+   hook, so nothing is waiting and nothing would have to be rewritten.
+3. `repository-identicon.py` drops the hook half of `emit` and the whole of
+   `hooks`, in one commit that also deletes `_bg`. **Undecided**, and it is the
+   only thing this document is still holding.
+
+The ordering rule those three were written to satisfy — that no working feature
+exists nowhere — is met either way now. `Claude-Colophon` delivers a mark at the
+end of every turn; it just does not do it with a hook.
+
+A fourth item, from checking the third: **`Claude-Colophon`'s vendored
+derivation needs a `vectors.json` and a conformance test**, and then needs to be
+brought to mapping version 3. It is drawing different marks than this
+specification does. That is work in that repository, not this one.
