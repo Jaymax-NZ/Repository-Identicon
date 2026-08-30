@@ -416,7 +416,7 @@ Written down so the same ground is not covered twice.
 
 ---
 
-# Two defects found on the way, neither a scope question
+# Three defects found on the way, none a scope question
 
 **`project_name` reads the key where it means the seed.** Table under №1. One
 word in the code and one in `SPEC.md`; it moves no mark. Worth fixing whether or
@@ -426,3 +426,17 @@ not `badge_label` survives — and if it does not, both go together.
 *after* the raise that rules it out, so it is always `None`, and the report
 `cmd_apply` prints from it can never fire. Marked on page 6 of the system
 diagram.
+
+**Two PNGs do not reproduce across machines.** Added 2026-08-30, after this
+branch merged. `apply --check` exits 1 on
+`.identicon/repository-identicon-128.png` and
+`.identicon/repository-identicon@4x.png`; the other eleven artifacts, including
+the key, the grid, the colour and the SVG, are unchanged. The committed bytes
+came from a GitHub runner and this machine writes different ones. The mark is
+not in question — the difference is inside the PNG encoding, most likely the
+zlib compression level, which the writer does not set explicitly. Regenerating
+the two files on either machine moves the mismatch to the next run on the other,
+so the fix is to pin the encoder's settings. `.github/workflows/pages.yml` runs
+on every push to `main`, so it will recur. Logged and left, on Justin's
+instruction: candidate 20 proposes deleting four rasters anyway, and if it
+carries, at least one of these two files stops existing.
