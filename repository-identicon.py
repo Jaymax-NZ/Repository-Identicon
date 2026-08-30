@@ -1664,11 +1664,13 @@ def build_parser():
 
     apply_cmd = sub.add_parser(
         "apply", help="create or update the identicon files in a repository")
-    add_common(apply_cmd, render=True)
-    apply_cmd.add_argument("--block", type=int, default=ARTIFACT_BLOCK,
-                           choices=BLOCKS,
-                           help=f"block size in pixels; default "
-                                f"{ARTIFACT_BLOCK}. The canvas follows.")
+    # `apply` writes the committed artifacts, so it takes no drawing options.
+    # Another chroma, lightness, background or block writes files the committed
+    # `.key` does not derive, and the output is indistinguishable from
+    # conforming output. `render` and `show` keep all four: their output is not
+    # committed.
+    add_common(apply_cmd, render=False)
+    apply_cmd.set_defaults(block=ARTIFACT_BLOCK)
     apply_cmd.add_argument("--check", action="store_true",
                            help="report what would change, write nothing, and "
                                 "exit 1 if not current")
