@@ -11,6 +11,45 @@ accounted for below — 40 terms, 96 names in `repository-identicon.py`, 30 in
 nothing is silently passed over. The lists are checked against the sources: no
 name appears twice, none is invented, and none is missed.
 
+## Decided, 2026-08-30
+
+Justin ruled on every candidate below. The list is no longer a proposal; it is
+a record. What is done is on the `scope-removal` branch.
+
+**Removed:** 1, 2, 3, 4, 5, 6, 7, 10, 12, 13, 15. Candidate 3 went as part of
+§ Derived names, which lost all five of its entries at once. Candidate 6 cost
+more than the estimate: it also took the `edge` parameter on `render_rgba`, its
+branch in `render_png`, and a test class of eight subtests.
+
+**Kept, with the reason:**
+
+| № | what | why it stays |
+|---:|---|---|
+| 9 | both `.sextant` and `.octant` | a viewer will select on how each renders on its system. Two representations is the point, not an accident |
+| 14 | `masking`, now `overridden_remote` | it reports a rename arriving under a pinned seed, which is the situation the August 2026 account rename creates. The name said nothing about what the field holds; the field was never the problem |
+| 16 | the README insertion | kept |
+| 19 | `VERSION` and `--version` | kept; `--version` also prints the mapping version, which is the number a colour bug is actually about |
+| 20 | the four rasters | kept |
+
+**Not yet done, and approved:** 8, `.txt`, on the condition that `.tricolour`,
+`.octant` and `.sextant` all stay. It also means regenerating the four fixture
+directories, so it is a regeneration as well as a deletion.
+
+**Still open:**
+
+- **11**, `.prior.*` — to be reconsidered against how other tools handle a
+  rollback copy, not decided on this list's argument.
+- **17**, the second CLI in `text-identicon.py` — parked. As written it breaks
+  `selftest()`, which is written in `parse_grid`, `parse_hex` and
+  `tricolour_detail`, and breaks `test_its_own_selftest_passes`, which shells
+  out to `--selftest`. It needs the selftest rewritten in other vocabulary
+  first, which is its own piece of work.
+- **18**, `cmd_show` — its premise is now satisfied, since 1, 4 and 5 are gone.
+  Undecided.
+- **21**, `work-in-progress/` — not a deletion. The colour mapping and wheel
+  work moves to its own repository and this one takes the finished outputs.
+  That is a repository split and wants its own branch.
+
 ## The test
 
 Two questions, in this order.
