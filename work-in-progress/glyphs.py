@@ -9,7 +9,7 @@ the selftest.
 glyph as three layers -- a darker rim, the body, a lighter highlight. `⬛` is not
 black at all: it is `#575757` over `#424242` under `#787878`, and `⬜` carries a
 `#bdbdbd` rim, which is exactly why both survive either ground. A sheet drawing
-one flat palette colour per square lies about the thing it exists to show.
+one flat palette colour per glyph lies about the thing it exists to show.
 
 Emitted as ordinary paths rather than as an embedded font subset: COLRv1 support
 varies by renderer, and a sheet that looks right here and wrong in a browser is
@@ -158,9 +158,9 @@ def defs(palette=None):
     defined once and referenced it is a fiftieth of that and identical on the
     page.
 
-    With `palette` -- square name to `#rrggbb` -- only the silhouette is drawn,
+    With `palette` -- colour name to `#rrggbb` -- only the silhouette is drawn,
     filled with the colour given. That renders the developer-weighted average
-    from `emoji-square-colours.md`: one body colour per square, sampled across
+    from `emoji-square-colours.md`: one body colour per glyph, sampled across
     seven vendor sets, with no rim or highlight to average because the vendors
     do not agree on having them. Do not invent a rim from Noto's ratios -- that
     is one vendor's seventh drawn as though it were all of it.

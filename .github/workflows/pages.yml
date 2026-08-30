@@ -1,0 +1,65 @@
+# The system diagram, published.
+#
+# Built from `work-in-progress/system-diagram.mr` on every push rather than
+# copied from the committed HTML, so the page cannot be a version of the
+# diagram nobody generated. The generator is standard library only and reads
+# the two sources for its line numbers, which is why this checks out the whole
+# repository rather than one directory.
+#
+# Enable once, in Settings -> Pages -> Source: GitHub Actions.
+name: pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Least privilege plus what deploy-pages needs: `pages` to publish and
+# `id-token` for the OIDC token it exchanges for permission to do so.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time, and never cancel one in flight: a half-finished
+# publish would leave the site on a version that was never a commit.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Generate the diagram from the MarkRight document
+        run: python3 work-in-progress/system-diagram.py site/index.html
+      - name: Fail on anything the generator reported
+        # The generator writes its warnings to stderr and still produces a
+        # page. A published diagram that overflows a column or points at an
+        # item that no longer exists is worse than no published diagram, so
+        # this re-runs it and refuses to deploy if it says anything.
+        run: |
+          if python3 work-in-progress/system-diagram.py /tmp/check.html 2>&1 >/dev/null \
+               | grep -q .; then
+            echo "::error::the generator reported warnings; not publishing"
+            python3 work-in-progress/system-diagram.py /tmp/check.html >/dev/null
+            exit 1
+          fi
+          echo "no warnings"
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

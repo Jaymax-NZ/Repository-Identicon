@@ -1,4 +1,4 @@
-# Work in progress: which three emoji squares stand for a colour
+# Work in progress: which three of the nine colours stand for a colour
 
 Not adopted. The shipped mapping is still the search in `../text-identicon.py`,
 and nothing here is imported by anything. Committed so it survives the machine.
@@ -11,7 +11,7 @@ two lattices; then this. The tricolour has been the hardest part to settle and
 is the least load-bearing, and those two facts are unrelated.
 
 **It also serves colour-blind readers worst, by construction.** Measured over
-the nine squares as the font paints them, seven of thirty-six pairs collapse
+the nine colours as the font paints them, seven of thirty-six pairs collapse
 under deuteranopia and five under protanopia — see `../SPEC.md`. The grid is
 what carries identity for those readers; the triple is a bonus that does not
 arrive. No amount of hand-placing fixes that, because the channel is hue.
@@ -19,7 +19,7 @@ arrive. No amount of hand-placing fixes that, because the channel is hue.
 ## The artifact
 
 `in-use.tsv` is the answer: sixty-three blocks tiling 0–360 with no gap and no
-overlap, each naming the three squares that stand for that band of hue, inner to
+overlap, each naming the three colours that stand for that band of hue, inner to
 outer. It comes out as sixty-four rows, because the block straddling zero is
 split in two.
 
@@ -85,7 +85,7 @@ still reported, and `wheel.tsv` is untouched.
 
 ### What the widths mean
 
-A block is as wide as the identity it affords. Three distinct squares give six
+A block is as wide as the identity it affords. Three distinct colours give six
 arrangements and eight shape combinations — 48 marks — against a pair's 3×8 and
 three-of-a-kind's 1×8. Eight degrees, four and one price that, and it comes out
 to a constant six marks per degree.
@@ -99,7 +99,7 @@ declare.
 
 **The 8/4/1 pricing overcounts, and this is a real fault rather than a rounding.**
 It assumes eight shape combinations per block, which holds only when all three
-squares are circleable. Black and white never are, so a triple containing one
+colours are circleable. Black and white never are, so a triple containing one
 has four and a triple containing both has two. A three-distinct block with a
 black in it is worth twelve marks and is drawn as wide as one worth forty-eight.
 
@@ -130,14 +130,15 @@ so a dropped line says so instead of silently shifting everything after it.
 ## The findings worth keeping
 
 **Opponency, not span.** The first rule tried was a limit on how far apart two
-squares could sit on the hue circle. It is wrong: red-green is 120 degrees and
+colours could sit on the hue circle. It is wrong: red-green is 120 degrees and
 must be refused, blue-green is *also* 120 degrees and must be allowed. Teal is
 an ordinary colour; reddish-green is not one at all. The check is a short list of
 opponent pairs, and it is biology rather than geometry.
 
-**Hashing an output of the mapping adds nothing to it.** The order of the three
-squares, and which of them are circles, were taken from a hash of `#rrggbb` — so
-that the shipped `.colour` file would be sufficient on its own, which is a real
+**Hashing an output of the mapping adds nothing to it.** The order of the
+three colours, and which of them are circles, were taken from a hash of
+`#rrggbb` — so that the shipped `.colour` file would be sufficient on its own,
+which is a real
 property and was argued for on real grounds. But the colour is what the mapping
 produces, so a channel derived from it cannot separate two projects the mapping
 has already put in the same place: over four thousand projects it yielded fewer
@@ -151,7 +152,7 @@ of the key's digest and already in hand wherever a mark is drawn.
 *names*, so `yellow` is nominally `#ffff00` — a colour no font paints and the
 gamut never reaches, since `identicon.js` fixes saturation at 0.7. Matching a
 70%-saturation target against 100%-saturation anchors forces a compensation
-square onto every colour. Every comparison here is made in the gamut's own terms.
+third onto every colour. Every comparison here is made in the gamut's own terms.
 
 **A checker that only rejects cannot see an absence.** Blue-green went missing
 for three iterations because nothing emitted it, so nothing ever failed. The
@@ -162,17 +163,17 @@ algorithm was choosing. Every one of the 165 has a line saying where it is, so a
 triple missing from the ring is missing because somebody put it in a tier.
 
 **Hue angle, not distance.** Matching a blend to the gamut by Oklab *distance*
-is dominated by lightness, because a blend of three squares is always lighter and
-duller than the gamut. Pale blends were matched to the cyans and dark ones to the
-oranges — `blue blue white` reported 198° when its hue is 282°. A blend's hue is
-its hue: read the Oklab hue angle and match on that.
+is dominated by lightness, because a blend of three colours is always lighter
+and duller than the gamut. Pale blends were matched to the cyans and dark ones
+to the oranges — `blue blue white` reported 198° when its hue is 282°. A
+blend's hue is its hue: read the Oklab hue angle and match on that.
 
 **White does not pull its weight.** A rendered white square is not `#ffffff` —
 it carries a border and the glyph is not a flat field — and beside two saturated
-squares the eye discounts it further, reading it as a lightener rather than as a
-third of the colour. `WHITE_WEIGHT` halves it. That is a calibration against what
-Justin can see, not a claim about optics, and it is the one place in `wheel.py`
-where the model is deliberately not physical.
+neighbours the eye discounts it further, reading it as a lightener rather than
+as a third of the colour. `WHITE_WEIGHT` halves it. That is a calibration
+against what Justin can see, not a claim about optics, and it is the one place
+in `wheel.py` where the model is deliberately not physical.
 
 **Clip-paths are not safe in an SVG anyone else will open.** The trefoil mixes
 were drawn as discs carrying `clip-path="url(#...)"`, which every browser honours

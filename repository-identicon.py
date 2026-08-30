@@ -2,7 +2,7 @@
 """Reference implementation of the repository identicon specification.
 
 A key -- `<mapping version>:host/owner/repo` -- becomes a 5x5 grid and one
-colour, and then the eight files a repository commits. Run
+colour, and then the eleven files a repository commits. Run
 `python3 repository-identicon.py apply` inside a repository.
 
   apply     write .identicon/, and put the mark in the README
@@ -18,8 +18,9 @@ specification; that half lives in Console-Colophon and is reached by vendoring
 this derivation, not by importing it. `work-in-progress/scope-split.md` records
 where each routine went.
 
-`text-identicon.py` must sit beside this file: four of the eight artifacts come
-from its sextant table and emoji palette.
+`text-identicon.py` must sit beside this file: four of the eleven artifacts --
+`.tricolour`, `.sextant`, `.octant` and `.txt` -- come from its lattices and
+emoji palette.
 
 Standard library only. The only subprocess is git, invoked with an argument
 list.
@@ -269,21 +270,28 @@ def resolve_seed(path=None, explicit=None):
 # as a rename. An unstamped key is version 0 and still draws what it always
 # drew. Conformance is unaffected: the reference consumes a digest, and only
 # the string being digested changed.
-MAPPING_VERSION = 3
+#
+# **It is a dotted string, and the leading zero is load-bearing.** The colour
+# rule and the wheel it was drawn from are one thing numbered once, and the `0.`
+# says the numbering is still pre-release: while it holds, a rule that is
+# withdrawn goes, and the vectors go with it. The version is compared for
+# equality and never ordered, so nothing here has to decide whether `0.10`
+# follows `0.9`.
+MAPPING_VERSION = "0.3"
 
-# **Three version numbers, and they count different things.**
+# **Two version numbers, and they count different things.**
 #
 #   VERSION          this tool, as a release. Nothing is released.
-#   MAPPING_VERSION  the colour rule, stamped into every key. An integer,
-#                    because the key format is `<digits>:seed`.
-#   wheel version    which tricolours stand over the gamut, in
-#                    `work-in-progress/wheel.tsv`. Currently 0.3, and not read
-#                    by this file at all.
+#   MAPPING_VERSION  the colour rule, stamped into every key -- and the wheel
+#                    of tricolours in `work-in-progress/wheel.tsv` that stands
+#                    over the same gamut. One number, so the two cannot drift.
 VERSION = "0.0.build"
 
-# `<digits>:` and nothing else, anchored, so a seed that happens to contain a
-# colon -- a scheme, a Windows path -- is never mistaken for a stamped key.
-KEY_STAMP = re.compile(r"^([0-9]+):(.*)$", re.DOTALL)
+# `<digits>` or `<digits>.<digits>`, then a colon, anchored -- so a seed that
+# happens to contain a colon is never mistaken for a stamped key. One dot at
+# most, which is what keeps a bare address out: `C:/src/x`, `host:1234/x` and
+# `10.0.0.1:8080/x` all fail to match, and an IPv4 host always has three dots.
+KEY_STAMP = re.compile(r"^([0-9]+(?:\.[0-9]+)?):(.*)$", re.DOTALL)
 
 
 def stamp_key(seed, version=None):
@@ -298,15 +306,20 @@ def stamp_key(seed, version=None):
 
 
 def parse_key(key):
-    """Split a key into (mapping_version, seed).
+    """Split a key into (mapping_version, seed), both strings.
 
-    An unstamped key is version 0 -- the mapping that existed before the
+    An unstamped key is version `"0"` -- the mapping that existed before the
     version did -- and is its own seed.
+
+    The version is kept as it was written rather than parsed into a number:
+    `"0.3"` is a label on a rule, the only question ever asked of it is whether
+    it is this build's, and a key stamped `"03"` is a different key because the
+    string being hashed is different.
     """
     match = KEY_STAMP.match(key)
     if not match:
-        return 0, key
-    return int(match.group(1)), match.group(2)
+        return "0", key
+    return match.group(1), match.group(2)
 
 
 def _digest(key):
@@ -398,9 +411,9 @@ MARK_CHROMA = 0.26
 # ---- The hue draw, compressed around blue-green ----
 #
 # **Every hue still exists; what changes is how many projects land on one.** The
-# draw off the digest is uniform over the circle, but the emoji-square
-# vocabulary has nothing between green and blue, so every mixture of the two
-# reads at essentially one hue. That is a fact about the palette, not about the
+# draw off the digest is uniform over the circle, but the emoji palette has no
+# colour between green and blue, so every mixture of the two reads at
+# essentially one hue. That is a fact about the palette, not about the
 # colour, and it cannot be fixed by placement -- see
 # `work-in-progress/README.md`.
 #
@@ -508,9 +521,13 @@ def identicon_colour(key, chroma=MARK_CHROMA, lightness=MARK_LIGHTNESS):
     chroma capped.
 
     **No rule that reaches a release retires; a draft may be withdrawn.**
-    Versions 0 to 2 were drafts -- HSL, then Oklab without the warp -- and no
-    release carried them, so they are gone. Once `VERSION` leaves `0.0.*` this
-    stops being true and every shipped rule has to stay.
+    Every rule so far has been a draft -- HSL, then Oklab without the warp,
+    then the warped ring under the bare integer `3` -- and no release carried
+    any of them, so they are gone. The rule drawn here is that third one
+    renumbered to `0.3`, taking the number the wheel it was drawn from already
+    carried; the rule is unchanged and the marks are not, because the version
+    is inside the string being hashed. Once `VERSION` leaves `0.0.*` this stops
+    being true and every shipped rule has to stay.
 
     A key stamped at a version this build does not draw is refused rather than
     redrawn: drawing it with today's rule would move a mark without anyone
@@ -871,7 +888,7 @@ def artifact_bytes(key, block=ARTIFACT_BLOCK, **render_kwargs):
     inside a blob, and `$(cat …/*.colour)` has to stay a cat.
 
     **The text rendering is written in parts and whole.** `.tricolour` is the
-    three emoji squares, `.sextant` and `.octant` are the pattern on each
+    three emoji, `.sextant` and `.octant` are the pattern on each
     lattice, and `.txt` is the sextant lattice with the tricolour ending its
     lower line. A consumer that wants the mark runs `cat` on `.txt`; one that
     is building a line of its own -- a prompt, a tab title, a status field --
@@ -1251,9 +1268,6 @@ def cmd_apply(args):
 # The plan had been for `Claude-Colophon` to take them. It shipped without a
 # hook at all -- the skill writes an instruction into the target's CLAUDE.md and
 # Claude reads it -- so nothing was ever going to call this.
-    print("The Phase 0 probe is registered on these events too. Check for a")
-    print("collision before adding these, per the README.")
-    return 0
 
 
 # ---- Conformance validator ----

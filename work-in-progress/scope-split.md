@@ -207,5 +207,5 @@ different constraint has no way to say so.
 
 A fourth item, from checking the third: **`Claude-Colophon`'s vendored
 derivation needs a `vectors.json` and a conformance test**, and then needs to be
-brought to mapping version 3. It is drawing different marks than this
+brought to mapping version 0.3. It is drawing different marks than this
 specification does. That is work in that repository, not this one.

@@ -10,10 +10,16 @@ stripped -- but Unicode block glyphs and colour emoji survive.
 The two parts have names, and they are the names of the artifacts each one is
 written to. The pattern is drawn on a **lattice** -- `sextant` on the 2x3 set,
 `octant` on the 2x4 -- three characters by two lines either way, carrying the
-whole 5x5 grid. The **tricolour** is the colour: three emoji squares. The
-tricolour terminates the mark rather than opening it, because an emoji is a
-full character cell tall and so sits flush beside the line that is full of
-grid.
+whole 5x5 grid. The **tricolour** is the colour: three colours drawn from a
+palette of nine, one emoji each. The tricolour terminates the mark rather than
+opening it, because an emoji is a full character cell tall and so sits flush
+beside the line that is full of grid.
+
+**A palette entry is a colour, not a square.** It is drawn as a square here
+because that is the only shape this file emits, but which shape carries a
+colour is a separate decision from which colours are chosen -- square and
+circle are peers, settled after the colours are -- so nothing below calls a
+palette entry a square.
 
 Both lattices are written. They differ in how tall the mark stands and in how
 likely a font is to have the glyphs, not in what they can carry, so which one
@@ -174,9 +180,10 @@ def sextant(grid):
 # ---------------------------------------------------------------------------
 # The palette
 #
-# Unicode names each square by a colour word, and that word is the definition.
-# Red, green and blue take the RGB primaries. Orange, purple and brown have no
-# primary reading and take their CSS named-colour values.
+# Each colour is anchored on the colour word in the name of the character that
+# carries it, and that word is the definition. Red, green and blue take the RGB
+# primaries. Orange, purple and brown have no primary reading and take their CSS
+# named-colour values.
 #
 # The name is the anchor, never the installed font: LARGE BLUE SQUARE is
 # `#0000FF` whatever a font paints it (the Noto here paints Material Blue 700
@@ -247,8 +254,8 @@ def parse_hex(value):
     return tuple(int(text[i:i + 2], 16) for i in (0, 2, 4))
 
 
-def nearest_square(rgb):
-    """Index into PALETTE of the single square closest to `rgb`.
+def nearest_colour(rgb):
+    """Index into PALETTE of the single palette colour closest to `rgb`.
 
     Ties break towards the lower index, so the choice is fixed rather than
     left to whatever `min` happens to do.
@@ -261,20 +268,20 @@ def nearest_square(rgb):
 def chosen_indices(rgb):
     """The three PALETTE indices for `rgb`, ascending.
 
-    The nearest single square twice, plus whichever third square brings the
+    The nearest single colour twice, plus whichever third colour brings the
     linear-light mean closest to the target. When the target *is* a palette
     colour the third is the base again, so canonical colours land on three of
     a kind without that being written down anywhere.
 
-    The nearest square is used twice deliberately. Choosing freely from all 165
-    mixtures -- every multiset of three drawn from nine squares, C(11,3) --
+    The nearest colour is used twice deliberately. Choosing freely from all 165
+    mixtures -- every multiset of three drawn from nine colours, C(11,3) --
     minimises error but reads badly, because the eye reads the majority rather
     than averaging: yellow-green `#d5d926` is closest to RED YELLOW GREEN, a
     muddle, where constraining it to YELLOW YELLOW BLACK costs 0.02 mean dE
     across the hue circle and is obviously yellow.
     """
     target = _oklab(tuple(_linear(v) for v in rgb))
-    base = nearest_square(rgb)
+    base = nearest_colour(rgb)
     best, best_odd = None, None
     for odd in range(len(PALETTE)):
         distance = math.dist(_oklab(_mix((base, base, odd))), target)
@@ -286,8 +293,8 @@ def chosen_indices(rgb):
 # ---------------------------------------------------------------------------
 # Arrangement
 #
-# Which squares is a function of the colour; what order is a function of the
-# grid. Two inputs, and they must stay two.
+# Which colours is a function of the colour asked for; what order is a function
+# of the grid. Two inputs, and they must stay two.
 # ---------------------------------------------------------------------------
 
 def grid_bits(grid):
@@ -304,25 +311,25 @@ def grid_bits(grid):
 
 
 def arrange(indices, grid):
-    """Order the chosen squares, deterministically, from the grid.
+    """Order the chosen colours, deterministically, from the grid.
 
-    `triple_indices` picks *which* squares; this picks the order they are laid
+    `chosen_indices` picks *which* colours; this picks the order they are laid
     out in, and the two carry different information.
 
-    **Why order at all.** Which squares to use is a question about fidelity, and
+    **Why order at all.** Which colours to use is a question about fidelity, and
     fidelity is what limits spread: neighbouring colours must choose the same
-    squares, or the choice would not be tracking the colour. Measured over the
+    ones, or the choice would not be tracking the colour. Measured over the
     whole 1074-colour gamut that leaves about 17 distinguishable triples, and
     the arithmetic is unforgiving -- eight projects collide 85% of the time.
-    Choosing squares more cleverly cannot help. Selecting freely from all 165
+    Choosing colours more cleverly cannot help. Selecting freely from all 165
     combinations rather than constraining to a majority *improves* mean error
     to 0.0393 from 0.0597 and yet leaves spread slightly worse, at 16.5
     effective against 17.5, because both are answering the same question about
     the same one-dimensional gamut.
 
     Order answers a different question, and costs nothing to the first. The same
-    three squares in a different arrangement are the same colours, mixing to the
-    same result, named by the same Unicode names: no arrangement renders the
+    three colours in a different arrangement are still the same colours, mixing
+    to the same result, named the same way: no arrangement renders the
     colour worse than another. So it is free to carry identity, and it roughly
     triples the spread -- 67 distinct arrangements, 49.8 effective.
 
@@ -392,7 +399,7 @@ def tricolour_detail(rgb, grid):
         "arranged": arranged,
         "emoji": "".join(PALETTE[i][0] for i in arranged),
         "names": tuple(PALETTE[i][1] for i in arranged),
-        "base": PALETTE[nearest_square(rgb)][1],
+        "base": PALETTE[nearest_colour(rgb)][1],
         "mix_hex": hex_colour(tuple(_encode(v) for v in mix)),
         "delta_e": math.dist(_oklab(mix), target),
     }
@@ -460,7 +467,7 @@ def selftest():
                               (0b111111, "FULL BLOCK")):
             assert unicodedata.name(SEXTANTS[pattern]) == name, pattern
 
-    # Every canonical colour is three of its own square, with no special case.
+    # Every canonical colour is three of itself, with no special case.
     # Three of a kind has one arrangement, so the grid cannot change it.
     sample_grid = parse_grid(".#.#.,.#.#.,#...#,#.#.#,.#.#.")
     for index, (char, name, _, rgb) in enumerate(PALETTE):
@@ -484,7 +491,7 @@ def selftest():
         assert sorted(arranged) == sorted(indices), (rgb, indices, arranged)
         assert arrange(indices, sample_grid) == arranged, "not deterministic"
 
-    # The squares come from the colour alone, and the two sample grids differ.
+    # The colours come from the target alone, and the two sample grids differ.
     other = parse_grid("#####,.....,#####,.....,#####")
     assert (chosen_indices((0x26, 0x92, 0xD9))
             == chosen_indices(parse_hex("#2692d9")))
@@ -511,7 +518,7 @@ def selftest():
 
     # One mark pinned whole on each lattice, so a change to a table, a padding
     # or the arrangement has to be written down here before it can ship. The
-    # squares are green, blue, blue by fidelity; the order comes from the grid,
+    # colours are green, blue, blue by fidelity; the order comes from the grid,
     # so both lattices carry the same tricolour.
     grid = parse_grid(".#.#.,.#.#.,#...#,#.#.#,.#.#.")
     for lattice, expected in (

@@ -51,7 +51,7 @@ nothing else.
 The key is the **mapping version, a colon, and the seed**:
 
 ```
-key = "1:" + seed          e.g. "1:github.com/owner/repo"
+key = "0.3:" + seed        e.g. "0.3:github.com/owner/repo"
 ```
 
 The **seed** identifies the project and is resolved as below. The **mapping
@@ -61,13 +61,21 @@ An implementation MUST hash the key **exactly as recorded**, prefix included,
 and MUST NOT add, strip or rewrite the prefix at hash time. Everything below
 follows from that one rule.
 
-A key with no `<digits>:` prefix is **mapping version 0** and is its own seed.
+A key with no version prefix is **mapping version `0`** and is its own seed.
 Version 0 is the derivation that existed before the version did, so an
 unstamped key hashes to itself and still produces the mark it always produced.
-An implementation MUST recognise the prefix only when it is a run of decimal
-digits followed by a colon at the very start of the key, so that a seed
-containing a colon — `ssh://…`, `C:/src/x`, `host:1234/x` — is never mistaken
-for a stamped one.
+
+A version is **a run of decimal digits, optionally followed by a dot and a
+second run** — `0`, `3`, `0.3`, `0.10`. An implementation MUST recognise the
+prefix only in that form, followed by a colon at the very start of the key, so
+that a seed containing a colon — `ssh://…`, `C:/src/x`, `host:1234/x`,
+`10.0.0.1:8080/x` — is never mistaken for a stamped one. One dot at most is
+what keeps a bare address out, since an IPv4 host carries three.
+
+A version is **a label, compared for equality and never ordered.** An
+implementation MUST NOT parse it as a number, and MUST treat `03`, `3` and
+`0.3` as three different versions: the prefix is part of the string being
+hashed, so two spellings are two different keys and two different marks.
 
 ### Why the version is in the key, and not in the seed
 
@@ -240,10 +248,18 @@ hue = hexval(h[-7:]) / 0xfffffff * 360      degrees, the last seven hex chars
 repositories are seeded at it and it is theirs; an implementation MUST keep
 drawing it, and MUST keep its vectors.
 
-**Before a release, a rule is a draft and may be withdrawn.** Versions 0 to 2
-were drafts — the reference's HSL, then Oklab without the warp — and no release
-carried them, so they are gone along with their vectors. An implementation MUST
+**Before a release, a rule is a draft and may be withdrawn.** Versions `0`,
+`1`, `2` and the bare `3` were drafts — the reference's HSL, then Oklab without
+the warp, then the warped ring under a bare integer — and no release carried
+any of them, so they are gone along with their vectors. An implementation MUST
 NOT reproduce them.
+
+**Version `0.3` is that fourth draft renumbered, and the rule is unchanged.**
+It takes the number the wheel it was solved against already carried, so the
+colour rule and the wheel of emoji triples standing over the same gamut are one
+thing numbered once. Renumbering is not a rule change, but it *is* a mark
+change, because the version is inside the string being hashed — which is why it
+is a withdrawal and a re-issue rather than an edit.
 
 **A key stamped at a version the implementation does not draw MUST be refused,
 not redrawn.** Drawing it with whatever rule is to hand moves a mark nobody
@@ -253,7 +269,7 @@ should name `remap` as the way across.
 The current release state is in `VERSION` in the reference implementation. While
 it reads `0.0.*`, the mapping is a draft and only the current rule exists.
 
-### Version 3, the only rule
+### Version 0.3, the only rule
 
 Two steps: warp the drawn value into a hue, then build the colour at that hue.
 
@@ -280,9 +296,9 @@ quarter of the projects its width would otherwise give it. Measured over the
 whole draw, the hundred degrees from 165 to 265 fall from 27.8% of projects to
 11.0%.
 
-**Why that arc.** The emoji-square fallback has no square between green and
+**Why that arc.** The emoji fallback's palette has no colour between green and
 blue, so every mixture of the two reads at essentially one hue and whole bands
-there cannot be named at all. That is a property of the vocabulary and cannot be
+there cannot be named at all. That is a property of the palette and cannot be
 fixed by choosing better triples. Spending less of the draw there puts the
 projects saved where the fallback can tell them apart, at no cost to the other
 renderings, which could always draw the colour exactly.
@@ -347,9 +363,9 @@ unportable.
 The pattern rule — the centre-out hex-character walk — and the seven-character
 hue draw are taken from **`stewartlord/identicon.js`**, vendored at
 `reference/vendor/identicon.js` and pinned by `vectors.json`. So are `0.7` and
-`0.5`, which is why version 0 and 1 look the way they do.
+`0.5`, which is why versions 0 and 1 look the way they do.
 
-**The version 2 and 3 colour rules are not.** They are this project's own, and
+**The version 2 and 0.3 colour rules are not.** They are this project's own, and
 the vendored library cannot produce them. The library still generates the
 digests and the grids in `vectors.json`, so the pattern remains pinned by an
 implementation nobody here wrote; the colour column is generated by the
@@ -369,11 +385,11 @@ shipped, and the committed identicon disagreed with its own specification until
 this was reconciled.
 
 The corollary is that the inherited values are not defended, only recorded.
-Version 2's and 3's are the opposite: chosen, and defended above.
+Version 2's and 0.3's are the opposite: chosen, and defended above.
 
-**Version 3's three constants are the ones the wheel was solved against**, and
+**Version 0.3's three constants are the ones the wheel was solved against**, and
 the wheel is the argument for them: `work-in-progress/wheel.tsv` places all 165
-triples of the emoji-square fallback against the gamut, and the arc this warp
+triples of the emoji fallback against the gamut, and the arc this warp
 compresses is the one where that vocabulary has nothing to say. They are a
 judgement about a fallback rendering, made by eye, and they are recorded as such
 rather than derived.
@@ -392,9 +408,9 @@ So under versions 0 and 1 roughly a fifth of all projects land in the 100–130
 band that occupies about six degrees of perceptual space, while the teal to blue
 stretch runs at about half its share. Version 2 removes both.
 
-**Version 3 makes the draw deliberately uneven again, which is not a reversal of
-that.** Version 2's defect was that equal draw bought unequal *colour*; the
-spacing was an accident of HSL and nobody chose it. Version 3 keeps the even
+**Version 0.3 makes the draw deliberately uneven again, which is not a reversal
+of that.** Version 2's defect was that equal draw bought unequal *colour*; the
+spacing was an accident of HSL and nobody chose it. Version 0.3 keeps the even
 perceptual spacing and then spends the draw unevenly on purpose, for a stated
 reason, in a stated place. An accident corrected and a choice made are different
 things even when the measured histogram looks similar.
@@ -475,7 +491,7 @@ what the mark was made from; it is what the mark is made from.
 .identicon/repository-identicon.svg            vector, same geometry
 .identicon/repository-identicon.colour         "#rrggbb\n", nothing else
 .identicon/repository-identicon.grid           five lines of "01010"
-.identicon/repository-identicon.tricolour      three emoji squares, the colour
+.identicon/repository-identicon.tricolour      three emoji, the colour
 .identicon/repository-identicon.sextant        the pattern on the 2×3 lattice
 .identicon/repository-identicon.octant         the pattern on the 2×4 lattice
 .identicon/repository-identicon.txt            .sextant and .tricolour, composed
@@ -748,7 +764,7 @@ mark is the message.
 ### Text, the fallback
 
 **The text rendering is two lines of block characters carrying the pattern,
-with three emoji squares carrying the colour.** The two parts are not
+with three emoji carrying the colour.** The two parts are not
 alternatives to each other and there is no useful intermediate.
 
 Why it comes out that way, since each constraint rules something out:
@@ -761,8 +777,8 @@ Why it comes out that way, since each constraint rules something out:
 - **The block characters are monochrome, and that is where colour has to come
   from.** The grid is one glyph per four or six cells, so a cell is not
   separately addressable and a foreground colour would tint the whole mark
-  rather than the pattern within it. The colour therefore rides in the emoji
-  squares, not in an escape sequence.
+  rather than the pattern within it. The colour therefore rides in the
+  tricolour, not in an escape sequence.
 - **Per-cell true-colour blocks are not worth pursuing.** It would mean one
   character per cell to make cells individually colourable, which is a 5×5 block
   of double-width glyphs — larger than the image it is standing in for, in a
@@ -820,14 +836,22 @@ Three caveats an implementation must handle rather than discover:
   wrong exclusion set it produces plausible, wrong glyphs, and past U+1CDE5 it
   walks into pictograms.
 
-#### Emoji squares, carrying the colour
+#### The tricolour, carrying the colour
 
 **The whole text rendering is a patch for when the identicon proper cannot be
 emitted.** Where an image can be sent, send the image: it is the grid, at full
 colour, in one glyph's worth of attention. Everything below is standing in for
-that, and the tricolour is the part standing in for 24 bits of colour with nine
-named squares — a lossy paraphrase that costs three double-width columns and
-carries semantic weight a coloured pattern does not.
+that, and the tricolour is the part standing in for 24 bits of colour with a
+palette of nine named colours — a lossy paraphrase that costs three
+double-width columns and carries semantic weight a coloured pattern does not.
+
+**A palette entry is a colour, not a square.** Each is drawn as one emoji, and
+the character an implementation emits today is the `LARGE … SQUARE` for that
+colour. But which shape carries a colour is a separate question from which
+colours are chosen, and square and circle are peers within it — see the shape
+bullet under *Colour vision*. So this section says *colour* wherever a choice
+among the nine is being made, and *square* only where the shape itself is the
+subject.
 
 It is nonetheless *the* colour channel here rather than a third-tier fallback,
 because both lattices are monochrome and nothing else can carry it. Palette of
@@ -843,10 +867,10 @@ $ python3 text-identicon.py --octant '#2692d9' '01010,01010,10001,10101,01010'
 𜶆𜶂🯦 🟦🟩🟦
 ```
 
-**Which three squares appear is a function of the colour; what order they appear
-in is a function of the grid.** Both are needed, and a caller rendering an
-identicon holds both, so `text-identicon.py` still takes a colour and a grid and
-nothing else — no key and no digest of its own.
+**Which three colours appear is a function of the colour; what order they
+appear in is a function of the grid.** Both are needed, and a caller rendering
+an identicon holds both, so `text-identicon.py` still takes a colour and a grid
+and nothing else — no key and no digest of its own.
 
 The order is the low digit of the grid's fifteen bits, read as a number: columns
 0–2 of each row, top to bottom, left to right, since columns 3 and 4 are the
@@ -862,12 +886,13 @@ projects it produced fewer distinct marks than there were distinct colours. The
 grid is fifteen bits of the key's digest, drawn from a slice disjoint from the
 hue's, so the order now separates projects that share a colour.
 
-**Which three squares stand for a colour is not yet normative.** The shipped
+**Which three of the nine stand for a colour is not yet normative.** The shipped
 chooser searches the palette for the mix nearest the target, which produces
 combinations that are numerically close and perceptually wrong. A replacement is
-settled but not adopted: `work-in-progress/in-use.tsv` is a hand-placed table of
-fifty arcs tiling 0–360, each naming its three squares, with `work-in-progress/`
-carrying how it was arrived at. It will land here, with vectors, once it ships.
+settled but not adopted: `work-in-progress/in-use.tsv` is a hand-placed table
+of fifty arcs tiling 0–360, each naming its three colours, with
+`work-in-progress/` carrying how it was arrived at. It will land here, with
+vectors, once it ships.
 
 #### Colour vision, stated plainly
 
@@ -877,8 +902,9 @@ is not a defect to be argued away; it is the cost of a channel whose entire job
 is to carry a hue through a medium that will not carry one.
 
 Simulating dichromatic vision (Viénot, Brettel and Mollon 1999) over the nine
-squares **as the emoji font actually paints them**, and calling a pair confusable
-below 0.10 in Oklab: all 36 pairs are distinct for normal trichromatic vision;
+colours **as the emoji font actually paints them**, and calling a pair
+confusable below 0.10 in Oklab: all 36 pairs are distinct for normal
+trichromatic vision;
 **7 pairs collapse under deuteranopia, 5 under protanopia, 4 under tritanopia.**
 
 | | worst collapses |
@@ -896,7 +922,7 @@ doing the work:
 - **Colour is never the only channel.** The grid is the identity; either lattice
   carries it with no colour at all, and it comes first. A reader who cannot
   separate red from green still has the full 5×5 pattern.
-- **Order is a channel, and it is colour-blind.** Which squares appear answers
+- **Order is a channel, and it is colour-blind.** Which three appear answers
   *what colour*; the order they appear in is separate information that survives
   any colour deficiency intact. It comes from the grid, so it is independent of
   the colour rather than derived from it — which is what makes it a second
@@ -916,4 +942,4 @@ identity and is legible with no colour at all, which is the property that lets
 this degrade at all.
 
 There is no colour-depth negotiation in this rendering: both lattices are
-monochrome by construction and the colour lives in the squares.
+monochrome by construction and the colour lives in the tricolour.

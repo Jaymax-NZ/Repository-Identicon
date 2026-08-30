@@ -46,9 +46,10 @@ would move somebody's mark.
 
 That changes at the first release. No rule that reaches a release ever retires,
 so from then on a port implements every released rule and picks by the version
-in the key, and `vectors.json` keeps the vectors for each. Versions 0 to 2 were
-drafts and have been withdrawn; if you seeded a repository from one of those
-builds, `remap` moves it.
+in the key, and `vectors.json` keeps the vectors for each. Versions 0, 1, 2 and
+the bare 3 were drafts and have been withdrawn — 3 is the rule drawn today,
+re-issued as 0.3 — so if you seeded a repository from one of those builds,
+`remap` moves it.
 
 The digest and the grid are the same rule at every version, so a port that
 hashes what it is handed gets those for free.

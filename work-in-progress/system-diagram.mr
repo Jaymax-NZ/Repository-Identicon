@@ -21,14 +21,12 @@
 ┊┊┊ ┄ ⸖ $hands=4
 ┊┊┊ ┄ ⸖ $carries=colour
 ┋┋ ━ RENDERING
+┊┊┊ ┄ ⸆ one key, eleven files
 ┊┊┊ ┄ ⸖ $fn=m4
 ┊┊┊ ┄ ⸖ $module=4
-┊┊┊ ┄ ⸆ one key, six media
 ┊┊┊ ┄ ⸖ $hands=5
 ┊┊┊ ┄ ⸖ $carries=grid
 ┊┊┊ ┄ ⸖ $hands=6
-┊┊┊ ┄ ⸖ $carries=calls
-┊┊┊ ┄ ⸖ $hands=7
 ┊┊┊ ┄ ⸖ $carries=calls
 ┋┋ ━ NAMES & GEOMETRY
 ┊┊┊ ┄ ⸖ $fn=m3
@@ -42,14 +40,14 @@
 ┊┊┊ ┄ ⸖ $fn=m6
 ┊┊┊ ┄ ⸖ $module=6
 ┊┊┊ ┄ ⸆ `apply` — what this is for
-┋┋ ━ AT THE END OF A TURN
+┋┋ ━ GONE: THE TERMINAL HALF
+┊┊┊ ┄ ⸆ `emit`, `hooks`, the escapes
 ┊┊┊ ┄ ⸖ $fn=m7
 ┊┊┊ ┄ ⸖ $module=7
-┊┊┊ ┄ ⸆ `emit`; → Claude-Colophon
-┋┋ ━ GONE TO CONSOLE-COLOPHON
+┋┋ ━ GONE: THE DESKTOP HALF
+┊┊┊ ┄ ⸆ Konsole and D-Bus
 ┊┊┊ ┄ ⸖ $fn=m8
 ┊┊┊ ┄ ⸖ $module=8
-┊┊┊ ┄ ⸆ the desktop half, removed
 ┋┋ ━ CONFORMANCE
 ┊┊┊ ┄ ⸖ $fn=m9
 ┊┊┊ ┄ ⸖ $module=9
@@ -59,25 +57,25 @@
 ┊┊ ┄ ⸆ what the command line offers, and what each one is for
 ┋┋ ━ The dispatcher
 ┋┋┋ ━ main(argv)
+┊┊┊┊ ┄ ⸆ Builds five subparsers, runs the one asked for, and turns a stranded repository into exit 1.
 ┊┊┊┊ ┄ ⸖ $number=0.1
 ┊┊┊┊ ┄ ⸖ $fn=main
 ┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:1780
-┊┊┊┊ ┄ ⸆ Builds every subparser, runs the one asked for, and maps two exceptions to exit 1.
+┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:1548
 ┋┋┋┋ ━ returns
 ┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋ ━ the subcommand's exit status
 ┋┋┋ ━ _key_from_args → _resolve_from_args
+┊┊┊┊ ┄ ⸆ add_common() gives the path commands --seed, and the drawing ones --chroma, --lightness and --background.
 ┊┊┊┊ ┄ ⸖ $signature=→ resolve_key_for(path, seed)
 ┊┊┊┊ ┄ ⸖ $number=0.2
 ┊┊┊┊ ┄ ⸖ $fn=argh
 ┊┊┊┊ ┄ ⸖ $kind=thin
-┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:1273
-┊┊┊┊ ┄ ⸆ add_common() gives every subparser the same --seed, --chroma and --lightness options.
+┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:1146
 ┋┋┋┋ ━ returns
 ┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋ ━ (key, source) for the path a command was given
-┋┋ ━ The seven commands
+┋┋ ━ The five commands
 ┋┋┋ ━ ● apply
 ┊┊┊┊ ┄ ⸖ $number=0.3
 ┊┊┊┊ ┄ ⸖ $fn=c_apply
@@ -85,7 +83,7 @@
 ┊┊┊┊ ┄ ⸆ Creates and adds the .identicon assets to the repository.
 ┋┋┋┋ ━ effects
 ┊┊┊┊┊ ┄ ⸖ $role=effects
-┋┋┋┋┋ ━ writes .identicon/, eight files
+┋┋┋┋┋ ━ writes .identicon/, twelve files
 ┋┋┋┋┋ ━ adds one line to README.md, once
 ┊┊┊┊ ┄ ⸖ $drives=6
 ┋┋┋ ━ ● show
@@ -108,25 +106,8 @@
 ┊┊┊┊ ┄ ⸖ $drives=1
 ┊┊┊┊ ┄ ⸖ $drives=3
 ┊┊┊┊ ┄ ⸖ $drives=4
-┋┋┋ ━ ● emit
-┊┊┊┊ ┄ ⸖ $number=0.6
-┊┊┊┊ ┄ ⸖ $fn=c_emit
-┊┊┊┊ ┄ ⸖ $kind=cmd
-┊┊┊┊ ┄ ⸆ Prints the identicon when control returns to you.
-┋┋┋┋ ━ effects
-┊┊┊┊┊ ┄ ⸖ $role=effects
-┋┋┋┋┋ ━ writes to the terminal
-┊┊┊┊ ┄ ⸖ $drives=1
-┊┊┊┊ ┄ ⸖ $drives=4
-┊┊┊┊ ┄ ⸖ $drives=7
-┋┋┋ ━ hooks
-┊┊┊┊ ┄ ⸖ $number=0.7
-┊┊┊┊ ┄ ⸖ $fn=c_hooks
-┊┊┊┊ ┄ ⸖ $kind=cmd
-┊┊┊┊ ┄ ⸆ Prints the hook registration to paste into settings.
-┊┊┊┊ ┄ ⸖ $drives=7
 ┋┋┋ ━ validate
-┊┊┊┊ ┄ ⸖ $number=0.8
+┊┊┊┊ ┄ ⸖ $number=0.6
 ┊┊┊┊ ┄ ⸖ $fn=c_validate
 ┊┊┊┊ ┄ ⸖ $kind=cmd
 ┊┊┊┊ ┄ ⸆ Checks another implementation against the pinned vectors.
@@ -135,7 +116,7 @@
 ┋┋┋┋┋ ━ runs the command you name
 ┊┊┊┊ ┄ ⸖ $drives=9
 ┋┋┋ ━ ● doctor
-┊┊┊┊ ┄ ⸖ $number=0.9
+┊┊┊┊ ┄ ⸖ $number=0.7
 ┊┊┊┊ ┄ ⸖ $fn=c_doctor
 ┊┊┊┊ ┄ ⸖ $kind=cmd
 ┊┊┊┊ ┄ ⸆ Reports the environment this tool depends on.
@@ -150,10 +131,10 @@
 ┊┊┊ ┄ ⸆ the key, and nothing else, decides the mark
 ┋┋┋ ━ WHAT DRAWS WITH IT
 ┋┋┋┋ ━ → c_show
+┊┊┊┊┊ ┄ ⸆ and render · doctor
 ┊┊┊┊┊ ┄ ⸖ $fn=r_cmds
 ┊┊┊┊┊ ┄ ⸖ $offpage=in
 ┊┊┊┊┊ ┄ ⸖ $target=c_show
-┊┊┊┊┊ ┄ ⸆ and render · emit · doctor
 ┊┊┊┊┊ ┄ ⸖ $edge=resolve_key_for
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
@@ -161,7 +142,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=1.1
 ┊┊┊┊┊ ┄ ⸖ $fn=resolve_key_for
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:1013
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:869
 ┊┊┊┊┊ ┄ ⸆ The one entry point for every command that needs a key.
 ┊┊┊┊┊ ┄ ⸖ $term=key
 ┊┊┊┊┊ ┄ ⸖ $term=recorded key
@@ -196,7 +177,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=1.2
 ┊┊┊┊┊ ┄ ⸖ $fn=recorded_key
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:1001
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:857
 ┊┊┊┊┊ ┄ ⸆ Reads the first line of the key file that is neither blank nor a # comment.
 ┊┊┊┊┊ ┄ ⸖ $term=recorded key
 ┊┊┊┊┊ ┄ ⸖ $term=the key file
@@ -210,7 +191,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=1.3
 ┊┊┊┊┊ ┄ ⸖ $fn=key_path
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:975
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:831
 ┊┊┊┊┊ ┄ ⸆ Names the file without opening it.
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
@@ -219,10 +200,10 @@
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=io
 ┋┋┋┋ ━ .identicon/repository-identicon.key
+┊┊┊┊┊ ┄ ⸆ 0.3:github.com/owner/repo
 ┊┊┊┊┊ ┄ ⸖ $number=1.4
 ┊┊┊┊┊ ┄ ⸖ $fn=f_keyfile
 ┊┊┊┊┊ ┄ ⸖ $kind=ext
-┊┊┊┊┊ ┄ ⸆ 3:github.com/owner/repo
 ┊┊┊┊┊ ┄ ⸖ $term=the key file
 ┊┊┊┊┊ ┄ ⸖ $term=key
 ┋┋┋ ━ DERIVING A SEED, WHEN NOTHING IS RECORDED
@@ -230,7 +211,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=1.5
 ┊┊┊┊┊ ┄ ⸖ $fn=resolve_seed
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:220
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:227
 ┊┊┊┊┊ ┄ ⸆ Tries each source in turn, most specific first, and says which one answered.
 ┊┊┊┊┊ ┄ ⸖ $term=seed
 ┊┊┊┊┊ ┄ ⸖ $term=source
@@ -254,7 +235,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=1.6
 ┊┊┊┊┊ ┄ ⸖ $fn=override_seed
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:200
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:207
 ┊┊┊┊┊ ┄ ⸆ The current filename wins; a legacy one is honoured only where it is absent.
 ┊┊┊┊┊ ┄ ⸖ $term=override
 ┋┋┋┋┋ ━ returns
@@ -274,7 +255,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=1.8
 ┊┊┊┊┊ ┄ ⸖ $fn=repo_toplevel
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:180
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:187
 ┊┊┊┊┊ ┄ ⸆ Returns the worktree's own root, which differs between worktrees of one repository.
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
@@ -286,7 +267,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=1.9
 ┊┊┊┊┊ ┄ ⸖ $fn=repo_remote_url
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:189
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:196
 ┊┊┊┊┊ ┄ ⸆ Prefers origin, then whichever remote is listed first.
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
@@ -301,7 +282,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=1.10
 ┊┊┊┊┊ ┄ ⸖ $fn=_git
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:161
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:168
 ┊┊┊┊┊ ┄ ⸆ The only subprocess this repository runs.
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
@@ -319,7 +300,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=1.12
 ┊┊┊┊┊ ┄ ⸖ $fn=normalise_remote_url
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:115
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:122
 ┊┊┊┊┊ ┄ ⸆ Accepts ssh, https and scp-like URLs, with or without a port, token or .git.
 ┊┊┊┊┊ ┄ ⸖ $term=seed
 ┋┋┋┋┋ ━ returns
@@ -332,7 +313,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=1.13
 ┊┊┊┊┊ ┄ ⸖ $fn=normalise_seed
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:100
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:107
 ┊┊┊┊┊ ┄ ⸆ Used where the directory is not a repository.
 ┊┊┊┊┊ ┄ ⸖ $term=seed
 ┋┋┋┋┋ ━ returns
@@ -342,7 +323,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=1.14
 ┊┊┊┊┊ ┄ ⸖ $fn=stamp_key
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:283
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:297
 ┊┊┊┊┊ ┄ ⸆ Reads MAPPING_VERSION at call time, not at import.
 ┊┊┊┊┊ ┄ ⸖ $term=key
 ┊┊┊┊┊ ┄ ⸖ $term=seed
@@ -354,11 +335,11 @@
 ┊┊┊┊┊ ┄ ⸖ $sides=rl
 ┊┊┊┊┊ ┄ ⸖ $carries=value
 ┋┋┋┋ ━ parse_key(key)
+┊┊┊┊┊ ┄ ⸆ Matches digits and at most one dot before the colon, so a colon inside a seed is not a stamp.
 ┊┊┊┊┊ ┄ ⸖ $number=1.15
 ┊┊┊┊┊ ┄ ⸖ $fn=parse_key
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:294
-┊┊┊┊┊ ┄ ⸆ Matches `^digits:` only, so a colon inside a seed is not read as a stamp.
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:308
 ┊┊┊┊┊ ┄ ⸖ $term=key
 ┊┊┊┊┊ ┄ ⸖ $term=seed
 ┊┊┊┊┊ ┄ ⸖ $term=mapping version
@@ -377,7 +358,7 @@
 ┊┊┊┊┊ ┄ ⸖ $term=mapping version
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ “3:github.com/owner/repo”
+┋┋┋┋┋┋ ━ “0.3:github.com/owner/repo”
 ┊┊┊┊┊ ┄ ⸖ $edge=r_digest
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=value
@@ -398,7 +379,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=1.17
 ┊┊┊┊┊ ┄ ⸖ $fn=cmd_doctor
 ┊┊┊┊┊ ┄ ⸖ $kind=data
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:1651
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:1438
 ┊┊┊┊┊ ┄ ⸆ Reports what this tool needs that is not in this file, and writes nothing.
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
@@ -419,7 +400,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=2.1
 ┊┊┊┊┊ ┄ ⸖ $fn=_digest
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:306
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:325
 ┊┊┊┊┊ ┄ ⸆ Returns hex characters, not bytes: the grid and the hue index them directly.
 ┊┊┊┊┊ ┄ ⸖ $term=key
 ┋┋┋┋┋ ━ returns
@@ -435,7 +416,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=2.2
 ┊┊┊┊┊ ┄ ⸖ $fn=identicon_grid
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:316
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:335
 ┊┊┊┊┊ ┄ ⸆ Conforms to stewartlord/identicon.js, and is pinned in vectors.json.
 ┊┊┊┊┊ ┄ ⸖ $term=grid
 ┊┊┊┊┊ ┄ ⸖ $term=vector
@@ -449,7 +430,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=2.3
 ┊┊┊┊┊ ┄ ⸖ $fn=identicon_hue
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:349
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:368
 ┊┊┊┊┊ ┄ ⸆ Reads the last seven characters of the same digest the grid uses.
 ┊┊┊┊┊ ┄ ⸖ $term=hue
 ┊┊┊┊┊ ┄ ⸖ $term=grid
@@ -464,7 +445,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=2.4
 ┊┊┊┊┊ ┄ ⸖ $fn=warp_hue
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:431
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:450
 ┊┊┊┊┊ ┄ ⸆ Advances the hue faster through 165°–265°, so fewer projects land there.
 ┊┊┊┊┊ ┄ ⸖ $term=the warp
 ┊┊┊┊┊ ┄ ⸖ $term=hue
@@ -479,7 +460,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=2.5
 ┊┊┊┊┊ ┄ ⸖ $fn=gamut_chroma
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:472
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:491
 ┊┊┊┊┊ ┄ ⸆ Bisects with fixed bounds and 30 fixed steps, rounded to four decimals.
 ┊┊┊┊┊ ┄ ⸖ $term=gamut chroma
 ┊┊┊┊┊ ┄ ⸖ $term=lightness / chroma
@@ -497,7 +478,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=2.6
 ┊┊┊┊┊ ┄ ⸖ $fn=_oklch_to_linear
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:455
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:474
 ┊┊┊┊┊ ┄ ⸆ Returns unclamped channels, so the caller can test the range.
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
@@ -509,7 +490,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=2.7
 ┊┊┊┊┊ ┄ ⸖ $fn=_encode
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:486
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:505
 ┊┊┊┊┊ ┄ ⸆ Rounds half up, not half to even.
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
@@ -523,7 +504,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=2.8
 ┊┊┊┊┊ ┄ ⸖ $fn=identicon_colour
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:498
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:517
 ┊┊┊┊┊ ┄ ⸆ Refuses a key stamped at a mapping version this build does not draw.
 ┊┊┊┊┊ ┄ ⸖ $term=key
 ┊┊┊┊┊ ┄ ⸖ $term=mapping version
@@ -545,7 +526,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=2.9
 ┊┊┊┊┊ ┄ ⸖ $fn=UnknownMappingVersion
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:494
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:513
 ┊┊┊┊┊ ┄ ⸆ main() catches it and prints `apply --remap`.
 ┊┊┊┊┊ ┄ ⸖ $term=mapping version
 ┊┊┊┊┊ ┄ ⸖ $term=reseed / remap
@@ -556,7 +537,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=2.10
 ┊┊┊┊┊ ┄ ⸖ $fn=_colour_for
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:526
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:549
 ┊┊┊┊┊ ┄ ⸆ Reads chroma and lightness from render kwargs that may carry neither.
 ┊┊┊┊┊ ┄ ⸖ $term=lightness / chroma
 ┋┋┋┋┋ ━ returns
@@ -602,7 +583,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=2.13
 ┊┊┊┊┊ ┄ ⸖ $fn=grid_text
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:338
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:357
 ┊┊┊┊┊ ┄ ⸆ The spelling vectors.json and the .grid asset both use.
 ┊┊┊┊┊ ┄ ⸖ $term=grid
 ┊┊┊┊┊ ┄ ⸖ $term=artifact
@@ -616,7 +597,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=2.14
 ┊┊┊┊┊ ┄ ⸖ $fn=hex_colour
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:539
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:562
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ #rrggbb
@@ -650,7 +631,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=3.1
 ┊┊┊┊┊ ┄ ⸖ $fn=short_hash
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:543
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:566
 ┊┊┊┊┊ ┄ ⸆ Returns sha256 of the key, not the md5 the mark is drawn from.
 ┊┊┊┊┊ ┄ ⸖ $term=short id
 ┊┊┊┊┊ ┄ ⸖ $term=discriminator
@@ -665,11 +646,11 @@
 ┊┊┊┊┊ ┄ ⸖ $sides=rr
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
 ┋┋┋┋ ━ project_name(key)
+┊┊┊┊┊ ┄ ⸆ Used by badge_label, and printed by `show`.
 ┊┊┊┊┊ ┄ ⸖ $number=3.2
 ┊┊┊┊┊ ┄ ⸖ $fn=project_name
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:552
-┊┊┊┊┊ ┄ ⸆ Used by badge_label, and printed by the banner and line styles.
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:575
 ┊┊┊┊┊ ┄ ⸖ $term=project name
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
@@ -681,7 +662,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=3.3
 ┊┊┊┊┊ ┄ ⸖ $fn=badge_label
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:557
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:580
 ┊┊┊┊┊ ┄ ⸆ Initials where the name has separators, otherwise the leading characters.
 ┊┊┊┊┊ ┄ ⸖ $term=badge label
 ┊┊┊┊┊ ┄ ⸖ $term=project name
@@ -692,7 +673,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=3.4
 ┊┊┊┊┊ ┄ ⸖ $fn=icon_name
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:547
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:570
 ┊┊┊┊┊ ┄ ⸆ Formats the icon theme name. Nothing in this repository installs icons.
 ┊┊┊┊┊ ┄ ⸖ $term=icon theme name
 ┊┊┊┊┊ ┄ ⸖ $term=short id
@@ -705,7 +686,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=3.5
 ┊┊┊┊┊ ┄ ⸖ $fn=canvas_edge
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:582
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:605
 ┊┊┊┊┊ ┄ ⸆ The canvas is always derived from the block, never the reverse.
 ┊┊┊┊┊ ┄ ⸖ $term=block
 ┊┊┊┊┊ ┄ ⸖ $term=border
@@ -717,7 +698,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=3.6
 ┊┊┊┊┊ ┄ ⸖ $fn=fit_block
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:593
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:616
 ┊┊┊┊┊ ┄ ⸆ Used where the canvas size is fixed by something else.
 ┊┊┊┊┊ ┄ ⸖ $term=fitting
 ┊┊┊┊┊ ┄ ⸖ $term=canvas
@@ -728,7 +709,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=3.7
 ┊┊┊┊┊ ┄ ⸖ $fn=large_geometry
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:71
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:78
 ┊┊┊┊┊ ┄ ⸆ Raises unless the canvas is a multiple of 32.
 ┊┊┊┊┊ ┄ ⸖ $term=block
 ┊┊┊┊┊ ┄ ⸖ $term=border
@@ -753,96 +734,28 @@
 ┊┊┊┊┊ ┄ ⸖ $offpage=out
 ┊┊┊┊┊ ┄ ⸖ $target=render_rgba
 ┊┊┊┊┊ ┄ ⸆ canvas_edge sizes the canvas
-┋┋┋┋ ━ → render_inline
-┊┊┊┊┊ ┄ ⸖ $fn=r_inline4
-┊┊┊┊┊ ┄ ⸖ $offpage=out
-┊┊┊┊┊ ┄ ⸖ $target=render_inline
-┊┊┊┊┊ ┄ ⸆ fit_block fits 40 px
 ┋┋┋┋ ━ → artifact_bytes
 ┊┊┊┊┊ ┄ ⸖ $fn=r_bytes6
 ┊┊┊┊┊ ┄ ⸖ $offpage=out
 ┊┊┊┊┊ ┄ ⸖ $target=artifact_bytes
 ┊┊┊┊┊ ┄ ⸆ large_geometry sizes 128 and 256
-┋┋┋┋ ━ → render_banner
-┊┊┊┊┊ ┄ ⸖ $fn=r_banner4
-┊┊┊┊┊ ┄ ⸖ $offpage=out
-┊┊┊┊┊ ┄ ⸖ $target=render_banner
-┊┊┊┊┊ ┄ ⸆ project_name labels the banner
-┋┋ ━ Rendering
-┊┊┊ ┄ ⸖ $page=4
-┊┊┊ ┄ ⸆ one key, six media — every part of this stays in this repository
-┋┋┋ ━ CHOOSING WHAT TO SEND
-┋┋┋┋ ━ → c_emit
-┊┊┊┊┊ ┄ ⸖ $fn=r_emit4
+┋┋┋┋ ━ → c_render
+┊┊┊┊┊ ┄ ⸖ $fn=r_render3
 ┊┊┊┊┊ ┄ ⸖ $offpage=in
-┊┊┊┊┊ ┄ ⸖ $target=c_emit
-┊┊┊┊┊ ┄ ⸆ emit · render · show · doctor
-┊┊┊┊┊ ┄ ⸖ $edge=render
+┊┊┊┊┊ ┄ ⸖ $target=c_render
+┊┊┊┊┊ ┄ ⸆ fit_block fits --edge
+┋┋ ━ Rendering
+┊┊┊ ┄ ⸆ one key, five kinds of bytes — and the line § Scope draws just past them
+┊┊┊ ┄ ⸖ $page=4
+┋┋┋ ━ WHAT ASKS FOR BYTES
+┋┋┋┋ ━ → c_render
+┊┊┊┊┊ ┄ ⸖ $fn=r_cmds4
+┊┊┊┊┊ ┄ ⸖ $offpage=in
+┊┊┊┊┊ ┄ ⸖ $target=c_render
+┊┊┊┊┊ ┄ ⸆ render · apply · show · doctor
+┊┊┊┊┊ ┄ ⸖ $edge=render_png
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
-┋┋┋┋ ━ render(key, style, source, depth,
-┊┊┊┊┊ ┄ ⸖ $signature=protocol, size)
-┊┊┊┊┊ ┄ ⸖ $number=4.1
-┊┊┊┊┊ ┄ ⸖ $fn=render
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:899
-┊┊┊┊┊ ┄ ⸆ Dispatches on style, and falls back from an inline image to the text mark.
-┊┊┊┊┊ ┄ ⸖ $term=style
-┊┊┊┊┊ ┄ ⸖ $term=rendering
-┊┊┊┊┊ ┄ ⸖ $term=protocol
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ everything to write, newline included
-┊┊┊┊┊ ┄ ⸖ $edge=resolve_colour_depth
-┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=calls
-┊┊┊┊┊ ┄ ⸖ $edge=render_inline
-┊┊┊┊┊ ┄ ⸖ $sides=rl
-┊┊┊┊┊ ┄ ⸖ $carries=calls
-┊┊┊┊┊ ┄ ⸖ $edge=render_ansi
-┊┊┊┊┊ ┄ ⸖ $sides=rl
-┊┊┊┊┊ ┄ ⸖ $carries=calls
-┊┊┊┊┊ ┄ ⸖ $edge=render_text
-┊┊┊┊┊ ┄ ⸖ $sides=rl
-┊┊┊┊┊ ┄ ⸖ $carries=calls
-┊┊┊┊┊ ┄ ⸖ $edge=render_banner
-┊┊┊┊┊ ┄ ⸖ $sides=rl
-┊┊┊┊┊ ┄ ⸖ $carries=calls
-┊┊┊┊┊ ┄ ⸖ $edge=render_line
-┊┊┊┊┊ ┄ ⸖ $sides=rl
-┊┊┊┊┊ ┄ ⸖ $carries=calls
-┋┋┋┋ ━ resolve_colour_depth(requested, environ)
-┊┊┊┊┊ ┄ ⸖ $number=4.2
-┊┊┊┊┊ ┄ ⸖ $fn=resolve_colour_depth
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:716
-┊┊┊┊┊ ┄ ⸆ NO_COLOR wins over everything, per no-color.org.
-┊┊┊┊┊ ┄ ⸖ $term=depth
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ truecolor, 256 or none
-┊┊┊┊┊ ┄ ⸖ $edge=resolve_protocol
-┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=weak dashed
-┋┋┋┋ ━ resolve_protocol(requested, environ)
-┊┊┊┊┊ ┄ ⸖ $number=4.3
-┊┊┊┊┊ ┄ ⸖ $fn=resolve_protocol
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:834
-┊┊┊┊┊ ┄ ⸆ Reads the environment. It never queries the terminal.
-┊┊┊┊┊ ┄ ⸖ $term=protocol
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ iterm2, kitty or text
-┊┊┊┊┊ ┄ ⸖ $edge=env
-┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=io
-┋┋┋┋ ━ the environment
-┊┊┊┊┊ ┄ ⸖ $number=4.4
-┊┊┊┊┊ ┄ ⸖ $fn=env
-┊┊┊┊┊ ┄ ⸖ $kind=ext
-┊┊┊┊┊ ┄ ⸆ NO_COLOR · COLORTERM · TERM · KITTY_WINDOW_ID
-┊┊┊┊┊ ┄ ⸆ KONSOLE_* · TERM_PROGRAM
 ┋┋┋┋ ━ → v_grid
 ┊┊┊┊┊ ┄ ⸖ $fn=r_grid4
 ┊┊┊┊┊ ┄ ⸖ $offpage=in
@@ -854,50 +767,28 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=render_svg
 ┊┊┊┊┊ ┄ ⸖ $sides=rl
 ┊┊┊┊┊ ┄ ⸖ $carries=grid
-┋┋┋ ━ PIXELS
-┋┋┋┋ ━ render_inline(key, protocol, size=40)
-┊┊┊┊┊ ┄ ⸖ $number=4.5
-┊┊┊┊┊ ┄ ⸖ $fn=render_inline
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:878
-┊┊┊┊┊ ┄ ⸆ Returns None for the text protocol.
-┊┊┊┊┊ ┄ ⸖ $term=protocol
+┋┋┋┋ ━ where § Scope cuts
+┊┊┊┊┊ ┄ ⸖ $number=4.1
+┊┊┊┊┊ ┄ ⸖ $fn=scope_line
+┊┊┊┊┊ ┄ ⸖ $kind=data
+┊┊┊┊┊ ┄ ⸆ in   a key to bytes — the raster, the vector, both
+┊┊┊┊┊ ┄ ⸆      lattices, the tricolour, and the line they compose
+┊┊┊┊┊ ┄ ⸆ out  addressing those bytes to a terminal: the iTerm2
+┊┊┊┊┊ ┄ ⸆      and kitty protocols, the ANSI foregrounds, and the
+┊┊┊┊┊ ┄ ⸆      environment sniffing that chose between them
+┊┊┊┊┊ ┄ ⸆ Every routine here is a pure function of the key.
+┊┊┊┊┊ ┄ ⸆ Nothing on this page reads the environment.
 ┊┊┊┊┊ ┄ ⸖ $term=rendering
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ an escape sequence, or None
-┊┊┊┊┊ ┄ ⸖ $edge=iterm2_image
-┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=calls
-┊┊┊┊┊ ┄ ⸖ $edge=render_png
-┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=calls
-┋┋┋┋ ━ iterm2_image(png)
-┊┊┊┊┊ ┄ ⸖ $number=4.6
-┊┊┊┊┊ ┄ ⸖ $fn=iterm2_image
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:855
-┊┊┊┊┊ ┄ ⸆ Base64 in OSC 1337. No argument may contain a colon.
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ an OSC 1337 sequence
-┊┊┊┊┊ ┄ ⸖ $edge=kitty_image
-┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=weak dashed
-┋┋┋┋ ━ kitty_image(png, chunk_size=4096)
-┊┊┊┊┊ ┄ ⸖ $number=4.7
-┊┊┊┊┊ ┄ ⸖ $fn=kitty_image
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:866
-┊┊┊┊┊ ┄ ⸆ Base64 in APC _G, chunked at 4096 characters.
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ one or more APC _G sequences
+┊┊┊┊┊ ┄ ⸖ $term=style
+┋┋┋ ━ PIXELS
 ┋┋┋┋ ━ render_png(key, block, **kwargs)
-┊┊┊┊┊ ┄ ⸖ $number=4.8
+┊┊┊┊┊ ┄ ⸖ $number=4.2
 ┊┊┊┊┊ ┄ ⸖ $fn=render_png
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:665
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:688
+┊┊┊┊┊ ┄ ⸆ Derives the canvas from the block unless a caller fixed one.
+┊┊┊┊┊ ┄ ⸖ $term=canvas
+┊┊┊┊┊ ┄ ⸖ $term=block
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ PNG bytes
@@ -906,10 +797,10 @@
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
 ┋┋┋┋ ━ render_rgba(key, block, border, chroma,
 ┊┊┊┊┊ ┄ ⸖ $signature=lightness, background, edge)
-┊┊┊┊┊ ┄ ⸖ $number=4.9
+┊┊┊┊┊ ┄ ⸖ $number=4.3
 ┊┊┊┊┊ ┄ ⸖ $fn=render_rgba
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:605
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:628
 ┊┊┊┊┊ ┄ ⸆ `edge` pads the grid into a canvas the caller did not choose.
 ┊┊┊┊┊ ┄ ⸖ $term=block
 ┊┊┊┊┊ ┄ ⸖ $term=border
@@ -922,20 +813,20 @@
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
 ┋┋┋┋ ━ encode_png(rgba, width, height)
-┊┊┊┊┊ ┄ ⸖ $number=4.10
+┊┊┊┊┊ ┄ ⸖ $number=4.4
 ┊┊┊┊┊ ┄ ⸖ $fn=encode_png
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:652
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:675
 ┊┊┊┊┊ ┄ ⸆ Writes IHDR, IDAT and IEND, at zlib level 9.
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ PNG bytes
 ┋┋┋┋ ━ render_svg(key, block, border, chroma,
 ┊┊┊┊┊ ┄ ⸖ $signature=lightness, background)
-┊┊┊┊┊ ┄ ⸖ $number=4.11
+┊┊┊┊┊ ┄ ⸖ $number=4.5
 ┊┊┊┊┊ ┄ ⸖ $fn=render_svg
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:670
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:693
 ┊┊┊┊┊ ┄ ⸆ One <rect> per foreground cell, at the same geometry as the raster.
 ┊┊┊┊┊ ┄ ⸖ $term=canvas
 ┊┊┊┊┊ ┄ ⸖ $term=block
@@ -943,80 +834,25 @@
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ an SVG document
 ┋┋┋ ━ CHARACTERS
+┊┊┊┊ ┄ ⸆ The lattices and the tricolour are next door, in text-identicon.py, and reach a file through artifact_bytes rather than through anything here.
 ┋┋┋┋ ━ render_ansi(key)
-┊┊┊┊┊ ┄ ⸖ $number=4.12
+┊┊┊┊┊ ┄ ⸖ $number=4.6
 ┊┊┊┊┊ ┄ ⸖ $fn=render_ansi
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:695
-┊┊┊┊┊ ┄ ⸆ Two spaces per cell on a background colour.
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:718
+┊┊┊┊┊ ┄ ⸆ Two spaces per cell on a background colour, for `show`.
+┊┊┊┊┊ ┄ ⸖ $term=grid
+┊┊┊┊┊ ┄ ⸖ $term=rendering
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ five lines of escape sequences
-┋┋┋┋ ━ render_text(key, chroma, lightness)
-┊┊┊┊┊ ┄ ⸖ $number=4.13
-┊┊┊┊┊ ┄ ⸖ $fn=render_text
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:775
-┊┊┊┊┊ ┄ ⸆ Passes the grid and the colour to the sibling module and splits the result.
-┊┊┊┊┊ ┄ ⸖ $term=octant
-┊┊┊┊┊ ┄ ⸖ $term=the triple
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ two lines
-┊┊┊┊┊ ┄ ⸖ $edge=text_module_path
-┊┊┊┊┊ ┄ ⸖ $sides=rl
-┊┊┊┊┊ ┄ ⸖ $carries=calls
-┋┋┋┋ ━ render_banner(key, source, depth, **kw)
-┊┊┊┊┊ ┄ ⸖ $number=4.14
-┊┊┊┊┊ ┄ ⸖ $fn=render_banner
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:787
-┊┊┊┊┊ ┄ ⸆ Drops the key line when the seed came from a bare path.
-┊┊┊┊┊ ┄ ⸖ $term=source
-┊┊┊┊┊ ┄ ⸖ $term=seed
-┊┊┊┊┊ ┄ ⸖ $term=project name
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ two lines
-┊┊┊┊┊ ┄ ⸖ $edge=render_text
-┊┊┊┊┊ ┄ ⸖ $sides=ll
-┊┊┊┊┊ ┄ ⸖ $carries=calls
-┊┊┊┊┊ ┄ ⸖ $edge=_fg
-┊┊┊┊┊ ┄ ⸖ $sides=rr
-┊┊┊┊┊ ┄ ⸖ $carries=calls
-┋┋┋┋ ━ render_line(key, depth, **kw)
-┊┊┊┊┊ ┄ ⸖ $number=4.15
-┊┊┊┊┊ ┄ ⸖ $fn=render_line
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:799
-┊┊┊┊┊ ┄ ⸆ Prints a colour chip and the project name. The grid does not fit one line.
-┊┊┊┊┊ ┄ ⸖ $term=the triple
-┊┊┊┊┊ ┄ ⸖ $term=depth
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ one line
-┊┊┊┊┊ ┄ ⸖ $edge=_fg
-┊┊┊┊┊ ┄ ⸖ $sides=rr
-┊┊┊┊┊ ┄ ⸖ $carries=calls
-┊┊┊┊┊ ┄ ⸖ $edge=r_emoji5
-┊┊┊┊┊ ┄ ⸖ $sides=rl
-┊┊┊┊┊ ┄ ⸖ $carries=colour
-┋┋┋┋ ━ _fg(rgb, depth)
-┊┊┊┊┊ ┄ ⸖ $number=4.16
-┊┊┊┊┊ ┄ ⸖ $fn=_fg
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:734
-┊┊┊┊┊ ┄ ⸆ Falls back to the nearest colour in the xterm 6×6×6 cube.
-┊┊┊┊┊ ┄ ⸖ $term=depth
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ an escape sequence, or empty
 ┋┋┋ ━ THE SIBLING FILE
+┊┊┊┊ ┄ ⸆ The two files are a pair and must be deployed together. Four of the eleven artifacts cannot be written without it, which is what `doctor` reports.
 ┋┋┋┋ ━ text_module_path()
-┊┊┊┊┊ ┄ ⸖ $number=4.17
+┊┊┊┊┊ ┄ ⸖ $number=4.7
 ┊┊┊┊┊ ┄ ⸖ $fn=text_module_path
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:756
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:742
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ the path beside this file
@@ -1024,10 +860,10 @@
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
 ┋┋┋┋ ━ _text_module()
-┊┊┊┊┊ ┄ ⸖ $number=4.18
+┊┊┊┊┊ ┄ ⸖ $number=4.8
 ┊┊┊┊┊ ┄ ⸖ $fn=_text_module
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:760
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:746
 ┊┊┊┊┊ ┄ ⸆ Loads text-identicon.py by path; its file name carries a hyphen.
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
@@ -1039,12 +875,7 @@
 ┊┊┊┊┊ ┄ ⸖ $fn=r_text5
 ┊┊┊┊┊ ┄ ⸖ $offpage=out
 ┊┊┊┊┊ ┄ ⸖ $target=t_text
-┊┊┊┊┊ ┄ ⸆ text(grid, rgb)
-┋┋┋┋ ━ → emoji_triple
-┊┊┊┊┊ ┄ ⸖ $fn=r_emoji5
-┊┊┊┊┊ ┄ ⸖ $offpage=out
-┊┊┊┊┊ ┄ ⸖ $target=emoji_triple
-┊┊┊┊┊ ┄ ⸆ emoji_triple(rgb, grid)
+┊┊┊┊┊ ┄ ⸆ text · sextant · octant · tricolour
 ┋┋┋ ━ WHO ELSE RENDERS
 ┋┋┋┋ ━ → artifact_bytes
 ┊┊┊┊┊ ┄ ⸖ $fn=r_bytes4
@@ -1055,107 +886,119 @@
 ┊┊┊┊┊ ┄ ⸖ $sides=lr
 ┊┊┊┊┊ ┄ ⸖ $carries=calls dashed
 ┋┋ ━ The text mark — text-identicon.py
-┊┊┊ ┄ ⸖ $page=5
 ┊┊┊ ┄ ⸆ for a client that renders neither an image nor ANSI colour; takes a grid and a colour and nothing else, so it vendors alone
+┊┊┊ ┄ ⸖ $page=5
 ┋┋┋ ━ THE WHOLE MARK
-┋┋┋┋ ━ → render_text
-┊┊┊┊┊ ┄ ⸖ $fn=r_rt
+┊┊┊┊ ┄ ⸆ Both lattices are written, because which one a host can draw is a fact about its fonts and not about the mark. `text` draws sextants unless told otherwise.
+┋┋┋┋ ━ → artifact_bytes
+┊┊┊┊┊ ┄ ⸖ $fn=r_art5
 ┊┊┊┊┊ ┄ ⸖ $offpage=in
-┊┊┊┊┊ ┄ ⸖ $target=render_text
-┊┊┊┊┊ ┄ ⸆ render_text · render_line, from page 4
+┊┊┊┊┊ ┄ ⸖ $target=artifact_bytes
+┊┊┊┊┊ ┄ ⸆ four artifacts come from this file
 ┊┊┊┊┊ ┄ ⸖ $edge=t_text
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=grid
-┋┋┋┋ ━ text(grid, rgb)
+┋┋┋┋ ━ text(grid, rgb, lattice=SEXTANT_LATTICE)
 ┊┊┊┊┊ ┄ ⸖ $number=5.1
 ┊┊┊┊┊ ┄ ⸖ $fn=t_text
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:350
-┊┊┊┊┊ ┄ ⸆ Returns the octant grid, then the emoji triple on the lower line.
+┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:405
+┊┊┊┊┊ ┄ ⸆ A lattice and the tricolour composed, the tricolour ending the lower line.
 ┊┊┊┊┊ ┄ ⸖ $term=the triple
+┊┊┊┊┊ ┄ ⸖ $term=sextant
 ┊┊┊┊┊ ┄ ⸖ $term=octant
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ two lines
-┊┊┊┊┊ ┄ ⸖ $edge=grid_lines
+┋┋┋┋┋┋ ━ two lines — what `.txt` holds
+┊┊┊┊┊ ┄ ⸖ $edge=t_lattice
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=grid
-┊┊┊┊┊ ┄ ⸖ $edge=emoji_triple
+┊┊┊┊┊ ┄ ⸖ $edge=tricolour
 ┊┊┊┊┊ ┄ ⸖ $sides=rl
 ┊┊┊┊┊ ┄ ⸖ $carries=colour
-┋┋┋┋ ━ grid_lines(grid)
+┊┊┊┊┊ ┄ ⸖ $term=lattice
+┋┋┋┋ ━ octant(grid) · sextant(grid)
 ┊┊┊┊┊ ┄ ⸖ $number=5.2
-┊┊┊┊┊ ┄ ⸖ $fn=grid_lines
+┊┊┊┊┊ ┄ ⸖ $fn=t_octant
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:97
-┊┊┊┊┊ ┄ ⸆ Packs the 5×5 into three octant characters by two lines.
+┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:158
+┊┊┊┊┊ ┄ ⸆ The two named lattices, one artifact each, neither a fallback for the other.
 ┊┊┊┊┊ ┄ ⸖ $term=octant
-┊┊┊┊┊ ┄ ⸖ $term=grid
+┊┊┊┊┊ ┄ ⸖ $term=sextant
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ two strings of three octant characters
-┊┊┊┊┊ ┄ ⸖ $edge=OCTANTS
+┋┋┋┋┋┋ ━ .octant, two lines
+┋┋┋┋┋┋ ━ .sextant, two lines
+┊┊┊┊┊ ┄ ⸖ $edge=t_lattice
+┊┊┊┊┊ ┄ ⸖ $sides=bt
+┊┊┊┊┊ ┄ ⸖ $carries=calls
+┋┋┋┋ ━ lattice_lines(grid, lattice)
+┊┊┊┊┊ ┄ ⸖ $number=5.3
+┊┊┊┊┊ ┄ ⸖ $fn=t_lattice
+┊┊┊┊┊ ┄ ⸖ $kind=fn
+┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:127
+┊┊┊┊┊ ┄ ⸆ One routine for both: only the numbers differ, and they arrive on `lattice`.
+┊┊┊┊┊ ┄ ⸖ $term=grid
+┊┊┊┊┊ ┄ ⸖ $term=octant
+┊┊┊┊┊ ┄ ⸖ $term=sextant
+┋┋┋┋┋ ━ returns
+┊┊┊┊┊┊ ┄ ⸖ $role=returns
+┋┋┋┋┋┋ ━ two strings of three characters
+┊┊┊┊┊ ┄ ⸖ $edge=LATTICES
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=weak dashed
-┋┋┋┋ ━ OCTANTS
-┊┊┊┊┊ ┄ ⸖ $number=5.3
+┊┊┊┊┊ ┄ ⸖ $term=lattice
+┋┋┋┋ ━ OCTANTS · SEXTANTS
+┊┊┊┊┊ ┄ ⸖ $number=5.4
 ┊┊┊┊┊ ┄ ⸖ $fn=OCTANTS
 ┊┊┊┊┊ ┄ ⸖ $kind=data
-┊┊┊┊┊ ┄ ⸆ A literal table: only 230 of the 256 are named BLOCK OCTANT-n.
+┊┊┊┊┊ ┄ ⸆ octants   2×4, Unicode 16.0. 230 of 256 are named
+┊┊┊┊┊ ┄ ⸆           BLOCK OCTANT-n; 26 were encoded earlier
+┊┊┊┊┊ ┄ ⸆ sextants  2×3, Unicode 13.0. 60 of 64 are named
+┊┊┊┊┊ ┄ ⸆           BLOCK SEXTANT-n; 4 were encoded earlier
+┊┊┊┊┊ ┄ ⸆ Literal tables. Offset arithmetic with the wrong
+┊┊┊┊┊ ┄ ⸆ exclusions walks into pictograms.
 ┊┊┊┊┊ ┄ ⸖ $term=octant
+┊┊┊┊┊ ┄ ⸖ $term=sextant
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ 256 characters, indexed by pattern
-┋┋┋ ━ WHICH THREE SQUARES
-┋┋┋┋ ━ emoji_triple(rgb, grid)
-┊┊┊┊┊ ┄ ⸖ $number=5.4
-┊┊┊┊┊ ┄ ⸖ $fn=emoji_triple
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:310
-┊┊┊┊┊ ┄ ⸖ $term=the triple
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ one string of three characters
-┊┊┊┊┊ ┄ ⸖ $edge=triple
+┋┋┋┋┋┋ ━ 256 and 64 characters, indexed by pattern
+┊┊┊┊┊ ┄ ⸖ $edge=LATTICES
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=colour
-┋┋┋┋ ━ triple(rgb, grid)
+┊┊┊┊┊ ┄ ⸖ $carries=weak dashed
+┋┋┋┋ ━ OCTANT_LATTICE · SEXTANT_LATTICE
 ┊┊┊┊┊ ┄ ⸖ $number=5.5
-┊┊┊┊┊ ┄ ⸖ $fn=triple
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:301
-┊┊┊┊┊ ┄ ⸆ Combines the chosen squares with their order.
-┊┊┊┊┊ ┄ ⸖ $term=the triple
-┊┊┊┊┊ ┄ ⸖ $term=arrangement
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ three palette indices, in laid-out order
-┊┊┊┊┊ ┄ ⸖ $edge=triple_indices
-┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=colour
-┊┊┊┊┊ ┄ ⸖ $edge=arrange
-┊┊┊┊┊ ┄ ⸖ $sides=rl
-┊┊┊┊┊ ┄ ⸖ $carries=grid
-┋┋┋┋ ━ triple_indices(rgb)
+┊┊┊┊┊ ┄ ⸖ $fn=LATTICES
+┊┊┊┊┊ ┄ ⸖ $kind=data
+┊┊┊┊┊ ┄ ⸆ (table, sub-rows per character, the blank, pad above)
+┊┊┊┊┊ ┄ ⸆ octants  (OCTANTS, 4, two spaces, 3 sub-rows)
+┊┊┊┊┊ ┄ ⸆ sextants (SEXTANTS, 3, one space, 1 sub-row)
+┊┊┊┊┊ ┄ ⸆ The blank differs because the widths do; the padding
+┊┊┊┊┊ ┄ ⸆ goes above so the lower line is all grid.
+┊┊┊┊┊ ┄ ⸖ $term=octant
+┊┊┊┊┊ ┄ ⸖ $term=sextant
+┊┊┊┊┊ ┄ ⸖ $term=lattice
+┋┋┋ ━ WHICH THREE COLOURS
+┋┋┋┋ ━ chosen_indices(rgb)
+┊┊┊┊┊ ┄ ⸆ Picks the nearest colour twice, plus the third that best corrects the mix.
 ┊┊┊┊┊ ┄ ⸖ $number=5.6
-┊┊┊┊┊ ┄ ⸖ $fn=triple_indices
+┊┊┊┊┊ ┄ ⸖ $fn=chosen_indices
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:209
-┊┊┊┊┊ ┄ ⸆ Picks the nearest square twice, plus the third that best corrects the mix.
+┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:261
 ┊┊┊┊┊ ┄ ⸖ $term=the triple
 ┊┊┊┊┊ ┄ ⸖ $term=the palette
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ three palette indices, ascending
-┊┊┊┊┊ ┄ ⸖ $edge=nearest_square
+┊┊┊┊┊ ┄ ⸖ $edge=nearest_colour
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
-┋┋┋┋ ━ nearest_square(rgb)
-┊┊┊┊┊ ┄ ⸖ $number=5.7
-┊┊┊┊┊ ┄ ⸖ $fn=nearest_square
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:198
+┋┋┋┋ ━ nearest_colour(rgb)
 ┊┊┊┊┊ ┄ ⸆ Breaks ties towards the lower index.
+┊┊┊┊┊ ┄ ⸖ $number=5.7
+┊┊┊┊┊ ┄ ⸖ $fn=nearest_colour
+┊┊┊┊┊ ┄ ⸖ $kind=fn
+┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:257
 ┊┊┊┊┊ ┄ ⸖ $term=the palette
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
@@ -1167,7 +1010,8 @@
 ┊┊┊┊┊ ┄ ⸖ $number=5.8
 ┊┊┊┊┊ ┄ ⸖ $fn=_mix
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:184
+┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:236
+┊┊┊┊┊ ┄ ⸆ Averages in linear light, which is what optical mixing does.
 ┊┊┊┊┊ ┄ ⸖ $term=the palette
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
@@ -1175,13 +1019,44 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=PALETTE
 ┊┊┊┊┊ ┄ ⸖ $sides=rl
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
-┋┋┋ ━ IN WHAT ORDER
-┋┋┋┋ ━ arrange(indices, grid)
+┋┋┋┋ ━ PALETTE
+┊┊┊┊┊ ┄ ⸆ Nine colours, each with the RGB the colour word in its character's name means.
 ┊┊┊┊┊ ┄ ⸖ $number=5.9
+┊┊┊┊┊ ┄ ⸖ $fn=PALETTE
+┊┊┊┊┊ ┄ ⸖ $kind=data
+┊┊┊┊┊ ┄ ⸖ $term=the palette
+┋┋┋┋┋ ━ returns
+┊┊┊┊┊┊ ┄ ⸖ $role=returns
+┋┋┋┋┋┋ ━ nine (character, name, codepoint, rgb) rows
+┊┊┊┊┊ ┄ ⸖ $edge=_oklab
+┊┊┊┊┊ ┄ ⸖ $sides=bt
+┊┊┊┊┊ ┄ ⸖ $carries=weak dashed
+┋┋┋ ━ IN WHAT ORDER
+┊┊┊┊ ┄ ⸆ Which colours is a function of the colour asked for; what order is a function of the grid. Two inputs, and they must stay two.
+┋┋┋┋ ━ tricolour(rgb, grid)
+┊┊┊┊┊ ┄ ⸆ Combines the chosen colours with the order the grid puts them in. `tricolour_indices` stops one step short, at the indices.
+┊┊┊┊┊ ┄ ⸖ $signature=tricolour_indices(rgb, grid)
+┊┊┊┊┊ ┄ ⸖ $number=5.10
+┊┊┊┊┊ ┄ ⸖ $fn=tricolour
+┊┊┊┊┊ ┄ ⸖ $kind=fn
+┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:362
+┊┊┊┊┊ ┄ ⸖ $term=the triple
+┊┊┊┊┊ ┄ ⸖ $term=arrangement
+┋┋┋┋┋ ━ returns
+┊┊┊┊┊┊ ┄ ⸖ $role=returns
+┋┋┋┋┋┋ ━ three emoji — what `.tricolour` holds
+┊┊┊┊┊ ┄ ⸖ $edge=chosen_indices
+┊┊┊┊┊ ┄ ⸖ $sides=ll
+┊┊┊┊┊ ┄ ⸖ $carries=colour
+┊┊┊┊┊ ┄ ⸖ $edge=arrange
+┊┊┊┊┊ ┄ ⸖ $sides=bt
+┊┊┊┊┊ ┄ ⸖ $carries=grid
+┋┋┋┋ ━ arrange(indices, grid)
+┊┊┊┊┊ ┄ ⸆ Selects the permutation with the fifteen grid bits, never with the colour.
+┊┊┊┊┊ ┄ ⸖ $number=5.11
 ┊┊┊┊┊ ┄ ⸖ $fn=arrange
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:254
-┊┊┊┊┊ ┄ ⸆ Selects the permutation with the fifteen grid bits.
+┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:306
 ┊┊┊┊┊ ┄ ⸖ $term=arrangement
 ┊┊┊┊┊ ┄ ⸖ $term=the triple
 ┋┋┋┋┋ ━ returns
@@ -1191,34 +1066,22 @@
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=grid
 ┋┋┋┋ ━ grid_bits(grid)
-┊┊┊┊┊ ┄ ⸖ $number=5.10
+┊┊┊┊┊ ┄ ⸖ $number=5.12
 ┊┊┊┊┊ ┄ ⸖ $fn=grid_bits
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:241
+┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:293
 ┊┊┊┊┊ ┄ ⸆ Reads the left three columns; the other two are their mirror.
 ┊┊┊┊┊ ┄ ⸖ $term=grid
 ┊┊┊┊┊ ┄ ⸖ $term=arrangement
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ a 15-bit integer
-┋┋┋┋ ━ PALETTE
-┊┊┊┊┊ ┄ ⸖ $number=5.11
-┊┊┊┊┊ ┄ ⸖ $fn=PALETTE
-┊┊┊┊┊ ┄ ⸖ $kind=data
-┊┊┊┊┊ ┄ ⸆ Nine squares, each with the RGB its Unicode colour word names.
-┊┊┊┊┊ ┄ ⸖ $term=the palette
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ nine (character, name, codepoint, rgb) rows
-┊┊┊┊┊ ┄ ⸖ $edge=_oklab
-┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=weak dashed
 ┋┋┋┋ ━ _oklab(linear_rgb) · _linear(component)
 ┊┊┊┊┊ ┄ ⸖ $signature=_encode(value)
-┊┊┊┊┊ ┄ ⸖ $number=5.12
+┊┊┊┊┊ ┄ ⸖ $number=5.13
 ┊┊┊┊┊ ┄ ⸖ $fn=_oklab
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:167
+┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:219
 ┊┊┊┊┊ ┄ ⸆ Converts between sRGB, linear light and Oklab.
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
@@ -1226,38 +1089,42 @@
 ┋┋┋┋┋┋ ━ linear light
 ┋┋┋┋┋┋ ━ sRGB
 ┋┋┋ ━ PUBLIC SURFACE, NOT CALLED FROM HERE
-┋┋┋┋ ━ triple_names(rgb, grid)
-┊┊┊┊┊ ┄ ⸖ $signature=triple_detail(rgb, grid)
-┊┊┊┊┊ ┄ ⸖ $number=5.13
-┊┊┊┊┊ ┄ ⸖ $fn=triple_names
+┋┋┋┋ ━ tricolour_names(rgb, grid)
+┊┊┊┊┊ ┄ ⸖ $signature=tricolour_detail(rgb, grid)
+┊┊┊┊┊ ┄ ⸖ $signature=hex_colour(rgb)
+┊┊┊┊┊ ┄ ⸖ $number=5.14
+┊┊┊┊┊ ┄ ⸖ $fn=tricolour_names
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:315
-┊┊┊┊┊ ┄ ⸆ Called by the tools that vendor this file.
+┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:370
+┊┊┊┊┊ ┄ ⸆ Called by the tools that vendor this file, to log or explain a mark.
 ┊┊┊┊┊ ┄ ⸖ $term=the triple
 ┊┊┊┊┊ ┄ ⸖ $term=vendoring
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ the colour names
 ┋┋┋┋┋┋ ━ everything about the choice
+┋┋┋┋┋┋ ━ #rrggbb
 ┋┋┋┋ ━ parse_grid(text) · parse_hex(value)
-┊┊┊┊┊ ┄ ⸖ $signature=hex_colour(rgb)
-┊┊┊┊┊ ┄ ⸖ $number=5.14
+┊┊┊┊┊ ┄ ⸖ $number=5.15
 ┊┊┊┊┊ ┄ ⸖ $fn=parse_grid
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:85
+┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:115
 ┊┊┊┊┊ ┄ ⸆ Used by this file's own command line.
+┊┊┊┊┊ ┄ ⸖ $term=grid
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ a grid
 ┋┋┋┋┋┋ ━ an (r, g, b) triple
-┋┋┋┋┋┋ ━ #rrggbb
-┋┋┋┋ ━ selftest() · _main(argv)
-┊┊┊┊┊ ┄ ⸖ $number=5.15
+┋┋┋┋ ━ selftest() · _recover(lines, lattice)
+┊┊┊┊┊ ┄ ⸖ $signature=_main(argv)
+┊┊┊┊┊ ┄ ⸖ $number=5.16
 ┊┊┊┊┊ ┄ ⸖ $fn=selftest
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:364
-┊┊┊┊┊ ┄ ⸆ Re-derives the octant table from unicodedata and checks the palette invariants.
+┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:427
+┊┊┊┊┊ ┄ ⸆ Re-derives both tables from unicodedata, and reads every rendered mark back to its grid.
 ┊┊┊┊┊ ┄ ⸖ $term=octant
+┊┊┊┊┊ ┄ ⸖ $term=sextant
+┊┊┊┊┊ ┄ ⸖ $term=the palette
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ True, or an assertion fails
@@ -1275,12 +1142,12 @@
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
 ┋┋┋┋ ━ install_into_repo(path, seed, block, check,
+┊┊┊┊┊ ┄ ⸆ Decides the key once, then writes the artifacts and the README line from it.
 ┊┊┊┊┊ ┄ ⸖ $signature=reseed, remap, readme, **render_kwargs)
 ┊┊┊┊┊ ┄ ⸖ $number=6.1
 ┊┊┊┊┊ ┄ ⸖ $fn=install_into_repo
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:1137
-┊┊┊┊┊ ┄ ⸆ Decides the key once, then writes the assets and the README line from it.
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:1010
 ┊┊┊┊┊ ┄ ⸖ $term=key
 ┊┊┊┊┊ ┄ ⸖ $term=seed drift
 ┊┊┊┊┊ ┄ ⸖ $term=masking
@@ -1328,43 +1195,49 @@
 ┊┊┊┊┊ ┄ ⸆ and 1.4 · 1.10 · 1.11 beside it
 ┋┋┋ ━ THE ASSETS
 ┋┋┋┋ ━ artifact_names()
+┊┊┊┊┊ ┄ ⸆ Names the eleven artifact files, in one list.
 ┊┊┊┊┊ ┄ ⸖ $number=6.3
 ┊┊┊┊┊ ┄ ⸖ $fn=artifact_names
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:941
-┊┊┊┊┊ ┄ ⸆ Names the seven asset files, in one list.
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:793
 ┊┊┊┊┊ ┄ ⸖ $term=artifact
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ (name, filename) for all seven
+┋┋┋┋┋┋ ━ (name, filename) for all eleven
 ┊┊┊┊┊ ┄ ⸖ $edge=artifact_paths
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
 ┋┋┋┋ ━ artifact_paths(root)
+┊┊┊┊┊ ┄ ⸆ Gives each artifact its path inside a project.
 ┊┊┊┊┊ ┄ ⸖ $number=6.4
 ┊┊┊┊┊ ┄ ⸖ $fn=artifact_paths
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:956
-┊┊┊┊┊ ┄ ⸆ Gives each asset its path inside a project.
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:812
 ┊┊┊┊┊ ┄ ⸖ $term=artifact
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ {name: path}
 ┋┋┋┋ ━ artifact_bytes(key, block, **render_kwargs)
+┊┊┊┊┊ ┄ ⸆ Builds the contents of each artifact, in parts as well as whole.
 ┊┊┊┊┊ ┄ ⸖ $number=6.5
 ┊┊┊┊┊ ┄ ⸖ $fn=artifact_bytes
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:1028
-┊┊┊┊┊ ┄ ⸆ Builds the contents of each asset.
-┊┊┊┊┊ ┄ ⸖ $term=artifact
-┊┊┊┊┊ ┄ ⸖ $term=block
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:884
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ {name: bytes}
+┊┊┊┊┊ ┄ ⸖ $term=artifact
+┊┊┊┊┊ ┄ ⸖ $term=block
+┊┊┊┊┊ ┄ ⸖ $term=the triple
+┊┊┊┊┊ ┄ ⸖ $term=octant
+┊┊┊┊┊ ┄ ⸖ $term=sextant
 ┊┊┊┊┊ ┄ ⸖ $edge=f_artifacts
 ┊┊┊┊┊ ┄ ⸖ $sides=rl
 ┊┊┊┊┊ ┄ ⸖ $carries=io
 ┊┊┊┊┊ ┄ ⸖ $edge=r_rend6
+┊┊┊┊┊ ┄ ⸖ $sides=rl
+┊┊┊┊┊ ┄ ⸖ $carries=calls dashed
+┊┊┊┊┊ ┄ ⸖ $edge=r_text6
 ┊┊┊┊┊ ┄ ⸖ $sides=rl
 ┊┊┊┊┊ ┄ ⸖ $carries=calls dashed
 ┋┋┋┋ ━ → key_path
@@ -1380,7 +1253,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=6.6
 ┊┊┊┊┊ ┄ ⸖ $fn=prior_path
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:979
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:835
 ┊┊┊┊┊ ┄ ⸆ Keeps the replaced bytes beside the new ones, so a rollback is a mv.
 ┊┊┊┊┊ ┄ ⸖ $term=prior
 ┋┋┋┋┋ ━ returns
@@ -1395,7 +1268,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=6.7
 ┊┊┊┊┊ ┄ ⸖ $fn=find_readme
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:1084
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:957
 ┊┊┊┊┊ ┄ ⸆ Finds the project's README, markdown and top level only.
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
@@ -1404,7 +1277,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=6.8
 ┊┊┊┊┊ ┄ ⸖ $fn=without_code_fences
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:1068
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:941
 ┊┊┊┊┊ ┄ ⸆ Blanks fenced code before the prose is searched.
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
@@ -1413,7 +1286,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=6.9
 ┊┊┊┊┊ ┄ ⸖ $fn=readme_state
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:1102
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:975
 ┊┊┊┊┊ ┄ ⸆ Adds the mark to the README, once, after the first heading.
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
@@ -1433,9 +1306,6 @@
 ┊┊┊┊┊ ┄ ⸖ $carries=io
 ┋┋┋ ━ ON DISK
 ┋┋┋┋ ━ .identicon/
-┊┊┊┊┊ ┄ ⸖ $number=6.10
-┊┊┊┊┊ ┄ ⸖ $fn=f_artifacts
-┊┊┊┊┊ ┄ ⸖ $kind=ext
 ┊┊┊┊┊ ┄ ⸆ repository-identicon.png       block 5, 27 px
 ┊┊┊┊┊ ┄ ⸆ repository-identicon@4x.png    block 20, border 2
 ┊┊┊┊┊ ┄ ⸆ repository-identicon-128.png   block 24, border 4
@@ -1443,8 +1313,15 @@
 ┊┊┊┊┊ ┄ ⸆ repository-identicon.svg       the same geometry
 ┊┊┊┊┊ ┄ ⸆ repository-identicon.colour    "#rrggbb\n"
 ┊┊┊┊┊ ┄ ⸆ repository-identicon.grid      five lines of 01010
+┊┊┊┊┊ ┄ ⸆ repository-identicon.tricolour three emoji, the colour
+┊┊┊┊┊ ┄ ⸆ repository-identicon.sextant   the 2×3 lattice
+┊┊┊┊┊ ┄ ⸆ repository-identicon.octant    the 2×4 lattice
+┊┊┊┊┊ ┄ ⸆ repository-identicon.txt       sextant and tricolour
 ┊┊┊┊┊ ┄ ⸆ repository-identicon.key       the key, verbatim
 ┊┊┊┊┊ ┄ ⸆ repository-identicon.prior.*   the outgoing bytes
+┊┊┊┊┊ ┄ ⸖ $number=6.10
+┊┊┊┊┊ ┄ ⸖ $fn=f_artifacts
+┊┊┊┊┊ ┄ ⸖ $kind=ext
 ┊┊┊┊┊ ┄ ⸖ $term=artifact
 ┊┊┊┊┊ ┄ ⸖ $term=the key file
 ┊┊┊┊┊ ┄ ⸖ $term=prior
@@ -1468,100 +1345,96 @@
 ┊┊┊┊┊ ┄ ⸖ $offpage=out
 ┊┊┊┊┊ ┄ ⸖ $target=large_geometry
 ┊┊┊┊┊ ┄ ⸆ large_geometry, for 128 and 256
-┋┋ ━ At the end of a turn
+┋┋┋┋ ━ → text
+┊┊┊┊┊ ┄ ⸖ $fn=r_text6
+┊┊┊┊┊ ┄ ⸖ $offpage=out
+┊┊┊┊┊ ┄ ⸖ $target=t_text
+┊┊┊┊┊ ┄ ⸆ text · sextant · octant · tricolour
+┋┋ ━ Gone to Console-Colophon — the terminal half
+┊┊┊ ┄ ⸆ kept as page 7 so the numbering does not shift; this is a record of what was removed and where it went
 ┊┊┊ ┄ ⸖ $page=7
-┊┊┊ ┄ ⸆ `emit` and `hooks` — the return-of-control marker. scope-split.md sends these five symbols to Claude-Colophon, which has not taken them yet.
-┋┋┋ ━ WHAT emit DOES, IN ORDER
-┊┊┊┊ ┄ ⸆ The whole body is wrapped in `except Exception: pass`. A hook that fails must not disturb the session, and a missing identicon is not worth a broken turn — which is why `doctor` exists to say whether the sibling module is there.
-┋┋┋┋ ━ → c_emit
-┊┊┊┊┊ ┄ ⸖ $fn=r_emit7
-┊┊┊┊┊ ┄ ⸖ $offpage=in
-┊┊┊┊┊ ┄ ⸖ $target=c_emit
-┊┊┊┊┊ ┄ ⸆ emit, registered as a hook command
-┊┊┊┊┊ ┄ ⸖ $edge=emit_seq
-┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=calls
-┋┋┋┋ ━ the sequence inside cmd_emit(args)
+┋┋┋ ━ THE RULE, APPLIED TO A RENDERING
+┊┊┊┊ ┄ ⸆ § Scope runs through the renderings rather than around them. Turning a key into bytes is in; addressing those bytes to a terminal is out.
+┋┋┋┋ ━ SPEC.md § Terminal
+┊┊┊┊┊ ┄ ⸆ in    the raster, the vector, both lattices, the
+┊┊┊┊┊ ┄ ⸆       tricolour, the composed line — all still files
+┊┊┊┊┊ ┄ ⸆ out   the iTerm2 and kitty protocols, the ANSI
+┊┊┊┊┊ ┄ ⸆       foregrounds, the environment sniffing
+┊┊┊┊┊ ┄ ⸆ The one section specified here and implemented
+┊┊┊┊┊ ┄ ⸆ elsewhere. It says so at the top, rather than leaving
+┊┊┊┊┊ ┄ ⸆ a reader to find the absence.
 ┊┊┊┊┊ ┄ ⸖ $number=7.1
-┊┊┊┊┊ ┄ ⸖ $fn=emit_seq
+┊┊┊┊┊ ┄ ⸖ $fn=terminal_rule
 ┊┊┊┊┊ ┄ ⸖ $kind=data
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:1425
-┊┊┊┊┊ ┄ ⸆ 1  --path, else payload_cwd(stdin) when stdin is not a tty
-┊┊┊┊┊ ┄ ⸆ 2  resolve_key_for(path, seed)                    → page 1
-┊┊┊┊┊ ┄ ⸆ 3  resolve_colour_depth · resolve_protocol        → page 4
-┊┊┊┊┊ ┄ ⸆ 4  render(key, style, source, depth, protocol)    → page 4
-┊┊┊┊┊ ┄ ⸆ 5  open_output(), write, flush, close if it is the tty
-┊┊┊┊┊ ┄ ⸖ $term=key
+┊┊┊┊┊ ┄ ⸖ $term=rendering
 ┊┊┊┊┊ ┄ ⸖ $term=style
-┊┊┊┊┊ ┄ ⸖ $term=depth
-┊┊┊┊┊ ┄ ⸖ $term=protocol
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ 0, whatever happens
-┊┊┊┊┊ ┄ ⸖ $edge=payload_cwd
-┊┊┊┊┊ ┄ ⸖ $sides=rl
-┊┊┊┊┊ ┄ ⸖ $carries=calls
-┊┊┊┊┊ ┄ ⸖ $edge=open_output
-┊┊┊┊┊ ┄ ⸖ $sides=rl
-┊┊┊┊┊ ┄ ⸖ $carries=calls
-┋┋┋ ━ READING THE PAYLOAD
-┋┋┋┋ ━ payload_cwd(stream)
+┋┋┋┋ ━ twenty-one moved
 ┊┊┊┊┊ ┄ ⸖ $number=7.2
-┊┊┊┊┊ ┄ ⸖ $fn=payload_cwd
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:1395
-┊┊┊┊┊ ┄ ⸆ Reads cwd from the payload and nothing else.
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ a cwd string, or None
-┊┊┊┊┊ ┄ ⸖ $edge=stdin
-┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=io
-┋┋┋┋ ━ stdin
-┊┊┊┊┊ ┄ ⸖ $number=7.3
-┊┊┊┊┊ ┄ ⸖ $fn=stdin
-┊┊┊┊┊ ┄ ⸖ $kind=ext
-┊┊┊┊┊ ┄ ⸆ the hook payload, JSON
-┋┋┋┋ ━ open_output()
-┊┊┊┊┊ ┄ ⸖ $number=7.4
-┊┊┊┊┊ ┄ ⸖ $fn=open_output
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:1412
-┊┊┊┊┊ ┄ ⸆ A hook's stdout is not reliably shown.
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ stream
-┋┋┋┋┋┋ ━ is_tty
-┊┊┊┊┊ ┄ ⸖ $edge=tty
-┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=io
-┋┋┋┋ ━ /dev/tty, else stdout
-┊┊┊┊┊ ┄ ⸖ $number=7.5
-┊┊┊┊┊ ┄ ⸖ $fn=tty
-┊┊┊┊┊ ┄ ⸖ $kind=ext
-┋┋┋ ━ REGISTERING IT
-┋┋┋┋ ━ RETURN_OF_CONTROL_EVENTS
-┊┊┊┊┊ ┄ ⸖ $number=7.6
-┊┊┊┊┊ ┄ ⸖ $fn=RETURN_OF_CONTROL_EVENTS
+┊┊┊┊┊ ┄ ⸖ $fn=gone_terminal
 ┊┊┊┊┊ ┄ ⸖ $kind=data
-┊┊┊┊┊ ┄ ⸆ Stop · PermissionRequest · Elicitation · SessionEnd
-┊┊┊┊┊ ┄ ⸆ Notification is omitted: idle_prompt fires 60 s after Stop.
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ four event names
-┊┊┊┊┊ ┄ ⸖ $edge=hooks_cmd
-┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=calls
-┋┋┋┋ ━ cmd_hooks(args)
-┊┊┊┊┊ ┄ ⸖ $number=7.7
-┊┊┊┊┊ ┄ ⸖ $fn=hooks_cmd
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:1460
-┊┊┊┊┊ ┄ ⸆ Prints the registration. It does not write settings.
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ 0, having printed the registration
-┋┋ ━ Gone to Console-Colophon
+┊┊┊┊┊ ┄ ⸆ dispatch   render · STYLES · _TEXT_STYLES
+┊┊┊┊┊ ┄ ⸆ inline     render_inline · iterm2_image · kitty_image
+┊┊┊┊┊ ┄ ⸆            INLINE_SIZE
+┊┊┊┊┊ ┄ ⸆ text       render_text · render_banner · render_line
+┊┊┊┊┊ ┄ ⸆ colour     _fg · _xterm256 · the depth constants
+┊┊┊┊┊ ┄ ⸆ protocol   ITERM2 · KITTY · TEXT · PROTOCOLS
+┊┊┊┊┊ ┄ ⸆ resolvers  resolve_protocol · resolve_colour_depth
+┊┊┊┊┊ ┄ ⸆ Checked byte for byte before they were deleted: ten
+┊┊┊┊┊ ┄ ⸆ vectors × six styles × three protocols × three depths
+┊┊┊┊┊ ┄ ⸆ × three sources, 1730 comparisons, zero differences.
+┋┋┋ ━ THE FIVE THAT WENT NOWHERE
+┊┊┊┊ ┄ ⸆ The plan had been for Claude-Colophon to take them. It shipped without a hook at all, so nothing was ever going to call them.
+┋┋┋┋ ━ emit and hooks, removed
+┊┊┊┊┊ ┄ ⸆ cmd_emit                 printed the mark at a turn's end
+┊┊┊┊┊ ┄ ⸆ cmd_hooks                printed a settings.json snippet
+┊┊┊┊┊ ┄ ⸆ payload_cwd              read a cwd off stdin
+┊┊┊┊┊ ┄ ⸆ open_output              opened the controlling tty
+┊┊┊┊┊ ┄ ⸆ RETURN_OF_CONTROL_EVENTS the four event names
+┊┊┊┊┊ ┄ ⸆ A hook registration is a side effect in a file outside
+┊┊┊┊┊ ┄ ⸆ this repository; the other three are properties of one
+┊┊┊┊┊ ┄ ⸆ caller rather than of a rendering.
+┊┊┊┊┊ ┄ ⸖ $number=7.3
+┊┊┊┊┊ ┄ ⸖ $fn=gone_hook
+┊┊┊┊┊ ┄ ⸖ $kind=data
+┋┋┋┋ ━ what a consumer does instead
+┊┊┊┊┊ ┄ ⸖ $number=7.4
+┊┊┊┊┊ ┄ ⸖ $fn=instead
+┊┊┊┊┊ ┄ ⸖ $kind=data
+┊┊┊┊┊ ┄ ⸆ --style text    is byte-identical to .txt
+┊┊┊┊┊ ┄ ⸆ --style full    is .grid and .colour
+┊┊┊┊┊ ┄ ⸆ --style banner  is .txt with names from .key
+┊┊┊┊┊ ┄ ⸆ --style line    colourless, is .tricolour
+┊┊┊┊┊ ┄ ⸆ Everything emit wrote is a file, or a composition of
+┊┊┊┊┊ ┄ ⸆ files, and `cat` is the whole integration.
+┊┊┊┊┊ ┄ ⸖ $term=artifact
+┊┊┊┊┊ ┄ ⸖ $term=style
+┋┋┋ ━ THE GAP IT LEFT
+┊┊┊┊ ┄ ⸆ Recorded rather than fixed. work-in-progress/scope-split.md carries this and the two ideas that would close it.
+┋┋┋┋ ━ no 40 px raster
+┊┊┊┊┊ ┄ ⸖ $number=7.5
+┊┊┊┊┊ ┄ ⸖ $fn=gap40
+┊┊┊┊┊ ┄ ⸖ $kind=data
+┊┊┊┊┊ ┄ ⸆ `--style icon` was the only producer of one, and no
+┊┊┊┊┊ ┄ ⸆ artifact holds it. The committed sizes are 27, 104,
+┊┊┊┊┊ ┄ ⸆ 128 and 256, so an inline-image consumer must
+┊┊┊┊┊ ┄ ⸆ re-derive or resample.
+┊┊┊┊┊ ┄ ⸆ 40 is five cells of eight, chosen because Konsole
+┊┊┊┊┊ ┄ ⸆ ignores the protocol's own width and height.
+┊┊┊┊┊ ┄ ⸖ $term=artifact
+┊┊┊┊┊ ┄ ⸖ $term=block
+┊┊┊┊┊ ┄ ⸖ $term=canvas
+┋┋┋┋ ━ Console-Colophon
+┊┊┊┊┊ ┄ ⸆ Took the twenty-one, and vendors text-identicon.py
+┊┊┊┊┊ ┄ ⸆ beside its own script as well as the derivation: the
+┊┊┊┊┊ ┄ ⸆ text styles need the lattice tables. Held to the same
+┊┊┊┊┊ ┄ ⸆ vectors.json by its own suite — 8.5.
+┊┊┊┊┊ ┄ ⸖ $number=7.6
+┊┊┊┊┊ ┄ ⸖ $fn=receiving_terminal
+┊┊┊┊┊ ┄ ⸖ $kind=ext
+┊┊┊┊┊ ┄ ⸖ $term=vendoring
+┊┊┊┊┊ ┄ ⸖ $term=vector
+┊┊┊┊┊ ┄ ⸖ $term=conforming
+┋┋ ━ Gone to Console-Colophon — the desktop half
 ┊┊┊ ┄ ⸖ $page=8
 ┊┊┊ ┄ ⸆ kept as page 8 so the numbering does not shift; this is a record of what was removed and where it went
 ┋┋┋ ━ THE RULE THAT DECIDED IT
@@ -1614,12 +1487,12 @@
 ┊┊┊┊┊ ┄ ⸖ $term=vector
 ┊┊┊┊┊ ┄ ⸖ $term=conforming
 ┊┊┊┊┊ ┄ ⸖ $term=icon theme name
-┋┋┋┋ ━ still open
+┋┋┋┋ ━ nothing open
+┊┊┊┊┊ ┄ ⸆ `emit` and `hooks` were the last thing waiting on somebody
+┊┊┊┊┊ ┄ ⸆ else. They are gone, and page 7 is what is left of them.
 ┊┊┊┊┊ ┄ ⸖ $number=8.6
 ┊┊┊┊┊ ┄ ⸖ $fn=still_open
 ┊┊┊┊┊ ┄ ⸖ $kind=data
-┊┊┊┊┊ ┄ ⸆ Claude-Colophon has not taken `emit` and `hooks`. Those five symbols stay
-┊┊┊┊┊ ┄ ⸆ on page 7 until it does.
 ┋┋ ━ Conformance
 ┊┊┊ ┄ ⸖ $page=9
 ┊┊┊ ┄ ⸆ `validate` — offered outward, so a port in another language does not have to build a harness to find out whether it agrees
@@ -1636,7 +1509,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=9.1
 ┊┊┊┊┊ ┄ ⸖ $fn=vectors_path
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:1504
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:1291
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ the path beside this script
@@ -1647,7 +1520,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=9.2
 ┊┊┊┊┊ ┄ ⸖ $fn=load_vectors
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:1508
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:1295
 ┊┊┊┊┊ ┄ ⸆ Refuses a file pinning any mapping version but this build's.
 ┊┊┊┊┊ ┄ ⸖ $term=vector
 ┊┊┊┊┊ ┄ ⸖ $term=mapping version
@@ -1680,7 +1553,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=9.4
 ┊┊┊┊┊ ┄ ⸖ $fn=validate_command
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:1593
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:1380
 ┊┊┊┊┊ ┄ ⸆ Runs argv with the key appended, once per vector.
 ┊┊┊┊┊ ┄ ⸖ $term=key
 ┊┊┊┊┊ ┄ ⸖ $term=seed
@@ -1710,7 +1583,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=9.6
 ┊┊┊┊┊ ┄ ⸖ $fn=check_output
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:1562
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:1349
 ┊┊┊┊┊ ┄ ⸆ Compares the grid and the colour only.
 ┊┊┊┊┊ ┄ ⸖ $term=conforming
 ┊┊┊┊┊ ┄ ⸖ $term=vector
@@ -1725,7 +1598,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=9.7
 ┊┊┊┊┊ ┄ ⸖ $fn=_normalise_grid
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:1546
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:1333
 ┊┊┊┊┊ ┄ ⸆ Accepts a row as a string, a list of ints, or a list of booleans.
 ┊┊┊┊┊ ┄ ⸖ $term=port
 ┊┊┊┊┊ ┄ ⸖ $term=grid
@@ -1739,153 +1612,194 @@
 ┊┊┊┊┊ ┄ ⸖ $number=9.8
 ┊┊┊┊┊ ┄ ⸖ $fn=_cell
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:1530
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:1317
 ┊┊┊┊┊ ┄ ⸆ Reads a string cell by value, never by truthiness.
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ "0" or "1"
 ┋ ━ Terms
+┊┊ ┄ ⸆ the words this repository uses in a particular way, each with the shape of the thing it names. No item on a page restates one of these; it points at them instead.
 ┊┊ ┄ ⸖ $section=terms
-┊┊ ┄ ⸆ the words this repository uses in a particular way
 ┋┋ ━ Identity
 ┋┋┋ ━ key
+┊┊┊┊ ┄ ⸖ $type=str
 ┊┊┊┊ ┄ ⸆ The one string the mark depends on: <mapping version>:<seed>, hashed verbatim.
 ┊┊┊┊ ┄ ⸖ $defines=1.16
 ┊┊┊┊ ┄ ⸖ $defines=1.14
 ┋┋┋ ━ seed
+┊┊┊┊ ┄ ⸖ $type=str
 ┊┊┊┊ ┄ ⸆ The identity alone, without the version: github.com/owner/repo.
 ┊┊┊┊ ┄ ⸖ $defines=1.5
 ┊┊┊┊ ┄ ⸖ $defines=1.12
 ┋┋┋ ━ mapping version
-┊┊┊┊ ┄ ⸆ The integer stamped into the key saying which colour rule drew it. Currently 3.
+┊┊┊┊ ┄ ⸖ $type=str, dotted
+┊┊┊┊ ┄ ⸆ The label stamped into the key saying which colour rule drew it. Currently 0.3 — the number the wheel it was solved against carries. Compared for equality, never ordered.
 ┊┊┊┊ ┄ ⸖ $defines=1.15
 ┊┊┊┊ ┄ ⸖ $defines=2.8
 ┋┋┋ ━ source
+┊┊┊┊ ┄ ⸖ $type=str, one of seven
 ┊┊┊┊ ┄ ⸆ Where the seed was arrived at: explicit, override, remote, toplevel or path — or key and remap, which outrank all of them.
 ┊┊┊┊ ┄ ⸖ $defines=1.5
 ┋┋┋ ━ override
+┊┊┊┊ ┄ ⸖ $type=file → str
 ┊┊┊┊ ┄ ⸆ A committed .repository-identicon holding a seed, outranking the git remote.
 ┊┊┊┊ ┄ ⸖ $defines=1.6
 ┊┊┊┊ ┄ ⸖ $defines=1.7
 ┋┋┋ ━ recorded key
+┊┊┊┊ ┄ ⸖ $type=str | None
 ┊┊┊┊ ┄ ⸆ The payload line of the key file, which outranks every derivation.
 ┊┊┊┊ ┄ ⸖ $defines=1.2
 ┊┊┊┊ ┄ ⸖ $defines=1.4
 ┋┋┋ ━ seed drift
+┊┊┊┊ ┄ ⸖ $type=str | None
 ┊┊┊┊ ┄ ⸆ What this repository would seed as today, differing from what is recorded. Reported, never acted on.
 ┊┊┊┊ ┄ ⸖ $defines=6.1
 ┋┋┋ ━ masking
+┊┊┊┊ ┄ ⸖ $type=str | None
 ┊┊┊┊ ┄ ⸆ An override in force while the git remote says something else.
 ┊┊┊┊ ┄ ⸖ $defines=6.1
 ┋┋┋ ━ reseed / remap
+┊┊┊┊ ┄ ⸖ $type=bool, bool
 ┊┊┊┊ ┄ ⸆ The two deliberate acts that move a mark: reseed adopts today's seed, remap keeps the seed and moves the mapping.
 ┊┊┊┊ ┄ ⸖ $defines=6.1
 ┋┋ ━ The mark
 ┋┋┋ ━ the mark
+┊┊┊┊ ┄ ⸖ $type=(grid, colour)
 ┊┊┊┊ ┄ ⸆ The grid and the colour together — what a reader recognises.
 ┊┊┊┊ ┄ ⸖ $defines=2.11
 ┊┊┊┊ ┄ ⸖ $defines=2.12
 ┋┋┋ ━ grid
-┊┊┊┊ ┄ ⸆ The 5×5 of booleans, from digest characters 0–14, drawn down the centre column and mirrored outwards.
+┊┊┊┊ ┄ ⸖ $type=5×5 of bool
+┊┊┊┊ ┄ ⸆ From digest characters 0–14, drawn down the centre column and mirrored outwards.
 ┊┊┊┊ ┄ ⸖ $defines=2.2
 ┋┋┋ ━ hue
+┊┊┊┊ ┄ ⸖ $type=float, [0, 1)
 ┊┊┊┊ ┄ ⸆ A fraction of a turn, from the last seven digest characters.
 ┊┊┊┊ ┄ ⸖ $defines=2.3
 ┋┋┋ ━ the warp
+┊┊┊┊ ┄ ⸖ $type=float° → float°
 ┊┊┊┊ ┄ ⸆ The raised-cosine reweighting that makes the hue advance faster through the blue-green arc.
 ┊┊┊┊ ┄ ⸖ $defines=2.4
 ┋┋┋ ━ lightness / chroma
+┊┊┊┊ ┄ ⸖ $type=float, float
 ┊┊┊┊ ┄ ⸆ Oklab. Lightness is held at 0.60 for every hue; chroma is capped at 0.26, not flattened.
 ┊┊┊┊ ┄ ⸖ $defines=2.8
 ┋┋┋ ━ gamut chroma
+┊┊┊┊ ┄ ⸖ $type=float
 ┊┊┊┊ ┄ ⸆ The most chroma sRGB will take at that hue and lightness.
 ┊┊┊┊ ┄ ⸖ $defines=2.5
 ┋┋ ━ Geometry
 ┋┋┋ ━ block
+┊┊┊┊ ┄ ⸖ $type=int, px
 ┊┊┊┊ ┄ ⸆ The pixel edge of one grid cell — the specified quantity.
 ┊┊┊┊ ┄ ⸖ $defines=3.5
 ┋┋┋ ━ border
+┊┊┊┊ ┄ ⸖ $type=int, px
 ┊┊┊┊ ┄ ⸆ The margin in pixels on each side. Chrome rather than content.
 ┊┊┊┊ ┄ ⸖ $defines=3.5
 ┋┋┋ ━ canvas
+┊┊┊┊ ┄ ⸖ $type=int, px
 ┊┊┊┊ ┄ ⸆ 5·block + 2·border. Always derived, never specified.
 ┊┊┊┊ ┄ ⸖ $defines=3.5
 ┋┋┋ ━ fitting
+┊┊┊┊ ┄ ⸖ $type=int px → int
 ┊┊┊┊ ┄ ⸆ Choosing the largest block that fits a canvas someone else fixed.
 ┊┊┊┊ ┄ ⸖ $defines=3.6
 ┋┋ ━ Names
 ┋┋┋ ━ short id
+┊┊┊┊ ┄ ⸖ $type=str, 12 hex
 ┊┊┊┊ ┄ ⸆ The first 12 characters of sha256(key).
 ┊┊┊┊ ┄ ⸖ $defines=3.1
 ┋┋┋ ━ discriminator
+┊┊┊┊ ┄ ⸖ $type=str, 6 hex
 ┊┊┊┊ ┄ ⸆ The first 6, for telling apart two projects sharing a basename.
 ┊┊┊┊ ┄ ⸖ $defines=3.1
 ┋┋┋ ━ project name
+┊┊┊┊ ┄ ⸖ $type=str
 ┊┊┊┊ ┄ ⸆ The last /-separated segment of the key, or all of it.
 ┊┊┊┊ ┄ ⸖ $defines=3.2
 ┋┋┋ ━ badge label
+┊┊┊┊ ┄ ⸖ $type=str, 1–2 chars
 ┊┊┊┊ ┄ ⸆ One or two upper-case characters, for a medium that can show no more.
 ┊┊┊┊ ┄ ⸖ $defines=3.3
 ┋┋┋ ━ icon theme name
+┊┊┊┊ ┄ ⸖ $type=str
 ┊┊┊┊ ┄ ⸆ <tool prefix>-<short id>. A name resolved through the icon theme, never a path.
 ┊┊┊┊ ┄ ⸖ $defines=3.4
 ┋┋ ━ In the repository
 ┋┋┋ ━ artifact
-┊┊┊┊ ┄ ⸆ One of the seven rendered files in .identicon/ — a cache with a canonical location, not a source.
+┊┊┊┊ ┄ ⸖ $type=file, one of eleven
+┊┊┊┊ ┄ ⸆ One of the eleven rendered files in .identicon/ — a cache with a canonical location, not a source.
 ┊┊┊┊ ┄ ⸖ $defines=6.3
 ┊┊┊┊ ┄ ⸖ $defines=6.10
 ┋┋┋ ━ the key file
+┊┊┊┊ ┄ ⸖ $type=file
 ┊┊┊┊ ┄ ⸆ The exception: the only file in .identicon/ that is a source of truth.
 ┊┊┊┊ ┄ ⸖ $defines=1.4
 ┋┋┋ ━ prior
+┊┊┊┊ ┄ ⸖ $type=file
 ┊┊┊┊ ┄ ⸆ stem.prior.suffix — the bytes a run replaced, kept one level deep.
 ┊┊┊┊ ┄ ⸖ $defines=6.6
 ┋┋┋ ━ current
+┊┊┊┊ ┄ ⸖ $type=bool
 ┊┊┊┊ ┄ ⸆ True when every artifact already holds the bytes it should.
 ┊┊┊┊ ┄ ⸖ $defines=6.1
 ┋┋ ━ Renderings
 ┋┋┋ ━ rendering
+┊┊┊┊ ┄ ⸖ $type=bytes | str
 ┊┊┊┊ ┄ ⸆ Bytes for one medium, derived from the key. Not part of conformance.
-┊┊┊┊ ┄ ⸖ $defines=4.1
-┋┋┋ ━ style
-┊┊┊┊ ┄ ⸆ Which rendering emit asks for: icon, image, text, full, banner or line.
-┊┊┊┊ ┄ ⸖ $defines=4.1
-┋┋┋ ━ protocol
-┊┊┊┊ ┄ ⸆ How an image reaches the terminal: iterm2, kitty, or text meaning it cannot.
-┊┊┊┊ ┄ ⸖ $defines=4.3
-┊┊┊┊ ┄ ⸖ $defines=4.5
-┋┋┋ ━ depth
-┊┊┊┊ ┄ ⸆ How much colour the terminal takes: truecolor, the 256-cube, or none.
 ┊┊┊┊ ┄ ⸖ $defines=4.2
+┋┋┋ ━ style
+┊┊┊┊ ┄ ⸆ Which rendering a consumer asks for: icon, image, text, full, banner or line. SPEC.md ranks the renderings; these names are Console-Colophon's, and left with it.
+┊┊┊┊ ┄ ⸖ $type=str, one of six
+┊┊┊┊ ┄ ⸖ $defines=7.1
+┊┊┊┊ ┄ ⸖ $defines=7.4
+┋┋┋ ━ lattice
+┊┊┊┊ ┄ ⸆ The subcell grid a pattern is drawn on, with the numbers that produce it: the table, its sub-rows, the blank, and the padding above.
+┊┊┊┊ ┄ ⸖ $type=(table, int, str, int)
+┊┊┊┊ ┄ ⸖ $defines=5.5
 ┋┋ ━ The text mark
 ┋┋┋ ━ octant
-┊┊┊┊ ┄ ⸆ One of 256 patterns over a 2×4 lattice; one glyph covers four grid cells.
-┊┊┊┊ ┄ ⸖ $defines=5.3
+┊┊┊┊ ┄ ⸖ $type=str, 1 char
+┊┊┊┊ ┄ ⸆ One of 256 patterns over a 2×4 lattice; one glyph carries a 2×4 patch of the grid.
 ┊┊┊┊ ┄ ⸖ $defines=5.2
-┋┋┋ ━ the triple
-┊┊┊┊ ┄ ⸆ Three emoji squares standing for the colour, where neither an image nor an escape sequence survives.
 ┊┊┊┊ ┄ ⸖ $defines=5.4
+┋┋┋ ━ sextant
+┊┊┊┊ ┄ ⸖ $type=str, 1 char
+┊┊┊┊ ┄ ⸆ One of 64 patterns over a 2×3 lattice; four years older in Unicode, so more fonts have it, and what .txt is drawn on.
+┊┊┊┊ ┄ ⸖ $defines=5.2
+┊┊┊┊ ┄ ⸖ $defines=5.4
+┋┋┋ ━ the triple
+┊┊┊┊ ┄ ⸆ Three of the palette's nine colours standing for the mark's colour, where neither an image nor an escape sequence survives. One emoji each.
+┊┊┊┊ ┄ ⸖ $type=3 of 9 colours
+┊┊┊┊ ┄ ⸖ $defines=5.10
 ┊┊┊┊ ┄ ⸖ $defines=5.6
 ┋┋┋ ━ arrangement
-┊┊┊┊ ┄ ⸆ The order the three squares are laid out in, taken from the grid and never from the colour.
-┊┊┊┊ ┄ ⸖ $defines=5.9
-┊┊┊┊ ┄ ⸖ $defines=5.10
-┋┋┋ ━ the palette
-┊┊┊┊ ┄ ⸆ The nine Unicode colour squares, anchored on the colour word in the character's name.
+┊┊┊┊ ┄ ⸆ The order the three colours are laid out in, taken from the grid and never from the colour.
+┊┊┊┊ ┄ ⸖ $type=tuple of 3 int
 ┊┊┊┊ ┄ ⸖ $defines=5.11
+┊┊┊┊ ┄ ⸖ $defines=5.12
+┋┋┋ ━ the palette
+┊┊┊┊ ┄ ⸆ Nine colours, each anchored on the colour word in the name of the character that carries it. A colour is drawn as a square here; shape is a separate channel.
+┊┊┊┊ ┄ ⸖ $type=9 colours
+┊┊┊┊ ┄ ⸖ $defines=5.9
 ┋┋ ━ Conformance
 ┋┋┋ ━ vector
+┊┊┊┊ ┄ ⸖ $type=dict of 4
 ┊┊┊┊ ┄ ⸆ One pinned (key, md5, grid, foreground) in vectors.json.
 ┊┊┊┊ ┄ ⸖ $defines=9.3
 ┊┊┊┊ ┄ ⸖ $defines=9.2
 ┋┋┋ ━ port
+┊┊┊┊ ┄ ⸖ $type=an implementation
 ┊┊┊┊ ┄ ⸆ Another implementation of the specification, in any language.
 ┊┊┊┊ ┄ ⸖ $defines=9.4
 ┊┊┊┊ ┄ ⸖ $defines=9.5
 ┋┋┋ ━ conforming
+┊┊┊┊ ┄ ⸖ $type=bool
 ┊┊┊┊ ┄ ⸆ Reproduces the grid and the colour of every vector.
 ┊┊┊┊ ┄ ⸖ $defines=9.6
 ┋┋┋ ━ vendoring
+┊┊┊┊ ┄ ⸖ $type=a practice
 ┊┊┊┊ ┄ ⸆ Carrying your own copy of the derivation rather than depending on this one.
 ┊┊┊┊ ┄ ⸖ $defines=9.5
 ┋ ━ Index

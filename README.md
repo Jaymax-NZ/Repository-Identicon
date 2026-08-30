@@ -29,7 +29,7 @@ It derives the key from the git remote and writes these:
 .identicon/repository-identicon.svg            vector, same geometry
 .identicon/repository-identicon.colour         "#rrggbb\n", nothing else
 .identicon/repository-identicon.grid           five lines of "01010"
-.identicon/repository-identicon.tricolour      three emoji squares, the colour
+.identicon/repository-identicon.tricolour      three emoji, the colour
 .identicon/repository-identicon.sextant        the pattern on the 2×3 lattice
 .identicon/repository-identicon.octant         the pattern on the 2×4 lattice
 .identicon/repository-identicon.txt            .sextant and .tricolour, composed
@@ -80,7 +80,7 @@ Commit the lot. To read the colour anywhere else,
 `$(cat .identicon/repository-identicon.colour)` is the whole integration.
 
 **The key is recorded once and hashed verbatim after that.** It reads
-`1:github.com/owner/repo` — a mapping version, then the seed — and it is the
+`0.3:github.com/owner/repo` — a mapping version, then the seed — and it is the
 one thing the mark depends on. Re-running refreshes the artifacts from it, so a
 better renderer or a different size reaches every repository while leaving the
 identity alone.
@@ -120,11 +120,25 @@ not survive being cloned. `apply` says so, and the fix is a
 | `text-identicon.py` | the two lattices and the emoji palette, for media that display no image. A pair with the file above, and four artifacts come from it |
 | `reference/` | the library the derivation conforms to, committed rather than fetched, and the harness that regenerates the vectors from it |
 | `tests/` | the implementation against the vectors, and the vectors against the library |
-| `work-in-progress/` | what is settled but not yet adopted: the emoji-square mapping, a fallback for media that can show neither an image nor styled text, and `scope-split.md`, which says where each half of `repository-identicon.py` belongs; nothing here is imported by anything |
+| `work-in-progress/` | what is settled but not yet adopted: the emoji-colour mapping, a fallback for media that can show neither an image nor styled text, and `scope-split.md`, which says where each half of `repository-identicon.py` belongs; nothing here is imported by anything |
 
 ```bash
 python3 -m unittest discover -s tests -t tests
 ```
+
+## The system diagram
+
+**[Every top-level routine, one page per module][diagram]** — what each one is
+for, what it hands back, and which other one calls it, with a typed glossary of
+the words this repository uses in a particular way.
+
+[diagram]: https://justin-maxwell.github.io/Repository-Identicon/
+
+Its source is `work-in-progress/system-diagram.mr`, a MarkRight document that
+knows nothing about pixels; `system-diagram-layout.py` says where things go and
+`system-diagram.py` draws them. The published page is generated from that source
+on every push to `main`, so it cannot be a version of the diagram nobody
+generated.
 
 Writing an implementation elsewhere? `validate` runs it against the pinned
 vectors, so you do not have to build a harness to find out whether you agree:

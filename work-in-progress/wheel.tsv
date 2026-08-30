@@ -2,12 +2,14 @@
 #
 # Every tile, where it is, and nothing else. This file is the wheel.
 #
-# **The wheel's version is not the mapping version.** The key stamps say which
-# colour rule drew a mark and are integers, 0 through 3. This is the version of
-# the tricolour arrangement -- which three squares stand for which stretch of
-# the draw -- and it moves when a tile moves. Version 3 of the colour rule and
-# version 0.3 of the wheel are different numbers about different things that
-# happen to have arrived together.
+# **The wheel's version is the mapping version now.** They used to be two
+# numbers for one thing: the key stamps said which colour rule drew a mark, as
+# a bare integer, and this said which tricolour arrangement -- which three
+# colours stand for which stretch of the draw -- stands over the gamut that
+# rule produces. The two were solved together, so a tile moving and the rule
+# moving are the same event. The bare `3` was withdrawn as a draft and
+# re-issued as `0.3`, which is what this file already carried, and there is one
+# number now. It still moves when a tile moves.
 #
 # **One file, and all 165 in it.** `hand.tsv` held only what had been argued
 # about -- the ring, the handful moved between tiers, and the rejected set --

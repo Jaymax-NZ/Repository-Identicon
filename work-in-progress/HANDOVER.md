@@ -101,10 +101,13 @@ disagreement. It is a new colour rule rather than an edit to version 2, because
 the key stamps the rule and old rules never retire; ten new vectors came with
 it, which `load_vectors` enforces.
 
-**Do not confuse the three version numbers.** `VERSION` is the tool, at
-`0.0.build`. `MAPPING_VERSION` is the colour rule, an integer in every key, now
-3. The wheel is `0.3`, in `wheel.tsv`. `--version` prints the first two together
-because a report about a colour means the second.
+**There are two version numbers now, not three.** `VERSION` is the tool, at
+`0.0.build`. `MAPPING_VERSION` is the colour rule, in every key, now the dotted
+string `0.3` -- which is the number the wheel in `wheel.tsv` already carried.
+The rule and the wheel were solved together, so they are one thing numbered
+once; the bare integer `3` was withdrawn as a draft and re-issued as `0.3`,
+which changed every mark, because the version is inside the string being hashed.
+`--version` prints both because a report about a colour means the second.
 
 **`in-use.tsv` is indexed by the draw, not by the hue.** Those were the same
 number until version 3 warped one into the other. A consumer indexing by hue is
