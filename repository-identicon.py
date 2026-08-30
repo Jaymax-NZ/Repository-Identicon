@@ -672,15 +672,187 @@ def _png_chunk(tag, data):
     )
 
 
+# ---- A deflate encoder this file owns ----
+#
+# **`zlib.compress` cannot be used here, at any level.** The PNG bytes are
+# committed to the repository and `apply --check` compares them, so two
+# machines running the same version must produce the same file. The
+# compression level was already pinned to 9 and the filter to 0, and the
+# rasters still differed: CPython links whichever deflate the platform
+# supplies, and zlib-ng picks different matches from stock zlib at the same
+# level. The level is an input to the search, not a description of its
+# output. So the search is written out here, where its result is a fact about
+# this file rather than about the machine.
+#
+# The trade is size. Fixed Huffman codes cost about 13 bits for the
+# length-distance pair that a flat colour run turns into, where zlib's dynamic
+# codes cost two or three. The 256-pixel raster is roughly four times the size
+# it was. Dynamic Huffman would win those bytes back and is the obvious
+# extension if the weight ever matters; it is a few hundred lines of
+# code-length alphabet and canonical code construction, and the rasters are
+# still a few kilobytes without it.
+#
+# `zlib.crc32` and `zlib.adler32` stay. They are checksums with one defined
+# answer, not searches.
+
+_DEFLATE_WINDOW = 32768
+_DEFLATE_MAX_MATCH = 258
+_DEFLATE_MIN_MATCH = 3
+
+# How many earlier positions a match search considers. Bounded so the encoder
+# is linear, and fixed so the bound is part of the format this file defines.
+_DEFLATE_MAX_CHAIN = 32
+
+# (code, extra bits, smallest length that uses the code), longest first.
+_LENGTH_CODES = [
+    (285, 0, 258), (284, 5, 227), (283, 5, 195), (282, 5, 163), (281, 5, 131),
+    (280, 4, 115), (279, 4, 99), (278, 4, 83), (277, 4, 67), (276, 3, 59),
+    (275, 3, 51), (274, 3, 43), (273, 3, 35), (272, 2, 31), (271, 2, 27),
+    (270, 2, 23), (269, 2, 19), (268, 1, 17), (267, 1, 15), (266, 1, 13),
+    (265, 1, 11), (264, 0, 10), (263, 0, 9), (262, 0, 8), (261, 0, 7),
+    (260, 0, 6), (259, 0, 5), (258, 0, 4), (257, 0, 3),
+]
+
+# (code, extra bits, smallest distance that uses the code), longest first.
+_DISTANCE_CODES = [
+    (29, 13, 24577), (28, 13, 16385), (27, 12, 12289), (26, 12, 8193),
+    (25, 11, 6145), (24, 11, 4097), (23, 10, 3073), (22, 10, 2049),
+    (21, 9, 1537), (20, 9, 1025), (19, 8, 769), (18, 8, 513), (17, 7, 385),
+    (16, 7, 257), (15, 6, 193), (14, 6, 129), (13, 5, 97), (12, 5, 65),
+    (11, 4, 49), (10, 4, 33), (9, 3, 25), (8, 3, 17), (7, 2, 13), (6, 2, 9),
+    (5, 1, 7), (4, 1, 5), (3, 0, 4), (2, 0, 3), (1, 0, 2), (0, 0, 1),
+]
+
+
+class _BitWriter:
+    """Deflate bit order: elements enter at the low bit, codes high bit first."""
+
+    def __init__(self):
+        self.out = bytearray()
+        self.bits = 0
+        self.count = 0
+
+    def add(self, value, width):
+        """Write `width` bits of `value`, least significant bit first."""
+        self.bits |= (value & ((1 << width) - 1)) << self.count
+        self.count += width
+        while self.count >= 8:
+            self.out.append(self.bits & 0xFF)
+            self.bits >>= 8
+            self.count -= 8
+
+    def code(self, code, width):
+        """Write a Huffman code of `width` bits, most significant bit first."""
+        for shift in range(width - 1, -1, -1):
+            self.add((code >> shift) & 1, 1)
+
+    def finish(self):
+        if self.count:
+            self.out.append(self.bits & 0xFF)
+            self.bits = 0
+            self.count = 0
+        return bytes(self.out)
+
+
+def _fixed_literal(value):
+    """The fixed-Huffman code and width for a literal or length symbol."""
+    if value < 144:
+        return 0x30 + value, 8
+    if value < 256:
+        return 0x190 + value - 144, 9
+    if value < 280:
+        return value - 256, 7
+    return 0xC0 + value - 280, 8
+
+
+def _split(table, value):
+    for code, extra, base in table:
+        if value >= base:
+            return code, extra, value - base
+    raise ValueError(value)
+
+
+def _deflate(data):
+    """One fixed-Huffman deflate block holding all of `data`.
+
+    Greedy longest match, most recent position on a tie, search bounded to
+    `_DEFLATE_MAX_CHAIN` candidates. Every choice is written here, so the
+    output depends on the input alone.
+    """
+    writer = _BitWriter()
+    writer.add(1, 1)  # BFINAL: this is the only block.
+    writer.add(1, 2)  # BTYPE 01: fixed Huffman codes.
+
+    size = len(data)
+    seen = {}
+    pos = 0
+    while pos < size:
+        best_length = 0
+        best_distance = 0
+        if pos + _DEFLATE_MIN_MATCH <= size:
+            chain = seen.get(data[pos:pos + _DEFLATE_MIN_MATCH])
+            if chain:
+                oldest = pos - _DEFLATE_WINDOW
+                ceiling = min(_DEFLATE_MAX_MATCH, size - pos)
+                for candidate in reversed(chain[-_DEFLATE_MAX_CHAIN:]):
+                    if candidate < oldest:
+                        continue
+                    length = 0
+                    # The match may run past `pos`; deflate copies byte by
+                    # byte, which is what turns a colour run into one pair.
+                    while (length < ceiling
+                           and data[candidate + length] == data[pos + length]):
+                        length += 1
+                    if length > best_length:
+                        best_length = length
+                        best_distance = pos - candidate
+                        if length == ceiling:
+                            break
+
+        if best_length >= _DEFLATE_MIN_MATCH:
+            symbol, extra, offset = _split(_LENGTH_CODES, best_length)
+            writer.code(*_fixed_literal(symbol))
+            if extra:
+                writer.add(offset, extra)
+            symbol, extra, offset = _split(_DISTANCE_CODES, best_distance)
+            writer.code(symbol, 5)
+            if extra:
+                writer.add(offset, extra)
+            step = best_length
+        else:
+            writer.code(*_fixed_literal(data[pos]))
+            step = 1
+
+        for index in range(pos, min(pos + step, size - _DEFLATE_MIN_MATCH + 1)):
+            seen.setdefault(data[index:index + _DEFLATE_MIN_MATCH],
+                            []).append(index)
+        pos += step
+
+    writer.code(*_fixed_literal(256))  # end of block
+    return writer.finish()
+
+
+def _zlib_stream(data):
+    """`data` wrapped as a zlib stream: header, deflate block, Adler-32."""
+    # 0x78 0x9C is CM=8, a 32K window, no preset dictionary, and the check bits
+    # that make the pair divide by 31.
+    return (b"\x78\x9c" + _deflate(data)
+            + struct.pack(">I", zlib.adler32(data) & 0xFFFFFFFF))
+
+
 def encode_png(rgba, width, height):
-    """Minimal 8-bit RGBA PNG encoder. Flat colour blocks compress to nothing."""
+    """Minimal 8-bit RGBA PNG encoder. Every row carries filter type 0.
+
+    The bytes are reproducible on any machine running this file: the filter is
+    fixed here and the deflate search is `_deflate`, not the platform's.
+    """
     stride = width * 4
     raw = b"".join(b"\x00" + rgba[y * stride:(y + 1) * stride] for y in range(height))
     header = struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0)
     return (
         b"\x89PNG\r\n\x1a\n"
         + _png_chunk(b"IHDR", header)
-        + _png_chunk(b"IDAT", zlib.compress(raw, 9))
+        + _png_chunk(b"IDAT", _zlib_stream(raw))
         + _png_chunk(b"IEND", b"")
     )
 

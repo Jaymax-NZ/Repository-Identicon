@@ -508,6 +508,27 @@ Both are derived and regenerable. Neither belongs in the key file: that file is
 the source of truth, an implementation SHOULD leave it byte-for-byte alone, and
 a derived value inside it would go stale with nothing entitled to correct it.
 
+### What `vectors.json` pins, and what the byte fixtures pin
+
+Two files hold pinned values, and they hold different things.
+
+`vectors.json` pins the **mapping**: for each key, the MD5 digest, the grid,
+and the foreground colour. It is the portable contract. An implementation in
+any language conforms by reproducing those three values, and nothing in it
+requires producing any particular file.
+
+`tests/fixtures/` pins the **serialisation**: for each of four keys, the exact
+bytes of all twelve artifacts listed above. It is a contract between this
+implementation and itself across machines, not a contract with a port. A
+reimplementation is not asked to match it and MUST NOT be judged against it.
+
+The division is the useful part. A grid that changed breaks the vectors; a
+file layout that changed breaks only the fixtures. So a failure names its own
+cause: the mapping moved, or the writer did.
+
+No key appears in both files, and `tests/test_bytes.py` asserts it, so neither
+file can drift into restating the other.
+
 ### One file, both grounds
 
 There is one of each rendered artifact, and one `.colour`. A consumer picks by
@@ -679,6 +700,29 @@ else is transparent by default.
 An implementation MUST NOT derive the block from a canvas. Doing so needs a
 heuristic, heuristics do not scale linearly, and a mark that lands on a
 different block at a different scale is two drawings rather than one.
+
+#### PNG encoding
+
+The specification fixes the pixels, not the file. Any encoding that decodes to
+the specified pixels conforms, and an implementation MAY use whatever PNG
+writer it has.
+
+The reference implementation holds itself to more, because it commits its
+rasters and `apply --check` compares them: two machines running the same
+version MUST write the same bytes. A general-purpose deflate does not give
+that. `zlib.compress` at a fixed level still selects different matches under
+zlib-ng than under stock zlib, so the level is an input to the search rather
+than a description of its output, and the same key produced different files on
+a laptop and on a CI runner.
+
+The reference therefore writes 8-bit RGBA, filter type 0 on every row, and one
+fixed-Huffman deflate block from a match search written out in
+`repository-identicon.py` rather than taken from the platform. The output then
+depends on the input alone. The cost is size: fixed Huffman codes spend about
+13 bits on a length-distance pair where dynamic codes spend two or three.
+
+A port that wants byte-identical rasters has to adopt that encoder. One that
+only wants to conform does not.
 
 #### Canvases a consumer fixes
 
