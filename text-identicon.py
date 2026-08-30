@@ -374,15 +374,6 @@ def tricolour(rgb, grid):
     return "".join(PALETTE[i][0] for i in tricolour_indices(rgb, grid))
 
 
-def tricolour_names(rgb, grid):
-    """The three colour names for `rgb`, in laid-out order.
-
-    Public surface. Nothing in this repository calls it; the consumers that
-    vendor this module do, to log or explain a mark.
-    """
-    return tuple(PALETTE[i][1] for i in tricolour_indices(rgb, grid))
-
-
 def tricolour_detail(rgb, grid):
     """Everything about the choice, for tests and for explaining a result.
 

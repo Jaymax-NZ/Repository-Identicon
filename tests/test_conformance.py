@@ -668,7 +668,7 @@ class TestInstallingIntoARepository(unittest.TestCase):
                          identicon.recorded_key(self.tmp))
         self.assertIsNone(after["seed_drift"])
 
-    def test_an_override_masking_a_renamed_remote_is_reported(self):
+    def test_an_override_outranking_a_renamed_remote_is_reported(self):
         """An override outranks the remote, which is the point of it and the
         one way a rename can pass unnoticed. It is reported, not resolved."""
         pinned = "github.com/someone/a-project"
@@ -681,13 +681,13 @@ class TestInstallingIntoARepository(unittest.TestCase):
         result = identicon.install_into_repo(self.tmp, check=True)
         self.assertEqual("override", result["source"])
         self.assertEqual(pinned, result["seed"])
-        self.assertEqual("github.com/someone/moved-on", result["masking"])
+        self.assertEqual("github.com/someone/moved-on", result["overridden_remote"])
 
     def test_an_override_agreeing_with_the_remote_is_not_reported(self):
         (pathlib.Path(self.tmp) / identicon.OVERRIDE_FILENAME).write_text(
             "github.com/someone/a-project\n")
         result = identicon.install_into_repo(self.tmp, check=True)
-        self.assertIsNone(result["masking"])
+        self.assertIsNone(result["overridden_remote"])
 
     def test_git_helpers_accept_a_default_cwd(self):
         """`git -C None` fails and reads as "not a repository", which is the

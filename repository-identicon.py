@@ -88,12 +88,7 @@ def large_geometry(canvas):
 
 # An optional one-line seed at the repository top level, overriding the derived
 # key. Committing it makes a project's identicon travel with the repository.
-#
-# `.claude-state-identicon` is still honoured on read: it is committed into
-# other people's repositories, so dropping it would silently change their
-# identicon, which is the one thing an override exists to prevent.
 OVERRIDE_FILENAME = ".repository-identicon"
-LEGACY_OVERRIDE_FILENAMES = (".claude-state-identicon",)
 
 
 def normalise_seed(path):
@@ -197,22 +192,17 @@ def repo_remote_url(path):
 
 
 def override_seed(directory):
-    """The committed seed at `directory`, if there is a usable one.
-
-    The current name wins; a legacy name is honoured only when the current one
-    is absent, so a repository carrying both is not left guessing.
-    """
+    """The committed seed at `directory`, if there is a usable one."""
     if not directory:
         return None
-    for name in (OVERRIDE_FILENAME, *LEGACY_OVERRIDE_FILENAMES):
-        try:
-            text = (pathlib.Path(directory) / name).read_text()
-        except (OSError, UnicodeDecodeError):
-            continue
-        for line in text.splitlines():
-            line = line.strip()
-            if line and not line.startswith("#"):
-                return line
+    try:
+        text = (pathlib.Path(directory) / OVERRIDE_FILENAME).read_text()
+    except (OSError, UnicodeDecodeError):
+        return None
+    for line in text.splitlines():
+        line = line.strip()
+        if line and not line.startswith("#"):
+            return line
     return None
 
 
@@ -1174,12 +1164,12 @@ def install_into_repo(path=None, seed=None, block=ARTIFACT_BLOCK, check=False,
     # An override outranks the remote, which is the point of it. Where one is
     # in force and the remote disagrees, say so rather than resolve it -- the
     # file is the record of a decision somebody made on purpose.
-    masking = None
+    overridden_remote = None
     if derived_source == "override":
         url = repo_remote_url(path)
         remote_seed = normalise_remote_url(url) if url else None
         if remote_seed and remote_seed != derived_seed:
-            masking = remote_seed
+            overridden_remote = remote_seed
 
     paths = artifact_paths(root)
     wanted = artifact_bytes(key, block, **render_kwargs)
@@ -1236,7 +1226,7 @@ def install_into_repo(path=None, seed=None, block=ARTIFACT_BLOCK, check=False,
         "changes": changes,
         "current": all(state == "unchanged" for state in changes.values()),
         "checked": bool(check),
-        "masking": masking,
+        "overridden_remote": overridden_remote,
         "seed_drift": seed_drift,
         "mapping_drift": mapping_drift,
         "reseeded": bool(reseed),
@@ -1331,11 +1321,11 @@ def cmd_apply(args):
         print("The identicon is unchanged, which is the point: a mark that "
               "re-derived itself would not be an identity. Run "
               "`apply --reseed` to adopt the new seed and change the mark.")
-    elif result["masking"]:
+    elif result["overridden_remote"]:
         print()
         print(f"{OVERRIDE_FILENAME} pins this repository to "
               f"{result['seed']}, but its remote now says "
-              f"{result['masking']}.")
+              f"{result['overridden_remote']}.")
         print("The override wins, which is what it is for. If the move was "
               "meant to change the identity, delete the file and re-run; if "
               "it was not, nothing needs doing.")
