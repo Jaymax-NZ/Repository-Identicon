@@ -84,14 +84,6 @@ def large_geometry(canvas):
     return block, border
 
 
-# An icon *theme* namespace, not a filename. **This is the one value a
-# vendoring tool is expected to change**, so two tools installing icons for one
-# project do not collide -- Console-Colophon's copy says `console-colophon` and
-# Claude-State-Panel's says `claude-state-identicon`. Nothing in this file
-# installs an icon; the prefix is here because SPEC.md fixes the name it forms.
-ICON_PREFIX = "repository-identicon"
-
-
 # ---- Seed and key ----
 
 # An optional one-line seed at the repository top level, overriding the derived
@@ -563,40 +555,14 @@ def hex_colour(rgb):
     return "#{:02x}{:02x}{:02x}".format(*rgb)
 
 
-def short_hash(key, length=12):
-    return hashlib.sha256(key.encode("utf-8")).hexdigest()[:length]
-
-
-def icon_name(key):
-    """Theme icon name. Konsole's profile Icon= is a theme name, not a path."""
-    return f"{ICON_PREFIX}-{short_hash(key)}"
-
-
-def project_name(key):
-    """The last segment of the key, or the whole key if it has no separator."""
-    return os.path.basename(key) or key
-
-
-def badge_label(key, limit=2):
-    """A one or two character label for the badge overlay.
-
-    Initials where the project name has separators, otherwise the leading
-    characters. Upper-cased, because the badge is small.
-    """
-    name = project_name(key)
-    flat = name
-    for separator in ("_", ".", " "):
-        flat = flat.replace(separator, "-")
-    words = [part for part in flat.split("-") if part]
-    if len(words) >= 2:
-        return "".join(word[0] for word in words[:limit]).upper()
-    return name[:limit].upper()
-
-
 # The Konsole profile names -- profile_name, profile_filename, profile_body --
-# were here and are now in Console-Colophon. SPEC.md fixes the short id, the
-# icon theme name and the badge label; it says nothing about how a terminal
-# emulator names a profile, and neither should this file.
+# were here and are now in Console-Colophon.
+#
+# The derived names were here too, and are gone: short_hash and icon_name,
+# because nothing in this repository installs an icon; project_name and
+# badge_label, because neither is derived from the mark. Two implementations
+# shortening a project's name differently collide with nothing, so the
+# specification has no reason to fix either.
 
 
 # ---- Rendering ----
@@ -613,33 +579,17 @@ def canvas_edge(block, border):
     return GRID * block + 2 * border
 
 
-def fit_block(edge, border=1):
-    """The largest block that fits a canvas somebody else fixed.
-
-    For the XDG icon theme, where the file at `48x48/apps/` has to be 48 pixels
-    whatever that divides into, and for a terminal handed a pixel budget.
-    """
-    block = (edge - 2 * border) // GRID
-    if block < 1:
-        block = max(1, edge // GRID)
-    return block
-
-
 def render_rgba(key, block, border=BORDER, chroma=MARK_CHROMA,
-                lightness=MARK_LIGHTNESS, background=None, edge=None):
+                lightness=MARK_LIGHTNESS, background=None):
     """Return raw RGBA bytes for a square identicon of `block`-pixel blocks.
 
-    `edge` is for the callers who do not get to choose their canvas -- the icon
-    theme, a terminal -- and pads the grid into a fixed square. Left alone the
-    canvas is derived from the block and the border, which is the normal case
-    and the only one the artifacts use.
+    The canvas is derived from the block and the border, never given. A caller
+    that has to fill a canvas somebody else fixed uses `large_geometry`, which
+    returns a block and a border that land on that canvas exactly.
     """
     grid = identicon_grid(key)
     red, green, blue = identicon_colour(key, chroma, lightness)
-    if edge is None:
-        edge, margin = canvas_edge(block, border), border
-    else:
-        margin = (edge - block * GRID) // 2
+    edge, margin = canvas_edge(block, border), border
 
     if background is None:
         back = bytes((0, 0, 0, 0))
@@ -858,7 +808,7 @@ def encode_png(rgba, width, height):
 
 
 def render_png(key, block, **kwargs):
-    edge = kwargs.get("edge") or canvas_edge(block, kwargs.get("border", BORDER))
+    edge = canvas_edge(block, kwargs.get("border", BORDER))
     return encode_png(render_rgba(key, block, **kwargs), edge, edge)
 
 
@@ -885,19 +835,6 @@ def render_svg(key, block=ARTIFACT_BLOCK, border=BORDER, chroma=MARK_CHROMA,
                 )
     parts.append("</svg>")
     return "\n".join(parts) + "\n"
-
-
-def render_ansi(key):
-    """Terminal preview, two spaces per cell on a background colour."""
-    grid = identicon_grid(key)
-    red, green, blue = identicon_colour(key)
-    lines = []
-    for row in grid:
-        line = ""
-        for filled in row:
-            line += f"\033[48;2;{red};{green};{blue}m  \033[0m" if filled else "  "
-        lines.append(line)
-    return "\n".join(lines)
 
 
 # The text rendering lives in text-identicon.py, which takes a grid and a colour
@@ -1315,10 +1252,6 @@ def _resolve_from_args(args):
                            getattr(args, "seed", None))
 
 
-def _key_from_args(args):
-    return _resolve_from_args(args)[0]
-
-
 def _render_kwargs(args):
     background = None
     if getattr(args, "background", None):
@@ -1349,22 +1282,14 @@ def cmd_show(args):
     print(f"key       {key}")
     note = SOURCE_NOTES.get(source)
     print(f"source    {source}" + (f"  ({note})" if note else ""))
-    print(f"project   {project_name(key)}")
-    print(f"icon      {icon_name(key)}")
-    print(f"badge     {badge_label(key)}")
     print(f"colour    {hex_colour(identicon_colour(key, args.chroma, args.lightness))}")
-    print()
-    print(render_ansi(key))
     return 0
 
 
 def cmd_render(args):
-    key = _key_from_args(args)
+    key = _resolve_from_args(args)[0]
     kwargs = _render_kwargs(args)
-    if args.edge:
-        block, extra = fit_block(args.edge), {"edge": args.edge}
-    else:
-        block, extra = args.block, {}
+    block, extra = args.block, {}
     if args.format == "svg":
         data = render_svg(key, block, **kwargs).encode("utf-8")
     else:
@@ -1693,9 +1618,6 @@ def build_parser():
     add_common(render, render=True)
     render.add_argument("--block", type=int, default=ARTIFACT_BLOCK,
                         choices=BLOCKS, help="block size in pixels")
-    render.add_argument("--edge", type=int,
-                        help="fit the grid to this exact canvas instead, for "
-                             "somewhere the size is not ours to choose")
     render.add_argument("--format", choices=("png", "svg"), default="png")
     render.add_argument("--out", default="-", help="output file, or - for stdout")
     render.set_defaults(func=cmd_render)
