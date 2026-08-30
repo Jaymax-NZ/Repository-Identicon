@@ -65,16 +65,6 @@
 ┋┋┋┋ ━ returns
 ┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋ ━ the subcommand's exit status
-┋┋┋ ━ _key_from_args → _resolve_from_args
-┊┊┊┊ ┄ ⸆ add_common() gives the path commands --seed, and the drawing ones --chroma, --lightness and --background.
-┊┊┊┊ ┄ ⸖ $signature=→ resolve_key_for(path, seed)
-┊┊┊┊ ┄ ⸖ $number=0.2
-┊┊┊┊ ┄ ⸖ $fn=argh
-┊┊┊┊ ┄ ⸖ $kind=thin
-┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:1146
-┋┋┋┋ ━ returns
-┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋ ━ (key, source) for the path a command was given
 ┋┋ ━ The five commands
 ┋┋┋ ━ ● apply
 ┊┊┊┊ ┄ ⸖ $number=0.3
@@ -248,7 +238,6 @@
 ┊┊┊┊┊ ┄ ⸖ $number=1.7
 ┊┊┊┊┊ ┄ ⸖ $fn=f_override
 ┊┊┊┊┊ ┄ ⸖ $kind=ext
-┊┊┊┊┊ ┄ ⸆ and .claude-state-identicon, on read only
 ┊┊┊┊┊ ┄ ⸖ $term=override
 ┊┊┊┊┊ ┄ ⸖ $term=seed
 ┋┋┋┋ ━ repo_toplevel(path)
@@ -362,19 +351,11 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=r_digest
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=value
-┊┊┊┊┊ ┄ ⸖ $edge=r_short
-┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=value
 ┋┋┋┋ ━ → _digest
 ┊┊┊┊┊ ┄ ⸖ $fn=r_digest
 ┊┊┊┊┊ ┄ ⸖ $offpage=out
 ┊┊┊┊┊ ┄ ⸖ $target=_digest
 ┊┊┊┊┊ ┄ ⸆ the mark comes off its md5
-┋┋┋┋ ━ → short_hash
-┊┊┊┊┊ ┄ ⸖ $fn=r_short
-┊┊┊┊┊ ┄ ⸖ $offpage=out
-┊┊┊┊┊ ┄ ⸖ $target=short_hash
-┊┊┊┊┊ ┄ ⸆ the names come off a sha256
 ┋┋┋┋ ━ cmd_doctor(args)
 ┊┊┊┊┊ ┄ ⸖ $number=1.17
 ┊┊┊┊┊ ┄ ⸖ $fn=cmd_doctor
@@ -614,72 +595,9 @@
 ┊┊┊┊┊ ┄ ⸖ $offpage=out
 ┊┊┊┊┊ ┄ ⸖ $target=artifact_bytes
 ┊┊┊┊┊ ┄ ⸆ .colour and .grid
-┋┋ ━ Names and geometry
+┋┋ ━ Geometry
 ┊┊┊ ┄ ⸖ $page=3
-┊┊┊ ┄ ⸆ the rest of what the key decides, and the canvas maths
-┋┋┋ ━ NAMES
-┊┊┊┊ ┄ ⸆ all four are fixed by SPEC.md § Derived names
-┋┋┋┋ ━ → v_key
-┊┊┊┊┊ ┄ ⸖ $fn=r_key3
-┊┊┊┊┊ ┄ ⸖ $offpage=in
-┊┊┊┊┊ ┄ ⸖ $target=v_key
-┊┊┊┊┊ ┄ ⸆ the key, through a second digest
-┊┊┊┊┊ ┄ ⸖ $edge=short_hash
-┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=value
-┋┋┋┋ ━ short_hash(key, length=12)
-┊┊┊┊┊ ┄ ⸖ $number=3.1
-┊┊┊┊┊ ┄ ⸖ $fn=short_hash
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:566
-┊┊┊┊┊ ┄ ⸆ Returns sha256 of the key, not the md5 the mark is drawn from.
-┊┊┊┊┊ ┄ ⸖ $term=short id
-┊┊┊┊┊ ┄ ⸖ $term=discriminator
-┊┊┊┊┊ ┄ ⸖ $term=key
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ the first `length` hex characters
-┊┊┊┊┊ ┄ ⸖ $edge=project_name
-┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=weak dashed
-┊┊┊┊┊ ┄ ⸖ $edge=icon_name
-┊┊┊┊┊ ┄ ⸖ $sides=rr
-┊┊┊┊┊ ┄ ⸖ $carries=calls
-┋┋┋┋ ━ project_name(key)
-┊┊┊┊┊ ┄ ⸆ Used by badge_label, and printed by `show`.
-┊┊┊┊┊ ┄ ⸖ $number=3.2
-┊┊┊┊┊ ┄ ⸖ $fn=project_name
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:575
-┊┊┊┊┊ ┄ ⸖ $term=project name
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ the last path segment of the key
-┊┊┊┊┊ ┄ ⸖ $edge=badge_label
-┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=calls
-┋┋┋┋ ━ badge_label(key, limit=2)
-┊┊┊┊┊ ┄ ⸖ $number=3.3
-┊┊┊┊┊ ┄ ⸖ $fn=badge_label
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:580
-┊┊┊┊┊ ┄ ⸆ Initials where the name has separators, otherwise the leading characters.
-┊┊┊┊┊ ┄ ⸖ $term=badge label
-┊┊┊┊┊ ┄ ⸖ $term=project name
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ one or two upper-case characters
-┋┋┋┋ ━ icon_name(key)
-┊┊┊┊┊ ┄ ⸖ $number=3.4
-┊┊┊┊┊ ┄ ⸖ $fn=icon_name
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:570
-┊┊┊┊┊ ┄ ⸆ Formats the icon theme name. Nothing in this repository installs icons.
-┊┊┊┊┊ ┄ ⸖ $term=icon theme name
-┊┊┊┊┊ ┄ ⸖ $term=short id
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ <ICON_PREFIX>-<short id>
+┊┊┊ ┄ the canvas maths
 ┋┋┋ ━ GEOMETRY
 ┊┊┊┊ ┄ ⸆ nothing here takes a key
 ┋┋┋┋ ━ canvas_edge(block, border)
@@ -694,17 +612,6 @@
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ the square canvas those imply
-┋┋┋┋ ━ fit_block(edge, border=1)
-┊┊┊┊┊ ┄ ⸖ $number=3.6
-┊┊┊┊┊ ┄ ⸖ $fn=fit_block
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:616
-┊┊┊┊┊ ┄ ⸆ Used where the canvas size is fixed by something else.
-┊┊┊┊┊ ┄ ⸖ $term=fitting
-┊┊┊┊┊ ┄ ⸖ $term=canvas
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ the largest block that fits
 ┋┋┋┋ ━ large_geometry(canvas)
 ┊┊┊┊┊ ┄ ⸖ $number=3.7
 ┊┊┊┊┊ ┄ ⸖ $fn=large_geometry
@@ -723,7 +630,7 @@
 ┊┊┊┊┊ ┄ ⸖ $kind=data
 ┊┊┊┊┊ ┄ ⸆ profile_name · profile_filename · profile_body · install_icon · install_profile
 ┋┋┋ ━ WHO USES THEM
-┊┊┊┊ ┄ ⸆ SPEC.md fixes the short id, the discriminator, the project name, the badge label and the icon theme name. It says nothing about how a terminal emulator names a profile, which is why those three left with the code that installed them.
+┊┊┊┊ ┄ SPEC.md fixed five derived names and now fixes none. Each was either a name for an icon this repository does not install, or a shortening of a project name that two implementations could disagree about without colliding.
 ┋┋┋┋ ━ → c_show
 ┊┊┊┊┊ ┄ ⸖ $fn=r_show3
 ┊┊┊┊┊ ┄ ⸖ $offpage=in
@@ -743,7 +650,6 @@
 ┊┊┊┊┊ ┄ ⸖ $fn=r_render3
 ┊┊┊┊┊ ┄ ⸖ $offpage=in
 ┊┊┊┊┊ ┄ ⸖ $target=c_render
-┊┊┊┊┊ ┄ ⸆ fit_block fits --edge
 ┋┋ ━ Rendering
 ┊┊┊ ┄ ⸆ one key, five kinds of bytes — and the line § Scope draws just past them
 ┊┊┊ ┄ ⸖ $page=4
@@ -779,7 +685,6 @@
 ┊┊┊┊┊ ┄ ⸆ Every routine here is a pure function of the key.
 ┊┊┊┊┊ ┄ ⸆ Nothing on this page reads the environment.
 ┊┊┊┊┊ ┄ ⸖ $term=rendering
-┊┊┊┊┊ ┄ ⸖ $term=style
 ┋┋┋ ━ PIXELS
 ┋┋┋┋ ━ render_png(key, block, **kwargs)
 ┊┊┊┊┊ ┄ ⸖ $number=4.2
@@ -805,7 +710,6 @@
 ┊┊┊┊┊ ┄ ⸖ $term=block
 ┊┊┊┊┊ ┄ ⸖ $term=border
 ┊┊┊┊┊ ┄ ⸖ $term=canvas
-┊┊┊┊┊ ┄ ⸖ $term=fitting
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ raw RGBA bytes
@@ -835,17 +739,6 @@
 ┋┋┋┋┋┋ ━ an SVG document
 ┋┋┋ ━ CHARACTERS
 ┊┊┊┊ ┄ ⸆ The lattices and the tricolour are next door, in text-identicon.py, and reach a file through artifact_bytes rather than through anything here.
-┋┋┋┋ ━ render_ansi(key)
-┊┊┊┊┊ ┄ ⸖ $number=4.6
-┊┊┊┊┊ ┄ ⸖ $fn=render_ansi
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:718
-┊┊┊┊┊ ┄ ⸆ Two spaces per cell on a background colour, for `show`.
-┊┊┊┊┊ ┄ ⸖ $term=grid
-┊┊┊┊┊ ┄ ⸖ $term=rendering
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ five lines of escape sequences
 ┋┋┋ ━ THE SIBLING FILE
 ┊┊┊┊ ┄ ⸆ The two files are a pair and must be deployed together. Four of the eleven artifacts cannot be written without it, which is what `doctor` reports.
 ┋┋┋┋ ━ text_module_path()
@@ -1089,21 +982,6 @@
 ┋┋┋┋┋┋ ━ linear light
 ┋┋┋┋┋┋ ━ sRGB
 ┋┋┋ ━ PUBLIC SURFACE, NOT CALLED FROM HERE
-┋┋┋┋ ━ tricolour_names(rgb, grid)
-┊┊┊┊┊ ┄ ⸖ $signature=tricolour_detail(rgb, grid)
-┊┊┊┊┊ ┄ ⸖ $signature=hex_colour(rgb)
-┊┊┊┊┊ ┄ ⸖ $number=5.14
-┊┊┊┊┊ ┄ ⸖ $fn=tricolour_names
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:370
-┊┊┊┊┊ ┄ ⸆ Called by the tools that vendor this file, to log or explain a mark.
-┊┊┊┊┊ ┄ ⸖ $term=the triple
-┊┊┊┊┊ ┄ ⸖ $term=vendoring
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ the colour names
-┋┋┋┋┋┋ ━ everything about the choice
-┋┋┋┋┋┋ ━ #rrggbb
 ┋┋┋┋ ━ parse_grid(text) · parse_hex(value)
 ┊┊┊┊┊ ┄ ⸖ $number=5.15
 ┊┊┊┊┊ ┄ ⸖ $fn=parse_grid
@@ -1150,7 +1028,7 @@
 ┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:1010
 ┊┊┊┊┊ ┄ ⸖ $term=key
 ┊┊┊┊┊ ┄ ⸖ $term=seed drift
-┊┊┊┊┊ ┄ ⸖ $term=masking
+┊┊┊┊┊ ┄ ⸖ $term=overridden_remote
 ┊┊┊┊┊ ┄ ⸖ $term=reseed / remap
 ┊┊┊┊┊ ┄ ⸖ $term=current
 ┊┊┊┊┊ ┄ ⸖ $term=recorded key
@@ -1183,7 +1061,7 @@
 ┊┊┊┊┊ ┄ ⸖ $fn=install_json
 ┊┊┊┊┊ ┄ ⸖ $kind=data
 ┊┊┊┊┊ ┄ ⸆ key · seed · mapping_version · source · root · colour
-┊┊┊┊┊ ┄ ⸆ files · changes · current · checked · masking
+┊┊┊┊┊ ┄ ⸆ files · changes · current · checked · overridden_remote
 ┊┊┊┊┊ ┄ ⸆ seed_drift · mapping_drift · reseeded · remapped
 ┊┊┊┊┊ ┄ ⸖ $edge=r_ident6
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
@@ -1367,7 +1245,6 @@
 ┊┊┊┊┊ ┄ ⸖ $fn=terminal_rule
 ┊┊┊┊┊ ┄ ⸖ $kind=data
 ┊┊┊┊┊ ┄ ⸖ $term=rendering
-┊┊┊┊┊ ┄ ⸖ $term=style
 ┋┋┋┋ ━ twenty-one moved
 ┊┊┊┊┊ ┄ ⸖ $number=7.2
 ┊┊┊┊┊ ┄ ⸖ $fn=gone_terminal
@@ -1407,7 +1284,6 @@
 ┊┊┊┊┊ ┄ ⸆ Everything emit wrote is a file, or a composition of
 ┊┊┊┊┊ ┄ ⸆ files, and `cat` is the whole integration.
 ┊┊┊┊┊ ┄ ⸖ $term=artifact
-┊┊┊┊┊ ┄ ⸖ $term=style
 ┋┋┋ ━ THE GAP IT LEFT
 ┊┊┊┊ ┄ ⸆ Recorded rather than fixed. work-in-progress/scope-split.md carries this and the two ideas that would close it.
 ┋┋┋┋ ━ no 40 px raster
@@ -1431,9 +1307,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=7.6
 ┊┊┊┊┊ ┄ ⸖ $fn=receiving_terminal
 ┊┊┊┊┊ ┄ ⸖ $kind=ext
-┊┊┊┊┊ ┄ ⸖ $term=vendoring
 ┊┊┊┊┊ ┄ ⸖ $term=vector
-┊┊┊┊┊ ┄ ⸖ $term=conforming
 ┋┋ ━ Gone to Console-Colophon — the desktop half
 ┊┊┊ ┄ ⸖ $page=8
 ┊┊┊ ┄ ⸆ kept as page 8 so the numbering does not shift; this is a record of what was removed and where it went
@@ -1464,13 +1338,10 @@
 ┊┊┊┊┊ ┄ ⸆ list_konsole_services · list_sessions · resolve_session
 ┊┊┊┊┊ ┄ ⸆ dead         _bg, which nothing had called since the octants landed
 ┋┋┋ ━ WHAT STAYED, AND WHY
-┋┋┋┋ ━ three that look like they should have gone
+┋┋┋┋ ━ two that look like they should have gone
 ┊┊┊┊┊ ┄ ⸖ $number=8.4
 ┊┊┊┊┊ ┄ ⸖ $fn=stayed
 ┊┊┊┊┊ ┄ ⸖ $kind=data
-┊┊┊┊┊ ┄ ⸆ icon_name      SPEC.md § Derived names defines it, so it is the
-┊┊┊┊┊ ┄ ⸆ specification's and not a delivery detail
-┊┊┊┊┊ ┄ ⸆ ICON_PREFIX    it forms that name; nothing here installs anything
 ┊┊┊┊┊ ┄ ⸆ render_png     SPEC.md § Renderings mandates the raster and the
 ┊┊┊┊┊ ┄ ⸆ render_svg     vector, so they are the standard and stay
 ┋┋┋┋ ━ Console-Colophon
@@ -1481,12 +1352,9 @@
 ┊┊┊┊┊ ┄ ⸆ vectors.json by its own suite — 26 tests, and `derive` prints the shape
 ┊┊┊┊┊ ┄ ⸆ `validate` expects so the copy can be checked from outside:
 ┊┊┊┊┊ ┄ ⸆ repository-identicon validate -- console-colophon derive
-┊┊┊┊┊ ┄ ⸆ Its ICON_PREFIX is `console-colophon`; the specification fixes the short id
-┊┊┊┊┊ ┄ ⸆ and leaves the prefix to the implementing tool.
-┊┊┊┊┊ ┄ ⸖ $term=vendoring
+┊┊┊┊┊ ┄ It names its own icons; the specification no longer fixes any part of
+┊┊┊┊┊ ┄ that name.
 ┊┊┊┊┊ ┄ ⸖ $term=vector
-┊┊┊┊┊ ┄ ⸖ $term=conforming
-┊┊┊┊┊ ┄ ⸖ $term=icon theme name
 ┋┋┋┋ ━ nothing open
 ┊┊┊┊┊ ┄ ⸆ `emit` and `hooks` were the last thing waiting on somebody
 ┊┊┊┊┊ ┄ ⸆ else. They are gone, and page 7 is what is left of them.
@@ -1557,7 +1425,6 @@
 ┊┊┊┊┊ ┄ ⸆ Runs argv with the key appended, once per vector.
 ┊┊┊┊┊ ┄ ⸖ $term=key
 ┊┊┊┊┊ ┄ ⸖ $term=seed
-┊┊┊┊┊ ┄ ⸖ $term=port
 ┊┊┊┊┊ ┄ ⸖ $term=vector
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
@@ -1576,8 +1443,6 @@
 ┊┊┊┊┊ ┄ ⸖ $fn=p_impl
 ┊┊┊┊┊ ┄ ⸖ $kind=ext
 ┊┊┊┊┊ ┄ ⸆ prints {"grid": […], "colour": "#rrggbb"}
-┊┊┊┊┊ ┄ ⸖ $term=port
-┊┊┊┊┊ ┄ ⸖ $term=vendoring
 ┋┋┋ ━ COMPARING IT
 ┋┋┋┋ ━ check_output(text, vector)
 ┊┊┊┊┊ ┄ ⸖ $number=9.6
@@ -1585,7 +1450,6 @@
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
 ┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:1349
 ┊┊┊┊┊ ┄ ⸆ Compares the grid and the colour only.
-┊┊┊┊┊ ┄ ⸖ $term=conforming
 ┊┊┊┊┊ ┄ ⸖ $term=vector
 ┊┊┊┊┊ ┄ ⸖ $term=rendering
 ┋┋┋┋┋ ━ returns
@@ -1600,7 +1464,6 @@
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
 ┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:1333
 ┊┊┊┊┊ ┄ ⸆ Accepts a row as a string, a list of ints, or a list of booleans.
-┊┊┊┊┊ ┄ ⸖ $term=port
 ┊┊┊┊┊ ┄ ⸖ $term=grid
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
@@ -1654,7 +1517,7 @@
 ┊┊┊┊ ┄ ⸖ $type=str | None
 ┊┊┊┊ ┄ ⸆ What this repository would seed as today, differing from what is recorded. Reported, never acted on.
 ┊┊┊┊ ┄ ⸖ $defines=6.1
-┋┋┋ ━ masking
+┋┋┋ ━ overridden_remote
 ┊┊┊┊ ┄ ⸖ $type=str | None
 ┊┊┊┊ ┄ ⸆ An override in force while the git remote says something else.
 ┊┊┊┊ ┄ ⸖ $defines=6.1
@@ -1701,31 +1564,7 @@
 ┊┊┊┊ ┄ ⸖ $type=int, px
 ┊┊┊┊ ┄ ⸆ 5·block + 2·border. Always derived, never specified.
 ┊┊┊┊ ┄ ⸖ $defines=3.5
-┋┋┋ ━ fitting
-┊┊┊┊ ┄ ⸖ $type=int px → int
-┊┊┊┊ ┄ ⸆ Choosing the largest block that fits a canvas someone else fixed.
-┊┊┊┊ ┄ ⸖ $defines=3.6
 ┋┋ ━ Names
-┋┋┋ ━ short id
-┊┊┊┊ ┄ ⸖ $type=str, 12 hex
-┊┊┊┊ ┄ ⸆ The first 12 characters of sha256(key).
-┊┊┊┊ ┄ ⸖ $defines=3.1
-┋┋┋ ━ discriminator
-┊┊┊┊ ┄ ⸖ $type=str, 6 hex
-┊┊┊┊ ┄ ⸆ The first 6, for telling apart two projects sharing a basename.
-┊┊┊┊ ┄ ⸖ $defines=3.1
-┋┋┋ ━ project name
-┊┊┊┊ ┄ ⸖ $type=str
-┊┊┊┊ ┄ ⸆ The last /-separated segment of the key, or all of it.
-┊┊┊┊ ┄ ⸖ $defines=3.2
-┋┋┋ ━ badge label
-┊┊┊┊ ┄ ⸖ $type=str, 1–2 chars
-┊┊┊┊ ┄ ⸆ One or two upper-case characters, for a medium that can show no more.
-┊┊┊┊ ┄ ⸖ $defines=3.3
-┋┋┋ ━ icon theme name
-┊┊┊┊ ┄ ⸖ $type=str
-┊┊┊┊ ┄ ⸆ <tool prefix>-<short id>. A name resolved through the icon theme, never a path.
-┊┊┊┊ ┄ ⸖ $defines=3.4
 ┋┋ ━ In the repository
 ┋┋┋ ━ artifact
 ┊┊┊┊ ┄ ⸖ $type=file, one of eleven
@@ -1749,11 +1588,6 @@
 ┊┊┊┊ ┄ ⸖ $type=bytes | str
 ┊┊┊┊ ┄ ⸆ Bytes for one medium, derived from the key. Not part of conformance.
 ┊┊┊┊ ┄ ⸖ $defines=4.2
-┋┋┋ ━ style
-┊┊┊┊ ┄ ⸆ Which rendering a consumer asks for: icon, image, text, full, banner or line. SPEC.md ranks the renderings; these names are Console-Colophon's, and left with it.
-┊┊┊┊ ┄ ⸖ $type=str, one of six
-┊┊┊┊ ┄ ⸖ $defines=7.1
-┊┊┊┊ ┄ ⸖ $defines=7.4
 ┋┋┋ ━ lattice
 ┊┊┊┊ ┄ ⸆ The subcell grid a pattern is drawn on, with the numbers that produce it: the table, its sub-rows, the blank, and the padding above.
 ┊┊┊┊ ┄ ⸖ $type=(table, int, str, int)
@@ -1789,19 +1623,6 @@
 ┊┊┊┊ ┄ ⸆ One pinned (key, md5, grid, foreground) in vectors.json.
 ┊┊┊┊ ┄ ⸖ $defines=9.3
 ┊┊┊┊ ┄ ⸖ $defines=9.2
-┋┋┋ ━ port
-┊┊┊┊ ┄ ⸖ $type=an implementation
-┊┊┊┊ ┄ ⸆ Another implementation of the specification, in any language.
-┊┊┊┊ ┄ ⸖ $defines=9.4
-┊┊┊┊ ┄ ⸖ $defines=9.5
-┋┋┋ ━ conforming
-┊┊┊┊ ┄ ⸖ $type=bool
-┊┊┊┊ ┄ ⸆ Reproduces the grid and the colour of every vector.
-┊┊┊┊ ┄ ⸖ $defines=9.6
-┋┋┋ ━ vendoring
-┊┊┊┊ ┄ ⸖ $type=a practice
-┊┊┊┊ ┄ ⸆ Carrying your own copy of the derivation rather than depending on this one.
-┊┊┊┊ ┄ ⸖ $defines=9.5
 ┋ ━ Index
 ┊┊ ┄ ⸖ $section=index
 ┊┊ ┄ ⸆ every numbered item and where it is written; rendered from processes, not authored
