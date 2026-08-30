@@ -24,7 +24,7 @@ failing test prints the diff.
 
     python3 tests/test_bytes.py --write
 
-It rewrites all forty-eight fixture files from the current code.
+It rewrites every fixture file from the current code.
 
 Running it is legitimate when the mapping version changes deliberately, or
 when a seed in `FIXTURE_SEEDS` is deliberately changed or replaced. Those are
@@ -129,10 +129,10 @@ def fixture_key(seed):
     """The key a fixture seed is frozen under: the pinned version, then it."""
     return identicon.stamp_key(seed, FIXTURE_MAPPING_VERSION)
 
-# `.key` is written by `install_into_repo`, not by `artifact_bytes`, so it is
-# added here. Twelve files per key.
-KEY_ARTIFACT = "key"
 
+# `.key` is written by `install_into_repo`, not by `artifact_bytes`, so
+# `expected_bytes` adds it. Twelve files per key.
+#
 # Artifacts compared as text, so a failure prints a diff. Everything else is
 # compared as bytes and reported by length.
 TEXT_SUFFIXES = (".key", ".grid", ".colour", ".octant", ".sextant",
