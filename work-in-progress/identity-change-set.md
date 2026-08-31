@@ -1,9 +1,24 @@
 # The identity section: the change set
 
-**Not executed.** This records the changes agreed for page 1 of the system
-diagram so that all of them are applied in one pass. Some edits are already in
-the working tree; the table says which, and which of those a later decision
-superseded. The file does not import in that state.
+**Executed 2026-08-31**, in three commits on `diagram-walk`. Every item in the
+change set below is done. The rules are kept here because they are the record
+of what was decided and why, and `SPEC.md` states only the outcome.
+
+Two things settled during execution rather than before it, both recorded here
+because neither was an explicit instruction:
+
+- **The seed is not lowercased.** The argument for folding was that forges
+  treat owner and repository names case-insensitively, so two people could
+  derive different seeds for one project. Rule 3 removes it: derivation runs
+  once and the result is committed, so there is no second derivation to
+  disagree. Against folding: it destroys a name the reader recognises, and it
+  makes every port implement Unicode case mapping to stay conformant.
+  `vectors.json` pins two spellings of one name so a port that folds fails on
+  that pair.
+- **A `colourMap` this build does not implement raises `UnknownColourMap`.**
+  One equality check. It can only be reached by a hand edit, and drawing with
+  the only map there is would produce a mark `settings.json` does not
+  describe.
 
 ## What was decided, 2026-08-31
 
@@ -212,6 +227,11 @@ rule 16 cannot write down why they did.
 
 ## Open
 
-- **`priorIdenticonSeeds`.** Rule 17 named `identiconSeed`. The prior list is
-  named here by applying the same rule, which was not asked for. Confirm or
-  replace.
+- **`identiconSeedHistory`.** Rule 17 named `identiconSeed`. `prior` was
+  rejected as reading singular and `prev` as an abbreviation, which works
+  against a rule asking for self-documenting names. `identiconSeedHistory`
+  says what the field holds, needs no plural noun to signal a list, and sorts
+  adjacent to `identiconSeed` in the written file, which `settings_bytes`
+  sorts. Shipped under that name; say if you want another.
+- **The remaining nine diagram pages.** This branch's exit condition is all
+  ten walked. Page 1 is done.
