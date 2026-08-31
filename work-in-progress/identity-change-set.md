@@ -28,7 +28,7 @@ because neither was an explicit instruction:
 2. **The seed lives in `.identicon/settings.json` and nowhere else.** That
    file is the only input to a repository's identity.
 3. **The seed is written only when it is not set.**
-4. **`--reseed` moves the current seed into a `priorSeeds` array and blanks
+4. **`--reseed` moves the current seed into a `identiconSeedHistory` array and blanks
    the current seed.** It does nothing else. Rule 3 then derives a new seed
    and writes it, so reseeding is one rule applied to an emptied field rather
    than a second way of setting one.
@@ -50,7 +50,7 @@ because neither was an explicit instruction:
     command changes it. Changing one is a hand edit of `settings.json`. The
     functionality to move a repository between maps is needed when a second
     production map ships, and not before.
-12. **`priorSeeds` is most recent first.**
+12. **`identiconSeedHistory` is most recent first.**
 13. **`MAPPING_VERSION` is renamed `COLOUR_MAP_LATEST`.** It names the newest
     shipped colour map, which is what a repository is seeded with. The JSON
     key is `colourMap`.
@@ -68,8 +68,8 @@ because neither was an explicit instruction:
     a supported thing to do.
 17. **Names are self-documenting, in the file and in the code.** The seed
     field is `identiconSeed`, not `seed`, so a person reading `settings.json`
-    knows what the string is for without opening the specification. The prior
-    list is `priorIdenticonSeeds`.
+    knows what the string is for without opening the specification. The history
+    list is `identiconSeedHistory`.
 18. **A stored seed survives a clone, whatever it was derived from.**
     `settings.json` is committed, so a path-derived seed travels exactly as a
     remote-derived one does. Derivation runs once in a repository's life.
@@ -88,13 +88,13 @@ later piece of work rather than an open question.
 ```json
 {
   "identiconSeed": "owner/repo",
-  "priorIdenticonSeeds": [],
+  "identiconSeedHistory": [],
   "colourMap": 0
 }
 ```
 
 `identiconSeed` is written when it is not set, and never rewritten.
-`priorIdenticonSeeds` holds the seeds this repository has had, most recent
+`identiconSeedHistory` holds the seeds this repository has had, most recent
 first; `--reseed` pushes the current seed onto its front and blanks
 `identiconSeed`. `colourMap` is written at seeding and never rewritten.
 
@@ -137,6 +137,15 @@ the whole of what rule 10 leaves to do.
 
 ## The change set
 
+**These tables are the record of the pass as it was executed on 2026-08-31,
+not a description of the code as it stands.** Several names moved again in the
+review rounds that followed: `resolve_seed` became `derive_identicon_seed`,
+`normalise_remote_url` became `extract_repository_name`, `path_seed` became
+`extract_repository_path`, `repository_root` became `locate_repository_root`,
+and `read_identicon_seed` collapsed into `identicon_seed( settings)`. Page 1 of
+the system diagram is the current picture.
+
+
 ### In the working tree and still correct
 
 | # | Change |
@@ -164,7 +173,7 @@ the whole of what rule 10 leaves to do.
 | 11 | `stamp_key`, `parse_key` and `KEY_STAMP` deleted |
 | 12 | `_digest`, `identicon_grid`, `identicon_hue`, `identicon_colour` take a seed |
 | 13 | `resolve_key_for` becomes `resolve_seed_for(path, explicit)`, returning `(seed, source)` |
-| 14 | `read_settings` companions for `priorSeeds` and `colourMap`; `--reseed` pushes the current seed onto the front of `priorSeeds` and blanks `seed` |
+| 14 | `read_settings` companions for `identiconSeedHistory` and `colourMap`; `--reseed` pushes the current seed onto the front of the history and blanks the seed |
 | 14a | `MAPPING_VERSION` renamed `COLOUR_MAP_LATEST` at every use, including `--version`'s output and `cmd_doctor`, and its value changed to `"0"` |
 | 14c | `normalise_seed` and `normalise_remote_url` split into `remote_seed`, `path_seed` and one `normalise_seed`, per the section below. Item 2 above folds into this |
 | 14d | A comment at `COLOUR_MAP_LATEST` recording that colour maps will carry the digit in the filename and be found by looking. No discovery code while there is one map |
@@ -233,5 +242,17 @@ rule 16 cannot write down why they did.
   says what the field holds, needs no plural noun to signal a list, and sorts
   adjacent to `identiconSeed` in the written file, which `settings_bytes`
   sorts. Shipped under that name; say if you want another.
-- **The remaining nine diagram pages.** This branch's exit condition is all
-  ten walked. Page 1 is done.
+- **Page 1 is about three quarters done**, Justin's assessment at the end of
+  2026-08-31. The walk moves to page 2 next regardless; the remaining quarter
+  comes back later rather than holding the branch up. What is known to be
+  unfinished on it:
+  - `_git` and the git process box were removed with no helpers page to take
+    them, so the page shows one arrow fewer than the code makes. There is a
+    comment at the removal point in the `.mr`.
+  - `install_into_repo` appears only as an off-page arrow. Page 6 owns it, and
+    the two pages have not been read against each other since the rewrite.
+  - The four-column grouping was chosen for the old flow. Now that `apply` is
+    the only writer, whether "what comes out" is still the right fourth column
+    is untested.
+- **The remaining nine diagram pages.** This branch's exit condition is all ten
+  walked. Page 2 is next.
