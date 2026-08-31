@@ -553,7 +553,7 @@ class TestInstallingIntoARepository(unittest.TestCase):
     def test_it_writes_every_artifact(self):
         result = identicon.install_into_repo(self.tmp)
         self.assertEqual("someone/a-project", result["identiconSeed"])
-        self.assertEqual("derived", result["source"])
+        self.assertEqual("derived from auto", result["source"])
         for name in ("png", "png4x", "svg", "colour", "grid", "tricolour",
                      "sextant", "octant", "txt"):
             with self.subTest(artifact=name):
@@ -686,7 +686,7 @@ class TestInstallingIntoARepository(unittest.TestCase):
         """The seed by itself, because the seed by itself is what gets
         hashed."""
         result = identicon.install_into_repo(self.tmp)
-        self.assertEqual("derived", result["source"])
+        self.assertEqual("derived from auto", result["source"])
         self.assertEqual(result["identiconSeed"],
                          identicon.read_identicon_seed(self.tmp))
         self.assertEqual(identicon.COLOUR_MAP_LATEST, result["colourMap"])
@@ -870,7 +870,7 @@ class TestTheSettingsFile(unittest.TestCase):
     def test_the_seed_is_written_on_the_first_run(self):
         result = identicon.install_into_repo(self.tmp, readme=False)
         self.assertEqual(self.SEED, result["identiconSeed"])
-        self.assertEqual("derived", result["source"])
+        self.assertEqual("derived from auto", result["source"])
         self.assertEqual(self.SEED, self.settings()["identiconSeed"])
         self.assertEqual(identicon.COLOUR_MAP_LATEST,
                          self.settings()["colourMap"])
@@ -1027,7 +1027,7 @@ class TestTheSettingsFile(unittest.TestCase):
         artifacts do not have."""
         applied = identicon.install_into_repo(self.tmp, readme=False)
         self.assertEqual(applied["identiconSeed"],
-                         identicon.identicon_seed_for(self.tmp))
+                         identicon.read_identicon_seed(self.tmp))
 
 
 # ---- The validator, and the pair of files ----

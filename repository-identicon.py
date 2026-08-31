@@ -202,13 +202,25 @@ def _git(args, cwd=None):
     return completed.stdout.strip() or None
 
 
-def repo_toplevel(path):
-    """The working tree root, or None outside a repository.
+def repository_root(path=None):
+    """The directory holding `.identicon/`: the nearest ancestor with a `.git`.
 
-    In a worktree this is the worktree's own root, not the main checkout — which
-    is exactly why it is not the seed.
+    Walks up from `path`, or from the working directory. Returns the starting
+    directory where no ancestor has one, so a directory outside a repository
+    still has somewhere to keep its settings.
+
+    A worktree has a `.git` file where a main checkout has a `.git` directory,
+    and both sit at the root that owns the `.identicon/`, so `exists` answers
+    for both. `git rev-parse --show-toplevel` returns the same directory and
+    costs a subprocess; walking is what lets a seeded repository resolve its
+    seed without running git at all.
     """
-    return _git(["rev-parse", "--show-toplevel"], path)
+    directory = pathlib.Path(os.path.abspath(
+        os.path.expanduser(str(path) if path else os.getcwd())))
+    for candidate in (directory, *directory.parents):
+        if (candidate / ".git").exists():
+            return str(candidate)
+    return str(directory)
 
 
 def repo_remote_url(path):
@@ -226,42 +238,40 @@ def repo_remote_url(path):
 SEED_SOURCES = ("auto", "repo", "path", "uuid")
 
 
-def derive_identicon_seed(repository_root, source="auto"):
-    """Derive a seed for a repository. Never reads `settings.json`.
+def derive_identicon_seed(repository_root, derive_from="auto"):
+    """Derive a seed for a repository, from one of four things.
 
-    `source` chooses what to derive from:
+    `derive_from` names which:
 
       auto   the git remote if there is one, otherwise the path
       repo   the git remote, as `owner/repo`
       path   the repository directory
-      uuid   a fresh uuid4, derived from nothing at all
+      uuid   a fresh uuid4
 
-    **A named source that cannot answer raises, and never falls back.** Asking
-    for `repo` where there is no remote is a question with no answer, and
-    handing back a path instead would give somebody something they did not ask
-    for. `auto` is the only source allowed to choose.
+    A named source that cannot answer raises. Asking for `repo` where there is
+    no remote is a question with no answer, and returning a path instead would
+    answer a different question. `auto` is the one source that chooses.
 
-    This runs once in a repository's life, at seeding. `doctor` calls it again
-    to report what the repository would derive now, which is a question and
-    not an instruction: a seeded repository keeps its seed through a rename.
+    This runs on the first `apply` in a repository, and again in `doctor` to
+    report what the repository would derive today.
     """
-    if source not in SEED_SOURCES:
-        raise ValueError(f"unknown seed source {source!r}; expected one of "
-                         f"{', '.join(SEED_SOURCES)}")
+    if derive_from not in SEED_SOURCES:
+        raise ValueError(f"unknown seed source {derive_from!r}; expected one "
+                         f"of {', '.join(SEED_SOURCES)}")
 
-    if source == "uuid":
+    if derive_from == "uuid":
         return str(uuid.uuid4())
 
-    if source in ("auto", "repo"):
+    if derive_from in ("auto", "repo"):
         url = repo_remote_url(repository_root)
         derived = remote_seed(url) if url else None
         if derived:
             return derived
-        if source == "repo":
+        if derive_from == "repo":
             raise ValueError(f"{repository_root} has no git remote, so there "
                              f"is no `repo` seed to derive")
 
-    return path_seed(repo_toplevel(repository_root) or repository_root)
+    return path_seed(repository_root)
 
 
 # ---- The colour map ----
@@ -945,37 +955,36 @@ def read_settings(repository_root):
     return loaded if isinstance(loaded, dict) else {}
 
 
-def read_identicon_seed(repository_root):
-    """The stored seed, or None where none is set.
+def read_settings_seed(settings):
+    """The seed held in an already-loaded settings mapping, or None.
 
-    Reads. `derive_identicon_seed` derives. The pair is deliberately two
-    functions with two verbs: one opens a file, the other runs git twice, and
-    a single name covering both is what let a seed get re-derived on every run
-    with nobody able to see it happening.
-
-    Empty is not set. `{"identiconSeed": ""}` is what somebody writes to hand
-    the next run the job of deriving one, and it reads the same as a file with
-    no seed field at all.
+    An empty string counts as unset, so `{"identiconSeed": ""}` and a file with
+    no seed field both mean "derive one". That is what makes a reseed a single
+    rule: `clear_identicon_seed` empties the field and this reports it unset.
     """
-    seed = read_settings(repository_root).get(SEED_FIELD)
+    seed = settings.get(SEED_FIELD)
     if not isinstance(seed, str) or not seed.strip():
         return None
     return normalise_seed(seed)
 
 
-def read_identicon_seed_history(repository_root):
-    """Every seed this repository has had before the current one, newest first."""
-    history = read_settings(repository_root).get(HISTORY_FIELD)
-    if not isinstance(history, list):
-        return []
-    return [entry for entry in history if isinstance(entry, str)]
+def read_identicon_seed(repository_root):
+    """The seed a repository is drawing with, or None where none is set.
+
+    Opens `settings.json` and reads one field. `derive_identicon_seed` is the
+    other half of the pair and runs git; two verbs for two operations, so a
+    caller states which one it wants.
+
+    `show` and `render` call this and nothing else. Only `apply` goes on to
+    derive.
+    """
+    return read_settings_seed(read_settings(repository_root))
 
 
 def read_colour_map(repository_root):
-    """The colour map this repository was seeded under.
+    """The colour map a repository was seeded under.
 
-    A repository with no settings file, or one with no `colourMap`, takes this
-    build's. Nothing rewrites the field once it is set.
+    A repository with no settings file, or none recorded, takes this build's.
     """
     colour_map = read_settings(repository_root).get(COLOUR_MAP_FIELD)
     return colour_map if isinstance(colour_map, int) else COLOUR_MAP_LATEST
@@ -1013,51 +1022,21 @@ def keep_prior(target, current):
     return keep
 
 
-def repository_root_for(path=None):
-    """The directory a repository's `.identicon/` sits in.
+def clear_identicon_seed(settings):
+    """`settings` with the current seed moved to the history and the field emptied.
 
-    The worktree root where there is one, and the directory itself where there
-    is not, so the settings file is looked for in the same place whether or
-    not git answers.
-    """
-    directory = path_seed(path if path else os.getcwd())
-    return repo_toplevel(directory) or directory
-
-
-def identicon_seed_for(path=None, explicit=None):
-    """The seed a command draws with, for a directory.
-
-    The stored seed, or a derived one where none is stored. `explicit`
-    outranks both and writes nothing.
-
-    Reading comes first, so a seeded repository never runs git to answer this.
-    A repository keeps its seed through a rename, a move between forges and a
-    clone; changing one is `apply --reseed`, on request.
-    """
-    if explicit:
-        return normalise_seed(explicit)
-    repository_root = repository_root_for(path)
-    stored = read_identicon_seed(repository_root)
-    if stored is not None:
-        return stored
-    return derive_identicon_seed(repository_root)
-
-
-def reseeded_settings(settings, seed):
-    """`settings` with `seed` pushed onto the history and the seed field blank.
-
-    `--reseed` does this and nothing else. Blanking the field is the whole
-    operation, because a blank seed is an unset seed and the next run derives
-    and writes one -- the same rule that seeds a repository the first time.
+    This is the whole of a reseed. An empty seed is an unset seed, so the rule
+    that seeds a fresh repository writes the next one -- one rule for both,
+    rather than two that have to agree.
     """
     history = settings.get(HISTORY_FIELD)
     history = [entry for entry in history if isinstance(entry, str)] \
         if isinstance(history, list) else []
+    current = settings.get(SEED_FIELD)
     updated = dict(settings)
-    if seed:
-        updated[HISTORY_FIELD] = [seed] + history
-    else:
-        updated[HISTORY_FIELD] = history
+    updated[HISTORY_FIELD] = ([current] + history
+                              if isinstance(current, str) and current.strip()
+                              else history)
     updated[SEED_FIELD] = ""
     return updated
 
@@ -1210,33 +1189,33 @@ def install_into_repo(path=None, seed=None, block=ARTIFACT_BLOCK, check=False,
 
     Returns a dict describing what happened, suitable for --json.
     """
-    repository_root = repository_root_for(path)
-    settings = read_settings(repository_root)
+    root = repository_root(path)
+    settings = read_settings(root)
 
-    # **One resolver, and it reads before it derives.** `show`, `render` and
-    # `doctor` call `identicon_seed_for`, which does the same two steps in the
-    # same order, so none of them can disagree with what is written here.
+    # **`apply` is the only command that derives or writes a seed.** `show`
+    # and `render` read the stored one and stop; `doctor` reads and derives
+    # separately, to report both. Keeping derivation here is what stops a
+    # command whose job is to draw from deciding what to draw it from.
+    if seed or reseed:
+        settings = clear_identicon_seed(settings)
+
     if seed:
-        settings = reseeded_settings(settings, read_identicon_seed(repository_root))
         resolved_seed, source = normalise_seed(seed), "explicit"
-    elif reseed:
-        settings = reseeded_settings(settings, read_identicon_seed(repository_root))
-        resolved_seed = derive_identicon_seed(repository_root, reseed)
-        source = f"reseed {reseed}"
     else:
-        stored = read_identicon_seed(repository_root)
+        stored = read_settings_seed(settings)
         if stored is not None:
             resolved_seed, source = stored, "settings"
         else:
-            resolved_seed = derive_identicon_seed(repository_root)
-            source = "derived"
+            derive_from = reseed or "auto"
+            resolved_seed = derive_identicon_seed(root, derive_from)
+            source = f"derived from {derive_from}"
 
     colour_map = settings.get(COLOUR_MAP_FIELD)
     if not isinstance(colour_map, int):
         colour_map = COLOUR_MAP_LATEST
     if colour_map != COLOUR_MAP_LATEST:
         raise UnknownColourMap(
-            f"{settings_path(repository_root)} names colour map "
+            f"{settings_path(root)} names colour map "
             f"{colour_map!r}; this build draws colour map "
             f"{COLOUR_MAP_LATEST}")
 
@@ -1244,7 +1223,7 @@ def install_into_repo(path=None, seed=None, block=ARTIFACT_BLOCK, check=False,
     settings.setdefault(HISTORY_FIELD, [])
     settings[COLOUR_MAP_FIELD] = colour_map
 
-    paths = artifact_paths(repository_root)
+    paths = artifact_paths(root)
     wanted = artifact_bytes(resolved_seed, block, **render_kwargs)
 
     changes = {}
@@ -1265,7 +1244,7 @@ def install_into_repo(path=None, seed=None, block=ARTIFACT_BLOCK, check=False,
     #
     # It is an input and not an artifact: it is not in `artifact_names`, and a
     # run that changes nothing else leaves it byte-for-byte alone.
-    settings_file = settings_path(repository_root)
+    settings_file = settings_path(root)
     current_settings = (settings_file.read_bytes()
                         if settings_file.is_file() else None)
     settings_wanted = settings_bytes(settings)
@@ -1279,7 +1258,7 @@ def install_into_repo(path=None, seed=None, block=ARTIFACT_BLOCK, check=False,
     paths["settings"] = settings_file
 
     if readme:
-        state, readme_file = readme_state(repository_root, check)
+        state, readme_file = readme_state(root, check)
         if readme_file is not None:
             changes["readme"] = state
             paths["readme"] = readme_file
@@ -1290,7 +1269,7 @@ def install_into_repo(path=None, seed=None, block=ARTIFACT_BLOCK, check=False,
         "identiconSeedHistory": settings[HISTORY_FIELD],
         "colourMap": colour_map,
         "source": source,
-        "root": str(repository_root),
+        "root": str(root),
         "colour": hex_colour(colour),
         "files": {name: str(target) for name, target in paths.items()},
         "changes": changes,
@@ -1302,9 +1281,26 @@ def install_into_repo(path=None, seed=None, block=ARTIFACT_BLOCK, check=False,
 # ---- Commands ----
 
 
-def _seed_from_args(args):
-    return identicon_seed_for(getattr(args, "path", None),
-                              getattr(args, "seed", None))
+class NotSeeded(ValueError):
+    """A read-only command run where no seed is set."""
+
+
+def _seed_to_draw(args):
+    """The seed `show` and `render` draw, from `--seed` or the settings file.
+
+    These two report a repository's mark. Deriving one here would let a
+    command whose job is to draw decide what to draw from, and would print a
+    mark that `apply` had never written. `apply` seeds; these two read.
+    """
+    explicit = getattr(args, "seed", None)
+    if explicit:
+        return normalise_seed(explicit)
+    root = repository_root(getattr(args, "path", None))
+    stored = read_identicon_seed(root)
+    if stored is None:
+        raise NotSeeded(f"{root} has no seed set in "
+                        f"{IDENTICON_DIR}/{SETTINGS_NAME}")
+    return stored
 
 
 def _render_kwargs(args):
@@ -1322,7 +1318,7 @@ def _render_kwargs(args):
 
 
 def cmd_show(args):
-    seed = _seed_from_args(args)
+    seed = _seed_to_draw(args)
     print(f"seed      {seed}")
     print(f"colour    "
           f"{hex_colour(identicon_colour(seed, args.chroma, args.lightness))}")
@@ -1330,7 +1326,7 @@ def cmd_show(args):
 
 
 def cmd_render(args):
-    seed = _seed_from_args(args)
+    seed = _seed_to_draw(args)
     kwargs = _render_kwargs(args)
     block, extra = args.block, {}
     if args.format == "svg":
@@ -1555,11 +1551,13 @@ def cmd_validate(args):
 
 
 def cmd_doctor(args):
-    """Report what this tool depends on that is not in this file.
+    """Report the sibling module, the vectors, the colour map, and both seeds.
 
-    Short, because there is little left to depend on: the sibling module and
-    the vectors. Anything about a desktop belongs to Console-Colophon, which
-    has a `doctor` of its own.
+    Everything here is something `apply` needs; this command reads the same
+    things and prints them instead of using them. That is why the derivation
+    lives here as well as in `apply` and nowhere else -- a repository's stored
+    seed and the seed it would derive today are two facts, and this is where
+    somebody comes to ask for them.
     """
     sibling = text_module_path()
     print(f"{TEXT_MODULE:16} " + (str(sibling) if sibling.is_file()
@@ -1570,20 +1568,20 @@ def cmd_doctor(args):
                                    else "NOT FOUND - validate cannot run"))
     print(f"{'colour map':16} {COLOUR_MAP_LATEST}")
 
-    repository_root = repository_root_for(getattr(args, "path", None))
-    stored = read_identicon_seed(repository_root)
+    root = repository_root(getattr(args, "path", None))
+    stored = read_identicon_seed(root)
     print(f"{'seed here':16} "
           + (f"{stored}  (settings)" if stored is not None else "not seeded"))
 
-    # **Asked, not announced.** A seeded repository keeps its seed through a
-    # rename, so `apply` has no reason to raise the subject and does not.
-    # `doctor` is where somebody comes to ask what the environment says, so
-    # the derivation runs here and its answer is a fact, not an instruction.
-    derived = derive_identicon_seed(repository_root)
+    # **Asked, not announced.** `apply` reports the seed it used and stops.
+    # The comparison lives here because this is the command somebody runs to
+    # ask a question, and `apply --reseed` is the command that acts on the
+    # answer.
+    derived = derive_identicon_seed(root)
     print(f"{'would derive':16} {derived}")
     if stored is not None and stored != derived:
-        print(f"{'':16} the two differ. `apply --reseed repo` is how a seed "
-              f"changes, and nothing changes one on its own.")
+        print(f"{'':16} the two differ; `apply --reseed repo` adopts the "
+              f"derived one")
     return 0
 
 
@@ -1689,6 +1687,12 @@ def main(argv=None):
         print(f"error: {error}", file=sys.stderr)
         print(f"       edit colourMap in .identicon/{SETTINGS_NAME}",
               file=sys.stderr)
+        return 1
+    except NotSeeded as error:
+        # `show` and `render` read a seed and never derive one, so an unseeded
+        # repository is a question for `apply`.
+        print(f"error: {error}", file=sys.stderr)
+        print("       repository-identicon apply", file=sys.stderr)
         return 1
     except ValueError as error:
         # `--reseed repo` where there is no remote, and the like: the user

@@ -118,51 +118,36 @@
 ┊┊ ┄ ⸆ every top-level routine, grouped as it is read
 ┋┋ ━ Identity
 ┊┊┊ ┄ ⸖ $page=1
-┊┊┊ ┄ ⸆ the seed, and nothing else, decides the mark
-┋┋┋ ━ WHAT DRAWS WITH IT
-┋┋┋┋ ━ → c_show
-┊┊┊┊┊ ┄ ⸆ and render · apply · doctor
-┊┊┊┊┊ ┄ ⸖ $fn=r_cmds
+┊┊┊ ┄ ⸆ what apply reads, and what it derives on the first run only
+┋┋┋ ━ WHAT APPLY READS
+┋┋┋┋ ━ → install_into_repo
+┊┊┊┊┊ ┄ ⸆ apply, and only apply, seeds a repository
+┊┊┊┊┊ ┄ ⸖ $fn=r_apply
 ┊┊┊┊┊ ┄ ⸖ $offpage=in
-┊┊┊┊┊ ┄ ⸖ $target=identicon_seed_for
-┊┊┊┊┊ ┄ ⸖ $edge=identicon_seed_for
-┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=calls
-┋┋┋┋ ━ identicon_seed_for(path, explicit)
-┊┊┊┊┊ ┄ ⸖ $number=1.1
-┊┊┊┊┊ ┄ ⸖ $fn=identicon_seed_for
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸆ The one seed resolver. Every command uses it, apply included.
-┊┊┊┊┊ ┄ ⸖ $term=seed
-┊┊┊┊┊ ┄ ⸖ $term=stored seed
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ seed
-┊┊┊┊┊┊┊ ┄ ⸖ $term=seed
+┊┊┊┊┊ ┄ ⸖ $target=read_identicon_seed
 ┊┊┊┊┊ ┄ ⸖ $edge=read_identicon_seed
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
-┊┊┊┊┊ ┄ ⸖ $edge=derive_identicon_seed
-┊┊┊┊┊ ┄ ⸖ $sides=rl
-┊┊┊┊┊ ┄ ⸖ $carries=calls dashed
 ┋┋┋┋ ━ read_identicon_seed(repository_root)
-┊┊┊┊┊ ┄ ⸖ $number=1.2
+┊┊┊┊┊ ┄ ⸖ $number=1.1
 ┊┊┊┊┊ ┄ ⸖ $fn=read_identicon_seed
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸆ Runs first, on every command, and answers without running git. A blank field reads the same as a missing one.
+┊┊┊┊┊ ┄ ⸆ Opens the settings file and reads one field. This is what show and render call, and all they call.
 ┊┊┊┊┊ ┄ ⸖ $term=stored seed
-┊┊┊┊┊ ┄ ⸖ $term=the settings file
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ the stored seed, or None
 ┊┊┊┊┊ ┄ ⸖ $edge=read_settings
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
+┊┊┊┊┊ ┄ ⸖ $edge=read_settings_seed
+┊┊┊┊┊ ┄ ⸖ $sides=rl
+┊┊┊┊┊ ┄ ⸖ $carries=calls
 ┋┋┋┋ ━ read_settings(repository_root)
-┊┊┊┊┊ ┄ ⸖ $number=1.3
+┊┊┊┊┊ ┄ ⸖ $number=1.2
 ┊┊┊┊┊ ┄ ⸖ $fn=read_settings
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸆ Parses the file. An unreadable or malformed one reads as empty, so the next apply writes a good one.
+┊┊┊┊┊ ┄ ⸆ Parses the file. An unreadable one reads as empty, so the next apply writes a good one.
 ┊┊┊┊┊ ┄ ⸖ $term=the settings file
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
@@ -172,18 +157,27 @@
 ┊┊┊┊┊ ┄ ⸖ $carries=io
 ┋┋┋┋ ━ .identicon/settings.json
 ┊┊┊┊┊ ┄ ⸆ identiconSeed · identiconSeedHistory · colourMap
-┊┊┊┊┊ ┄ ⸖ $number=1.4
+┊┊┊┊┊ ┄ ⸖ $number=1.3
 ┊┊┊┊┊ ┄ ⸖ $fn=f_settings
 ┊┊┊┊┊ ┄ ⸖ $kind=ext
 ┊┊┊┊┊ ┄ ⸖ $term=the settings file
 ┊┊┊┊┊ ┄ ⸖ $term=seed history
 ┊┊┊┊┊ ┄ ⸖ $term=colour map
-┋┋┋ ━ DERIVING, WHEN NOTHING IS SET
-┋┋┋┋ ━ derive_identicon_seed(root, source)
+┋┋┋┋ ━ read_settings_seed(settings)
+┊┊┊┊┊ ┄ ⸖ $number=1.4
+┊┊┊┊┊ ┄ ⸖ $fn=read_settings_seed
+┊┊┊┊┊ ┄ ⸖ $kind=fn
+┊┊┊┊┊ ┄ ⸆ Takes the seed out of a loaded settings mapping. An empty string counts as unset, which is what makes a reseed one rule.
+┊┊┊┊┊ ┄ ⸖ $term=stored seed
+┋┋┋┋┋ ━ returns
+┊┊┊┊┊┊ ┄ ⸖ $role=returns
+┋┋┋┋┋┋ ━ the seed, or None
+┋┋┋ ━ WHAT APPLY DERIVES, ON THE FIRST RUN
+┋┋┋┋ ━ derive_identicon_seed(root, derive_from)
 ┊┊┊┊┊ ┄ ⸖ $number=1.5
 ┊┊┊┊┊ ┄ ⸖ $fn=derive_identicon_seed
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸆ Runs once in a repository's life, at seeding. A named source that cannot answer raises rather than falling back.
+┊┊┊┊┊ ┄ ⸆ Derives from one of auto, repo, path or uuid. A named source that cannot answer raises.
 ┊┊┊┊┊ ┄ ⸖ $term=seed
 ┊┊┊┊┊ ┄ ⸖ $term=seed source
 ┋┋┋┋┋ ━ returns
@@ -199,30 +193,8 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=path_seed
 ┊┊┊┊┊ ┄ ⸖ $sides=tt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls dashed
-┋┋┋┋ ━ repository_root_for(path)
-┊┊┊┊┊ ┄ ⸖ $number=1.6
-┊┊┊┊┊ ┄ ⸖ $fn=repository_root_for
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸆ Where .identicon/ sits: the worktree root, or the directory itself outside a repository.
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ a directory
-┊┊┊┊┊ ┄ ⸖ $edge=repo_toplevel
-┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=calls
-┋┋┋┋ ━ repo_toplevel(path)
-┊┊┊┊┊ ┄ ⸖ $number=1.7
-┊┊┊┊┊ ┄ ⸖ $fn=repo_toplevel
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸆ Returns the worktree's own root, which differs between worktrees of one repository.
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ the worktree root, or None
-┊┊┊┊┊ ┄ ⸖ $edge=_git
-┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=calls
 ┋┋┋┋ ━ repo_remote_url(path)
-┊┊┊┊┊ ┄ ⸖ $number=1.8
+┊┊┊┊┊ ┄ ⸖ $number=1.6
 ┊┊┊┊┊ ┄ ⸖ $fn=repo_remote_url
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
 ┊┊┊┊┊ ┄ ⸆ Prefers origin, then whichever remote is listed first.
@@ -230,13 +202,13 @@
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ a remote URL, or None
 ┊┊┊┊┊ ┄ ⸖ $edge=_git
-┊┊┊┊┊ ┄ ⸖ $sides=rr
+┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
 ┋┋┋┋ ━ _git(args, cwd)
-┊┊┊┊┊ ┄ ⸖ $number=1.9
+┊┊┊┊┊ ┄ ⸖ $number=1.7
 ┊┊┊┊┊ ┄ ⸖ $fn=_git
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸆ The only subprocess this repository runs. A seeded repository reaches it for the root and no further.
+┊┊┊┊┊ ┄ ⸆ Runs one git command and returns its stdout. Reached once in a repository's life, from here.
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ stripped stdout, or None on any failure
@@ -244,16 +216,24 @@
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=io
 ┋┋┋┋ ━ git
-┊┊┊┊┊ ┄ ⸖ $number=1.10
+┊┊┊┊┊ ┄ ⸖ $number=1.8
 ┊┊┊┊┊ ┄ ⸖ $fn=p_git
 ┊┊┊┊┊ ┄ ⸖ $kind=ext
-┊┊┊┊┊ ┄ ⸆ rev-parse --show-toplevel · remote get-url
+┊┊┊┊┊ ┄ ⸆ remote get-url
 ┋┋┋ ━ REDUCING IT TO ONE STRING
+┋┋┋┋ ━ repository_root(path)
+┊┊┊┊┊ ┄ ⸖ $number=1.9
+┊┊┊┊┊ ┄ ⸖ $fn=repository_root
+┊┊┊┊┊ ┄ ⸖ $kind=fn
+┊┊┊┊┊ ┄ ⸆ Walks up to the nearest ancestor holding a .git, which is where .identicon/ sits. A worktree has a file there, a checkout a dir.
+┋┋┋┋┋ ━ returns
+┊┊┊┊┊┊ ┄ ⸖ $role=returns
+┋┋┋┋┋┋ ━ a directory
 ┋┋┋┋ ━ remote_seed(url)
-┊┊┊┊┊ ┄ ⸖ $number=1.11
+┊┊┊┊┊ ┄ ⸖ $number=1.10
 ┊┊┊┊┊ ┄ ⸖ $fn=remote_seed
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸆ Accepts ssh, https and scp-like URLs. The host is parsed, used to reject a URL that has none, then dropped.
+┊┊┊┊┊ ┄ ⸆ Accepts ssh, https and scp-like URLs. Keeps the path segments and drops the host, so a move between forges keeps the mark.
 ┊┊┊┊┊ ┄ ⸖ $term=seed
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
@@ -262,10 +242,10 @@
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
 ┋┋┋┋ ━ path_seed(path)
-┊┊┊┊┊ ┄ ⸖ $number=1.12
+┊┊┊┊┊ ┄ ⸖ $number=1.11
 ┊┊┊┊┊ ┄ ⸖ $fn=path_seed
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸆ Expands and absolutises. The fallback where there is no remote to read.
+┊┊┊┊┊ ┄ ⸆ Expands and absolutises a directory. Used where there is no remote to read.
 ┊┊┊┊┊ ┄ ⸖ $term=seed
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
@@ -274,10 +254,10 @@
 ┊┊┊┊┊ ┄ ⸖ $sides=rl
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
 ┋┋┋┋ ━ normalise_seed(value)
-┊┊┊┊┊ ┄ ⸖ $number=1.13
+┊┊┊┊┊ ┄ ⸖ $number=1.12
 ┊┊┊┊┊ ┄ ⸖ $fn=normalise_seed
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸆ The one normaliser, run on every seed including a hand-typed one. Strips whitespace and a trailing separator; leaves case.
+┊┊┊┊┊ ┄ ⸆ Strips whitespace and a trailing separator, keeping case. Runs on every seed, a hand-typed one included.
 ┊┊┊┊┊ ┄ ⸖ $term=seed
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
@@ -285,22 +265,22 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=v_seed
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=value
-┋┋┋┋ ━ reseeded_settings(settings, seed)
-┊┊┊┊┊ ┄ ⸖ $number=1.14
-┊┊┊┊┊ ┄ ⸖ $fn=reseeded_settings
+┋┋┋ ━ WHAT COMES OUT
+┋┋┋┋ ━ clear_identicon_seed(settings)
+┊┊┊┊┊ ┄ ⸖ $number=1.13
+┊┊┊┊┊ ┄ ⸖ $fn=clear_identicon_seed
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸆ Pushes the current seed onto the history and blanks the seed field. The ordinary rule then writes a new one.
+┊┊┊┊┊ ┄ ⸆ Moves the current seed to the history and empties the field. The whole of a reseed; the rule above then writes the next one.
 ┊┊┊┊┊ ┄ ⸖ $term=reseed
 ┊┊┊┊┊ ┄ ⸖ $term=seed history
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ the settings, with the seed unset
-┋┋┋ ━ WHAT COMES OUT
+┋┋┋┋┋┋ ━ the settings, seed emptied
 ┋┋┋┋ ━ seed
-┊┊┊┊┊ ┄ ⸖ $number=1.15
+┊┊┊┊┊ ┄ ⸖ $number=1.14
 ┊┊┊┊┊ ┄ ⸖ $fn=v_seed
 ┊┊┊┊┊ ┄ ⸖ $kind=val
-┊┊┊┊┊ ┄ ⸆ Hashed exactly as settings.json spells it. Nothing is prepended and nothing appended.
+┊┊┊┊┊ ┄ ⸆ The string that goes into the digest, spelled as the settings file spells it.
 ┊┊┊┊┊ ┄ ⸖ $term=seed
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
@@ -314,10 +294,10 @@
 ┊┊┊┊┊ ┄ ⸖ $target=_digest
 ┊┊┊┊┊ ┄ ⸆ the mark comes off its md5
 ┋┋┋┋ ━ cmd_doctor(args)
-┊┊┊┊┊ ┄ ⸖ $number=1.16
+┊┊┊┊┊ ┄ ⸖ $number=1.15
 ┊┊┊┊┊ ┄ ⸖ $fn=cmd_doctor
 ┊┊┊┊┊ ┄ ⸖ $kind=data
-┊┊┊┊┊ ┄ ⸆ Reports what this tool depends on, and writes nothing. The one place that derives a seed to compare against the stored one.
+┊┊┊┊┊ ┄ ⸆ Reads the stored seed and derives one separately, and prints both. The only other caller of the derivation.
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ 0
@@ -1441,7 +1421,7 @@
 ┋┋┋ ━ seed
 ┊┊┊┊ ┄ ⸖ $type=str
 ┊┊┊┊ ┄ ⸆ The one string the mark depends on, hashed exactly as settings.json spells it. owner/repo, or a path where there is no remote.
-┊┊┊┊ ┄ ⸖ $defines=1.16
+┊┊┊┊ ┄ ⸖ $defines=1.14
 ┊┊┊┊ ┄ ⸖ $defines=1.1
 ┋┋┋ ━ the settings file
 ┊┊┊┊ ┄ ⸖ $type=file → dict

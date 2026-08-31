@@ -112,10 +112,22 @@ outranks every row of this table.
 |---|---|---|---|
 | 1 | `explicit` | supplied by the caller | — |
 | 2 | `repo` | the normalised git remote, below | **yes** |
-| 3 | `path` | the repository top level, or the directory itself, as an absolute path | no |
+| 3 | `path` | the repository root, as an absolute path | no |
 
 Resolve most specific first, and stop at the first that yields a value. The git
 remote is `origin` where one exists, otherwise the first remote listed.
+
+**Only the command that writes a seed may derive one.** A command that reads a
+repository's mark — rendering it, printing it — MUST read the stored seed and
+MUST NOT derive one when none is set; it reports that the repository is not
+seeded. Deriving there would let a command whose job is to draw decide what to
+draw from, and would show a mark that no `settings.json` records.
+
+**The repository root is found by walking up for a `.git` entry**, which is a
+file in a worktree and a directory in a main checkout. That is the directory
+holding `.identicon/`. An implementation MAY ask git instead; walking is what
+lets a seeded repository resolve its seed without running any subprocess, and
+a seeded repository SHOULD run none.
 
 **Why the remote is preferred.** A path is not stable across machines,
 containers, cloud sessions, or worktrees. That last one is decisive rather than
