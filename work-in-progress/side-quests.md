@@ -4,32 +4,40 @@ Work worth noticing and not worth interrupting for. When an idea arrives on a
 branch that does not own it, it goes here instead of into that branch. Nothing
 in this file is scheduled and nothing in it is decided.
 
-## A diagramming library, in a repository of its own
+## MarkRight, diagramming, and repository mapping, as one project
 
-Raised 2026-08-31. `work-in-progress/system-diagram.py` is 950 lines that read
-MarkRight and emit SVG: column layout, box placement, text wrapping, edge
-routing, a glossary, and a consistency check against the two sources. None of
-it is about identicons, and none of it ships -- `work-in-progress/` is out of
-the specification's scope and is not in any release.
+Raised 2026-08-31, and named for tomorrow. Three things that are currently
+scattered belong together in a repository of their own:
 
-It should be a library in its own repository, which this one uses. Splitting it
-is not urgent and is explicitly not this branch's work.
+- **MarkRight**, which already has one at `~/Code/Projects/MarkRight` -- the
+  glyph specification, the Markdown mapping, the parser and the linter.
+- **The diagramming layer**: `work-in-progress/system-diagram.py`, 950 lines
+  that read MarkRight and emit SVG. Column layout, box placement, text
+  wrapping, edge routing, a glossary, and a check against the sources. None of
+  it is about identicons and none of it ships.
+- **Repository system mapping**: pointing the above at a repository and
+  getting a diagram of what calls what, rather than hand-writing every item.
 
-What is already worth carrying across when it happens:
+This repository would then depend on that one instead of carrying it.
+
+What is worth carrying across, because it was paid for here:
 
 - The check that fails a page documenting a routine the source no longer has.
   It caught nine stale items in one run on 2026-08-31.
-- Edge routing that tests a path against every box and detours through a clear
-  lane or band. It took eighteen crossings to zero across ten pages.
-- The layout table kept separate from the content, so the `.mr` says what the
+- Edge routing that tests each path against every box and detours through a
+  clear lane or band. Eighteen crossings to zero across ten pages.
+- The layout table kept apart from the content, so the `.mr` says what the
   diagram means and the table says where it goes.
 
-What it does not yet do, and a library should:
+What it does not do yet, and a library should:
 
 - Show how often an edge is traversed. Derived-on-every-run and derived-once
   draw identically today, which is how a re-derivation survived a review.
-- Wrap or fold a signature too wide for its column, rather than warning and
-  leaving a human to rebalance the columns by hand.
+- Fold a signature too wide for its column, rather than warning and leaving a
+  human to rebalance the columns.
+- Carry a helpers page, or some equivalent, so a generic routine like `_git`
+  has somewhere to live that is not the page of whatever calls it. Page 1 of
+  the system diagram currently omits it and says so in a comment.
 
 ## A `.json` artifact carrying every derived value
 

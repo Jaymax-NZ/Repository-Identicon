@@ -201,28 +201,15 @@
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ a remote URL, or None
-┊┊┊┊┊ ┄ ⸖ $edge=_git
-┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=calls
-┋┋┋┋ ━ _git( args, cwd)
-┊┊┊┊┊ ┄ ⸖ $number=1.7
-┊┊┊┊┊ ┄ ⸖ $fn=_git
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸆ Runs one git command and returns its stdout. Reached once in a repository's life, from here.
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ stripped stdout, or None on any failure
-┊┊┊┊┊ ┄ ⸖ $edge=p_git
-┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=io
-┋┋┋┋ ━ git
-┊┊┊┊┊ ┄ ⸖ $number=1.8
-┊┊┊┊┊ ┄ ⸖ $fn=p_git
-┊┊┊┊┊ ┄ ⸖ $kind=ext
-┊┊┊┊┊ ┄ ⸆ remote get-url
+┊┊┊┊┊ ┄ ⸲ _git and the git process were items 1.7 and 1.8 here, and were
+┊┊┊┊┊ ┄ ⸲ taken off this page on 2026-08-31: a subprocess helper is not
+┊┊┊┊┊ ┄ ⸲ about identity, and there is no helpers page for it yet. The
+┊┊┊┊┊ ┄ ⸲ call still happens -- repo_remote_url invokes it -- so this
+┊┊┊┊┊ ┄ ⸲ page shows one arrow fewer than the code makes. Put them back
+┊┊┊┊┊ ┄ ⸲ when a helpers page exists, or leave the note when it does not.
 ┋┋┋ ━ REDUCING IT TO ONE STRING
 ┋┋┋┋ ━ locate_repository_root( working_directory)
-┊┊┊┊┊ ┄ ⸖ $number=1.9
+┊┊┊┊┊ ┄ ⸖ $number=1.7
 ┊┊┊┊┊ ┄ ⸖ $fn=locate_repository_root
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
 ┊┊┊┊┊ ┄ ⸆ Walks up to the nearest ancestor holding a .git, which is where .identicon/ sits. A worktree has a file there, a checkout a dir.
@@ -230,7 +217,7 @@
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ a directory
 ┋┋┋┋ ━ extract_repository_name( repository_url)
-┊┊┊┊┊ ┄ ⸖ $number=1.10
+┊┊┊┊┊ ┄ ⸖ $number=1.8
 ┊┊┊┊┊ ┄ ⸖ $fn=extract_repository_name
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
 ┊┊┊┊┊ ┄ ⸆ Accepts ssh, https and scp-like URLs. Keeps the path segments and drops the host, so a move between forges keeps the mark.
@@ -242,7 +229,7 @@
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
 ┋┋┋┋ ━ extract_repository_path( repository_root)
-┊┊┊┊┊ ┄ ⸖ $number=1.11
+┊┊┊┊┊ ┄ ⸖ $number=1.9
 ┊┊┊┊┊ ┄ ⸖ $fn=extract_repository_path
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
 ┊┊┊┊┊ ┄ ⸆ Expands and absolutises the repository's own directory. Used where there is no remote to read.
@@ -254,7 +241,7 @@
 ┊┊┊┊┊ ┄ ⸖ $sides=rl
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
 ┋┋┋┋ ━ normalise_seed( value)
-┊┊┊┊┊ ┄ ⸖ $number=1.12
+┊┊┊┊┊ ┄ ⸖ $number=1.10
 ┊┊┊┊┊ ┄ ⸖ $fn=normalise_seed
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
 ┊┊┊┊┊ ┄ ⸆ Strips whitespace and a trailing separator, keeping case. Runs on every seed, a hand-typed one included.
@@ -267,7 +254,7 @@
 ┊┊┊┊┊ ┄ ⸖ $carries=value
 ┋┋┋ ━ WHAT COMES OUT
 ┋┋┋┋ ━ clear_identicon_seed( repository_root)
-┊┊┊┊┊ ┄ ⸖ $number=1.13
+┊┊┊┊┊ ┄ ⸖ $number=1.11
 ┊┊┊┊┊ ┄ ⸖ $fn=clear_identicon_seed
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
 ┊┊┊┊┊ ┄ ⸆ Moves the seed to the front of the history and empties the field, on disk. apply then reads the file back.
@@ -277,7 +264,7 @@
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ the cleared settings, as written
 ┋┋┋┋ ━ seed
-┊┊┊┊┊ ┄ ⸖ $number=1.14
+┊┊┊┊┊ ┄ ⸖ $number=1.12
 ┊┊┊┊┊ ┄ ⸖ $fn=v_seed
 ┊┊┊┊┊ ┄ ⸖ $kind=val
 ┊┊┊┊┊ ┄ ⸆ The string that goes into the digest, spelled as the settings file spells it.
@@ -294,7 +281,7 @@
 ┊┊┊┊┊ ┄ ⸖ $target=_digest
 ┊┊┊┊┊ ┄ ⸆ the mark comes off its md5
 ┋┋┋┋ ━ cmd_doctor( args)
-┊┊┊┊┊ ┄ ⸖ $number=1.15
+┊┊┊┊┊ ┄ ⸖ $number=1.13
 ┊┊┊┊┊ ┄ ⸖ $fn=cmd_doctor
 ┊┊┊┊┊ ┄ ⸖ $kind=data
 ┊┊┊┊┊ ┄ ⸆ Reads the stored seed and derives one separately, and prints both. The only other caller of the derivation.
@@ -1421,7 +1408,7 @@
 ┋┋┋ ━ seed
 ┊┊┊┊ ┄ ⸖ $type=str
 ┊┊┊┊ ┄ ⸆ The one string the mark depends on, hashed exactly as settings.json spells it. owner/repo, or a path where there is no remote.
-┊┊┊┊ ┄ ⸖ $defines=1.14
+┊┊┊┊ ┄ ⸖ $defines=1.12
 ┊┊┊┊ ┄ ⸖ $defines=1.1
 ┋┋┋ ━ the settings file
 ┊┊┊┊ ┄ ⸖ $type=file → dict
