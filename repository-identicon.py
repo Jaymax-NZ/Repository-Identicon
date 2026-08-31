@@ -206,7 +206,7 @@ def repo_toplevel(path):
     """The working tree root, or None outside a repository.
 
     In a worktree this is the worktree's own root, not the main checkout — which
-    is exactly why it is not the key.
+    is exactly why it is not the seed.
     """
     return _git(["rev-parse", "--show-toplevel"], path)
 
@@ -430,8 +430,8 @@ def _warp_bump(turned, half):
 def warp_hue(degrees, warp=HUE_WARP):
     """A uniform draw in degrees, to the hue it names. Monotonic, onto [0, 360).
 
-    `None` for `warp` is the uniform draw, which is what mapping versions
-    before 3 use.
+    `None` for `warp` is the uniform draw, which the three withdrawn drafts
+    before this colour map used.
     """
     if warp is None:
         return degrees % 360.0
@@ -883,7 +883,7 @@ ARTIFACT_STEM = "repository-identicon"
 
 
 def artifact_names():
-    """Every artifact as (key, filename).
+    """Every artifact as (name, filename).
 
     One list, walked by both the path builder and the byte builder, so a file
     that exists in one and not the other cannot happen.
@@ -1466,7 +1466,7 @@ def _normalise_grid(value):
 
 
 def check_output(text, vector):
-    """Compare one implementation's output for one key. Returns a problem list."""
+    """Compare one implementation's output for one seed. Returns a problem list."""
     try:
         got = json.loads(text)
     except ValueError as error:

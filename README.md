@@ -19,7 +19,9 @@ Run this inside the repository you want marked:
 python3 /path/to/repository-identicon.py apply
 ```
 
-It derives the key from the git remote and writes these:
+On the first run it derives the seed from the git remote and writes it to
+`.identicon/settings.json`; on every run after that it reads that file. Then it
+writes these:
 
 ```
 .identicon/repository-identicon.png            block 5, 27px canvas
@@ -33,8 +35,22 @@ It derives the key from the git remote and writes these:
 .identicon/repository-identicon.sextant        the pattern on the 2×3 lattice
 .identicon/repository-identicon.octant         the pattern on the 2×4 lattice
 .identicon/repository-identicon.txt            .sextant and .tricolour, composed
-.identicon/repository-identicon.key            the key, hashed exactly as it reads
 ```
+
+Beside them sits the one file that is an input rather than an artifact:
+
+```json
+// .identicon/settings.json
+{
+  "identiconSeed": "owner/repo",
+  "identiconSeedHistory": [],
+  "colourMap": 0
+}
+```
+
+`identiconSeed` is the string that gets hashed, exactly as it reads. It is
+written when it is not set and never rewritten, so the mark survives a rename,
+a move between forges and a clone. Edit it by hand to choose your own.
 
 `.colour` and `.grid` are the mark as text — enough to draw it with no PNG
 decoder and no SVG parser.
@@ -79,24 +95,32 @@ exactly as you left it — and a repository with no README is never given one.
 Commit the lot. To read the colour anywhere else,
 `$(cat .identicon/repository-identicon.colour)` is the whole integration.
 
-**The key is recorded once and hashed verbatim after that.** It reads
-`0.3:github.com/owner/repo` — a mapping version, then the seed — and it is the
-one thing the mark depends on. Re-running refreshes the artifacts from it, so a
+**The seed is written once and hashed verbatim after that.** It is the one
+thing the pattern depends on. Re-running refreshes the artifacts from it, so a
 better renderer or a different size reaches every repository while leaving the
 identity alone.
 
-Nothing else moves the mark. Renaming the repository, moving it between forges,
-cloning it somewhere else, or upgrading to a tool that draws newly seeded
-repositories differently: all reported, none acted on. Two switches change it,
-and both have to be asked for:
+Nothing moves the mark on its own. Renaming the repository, moving it between
+forges, and cloning it somewhere else all leave the seed where it is, because
+the seed is a committed file rather than something re-derived on each run.
+Changing an identity is asked for, and there is one way to ask:
 
 ```bash
-python3 /path/to/repository-identicon.py apply --reseed   # adopt today's seed
-python3 /path/to/repository-identicon.py apply --remap    # same seed, new mapping
+apply --reseed          # today's seed: the remote, or the path if there is none
+apply --reseed repo     # the git remote, as owner/repo
+apply --reseed path     # the repository directory
+apply --reseed uuid     # a fresh uuid4, tied to nothing
+apply --seed owner/name # a seed you supply outright
 ```
 
-Each rewrites that one line, so the change to your mark arrives as a diff you
-review rather than as a surprise on somebody's next upgrade.
+`--reseed` moves the current seed to the front of `identiconSeedHistory` and
+blanks the seed field; the ordinary rule then derives a new one and writes it,
+so seeding a fresh repository and reseeding an old one are one rule and not
+two. A named source that cannot answer — `--reseed repo` where there is no
+remote — fails and says so rather than quietly using something else.
+
+The change to your mark arrives as a diff you review rather than as a surprise
+on somebody's next upgrade.
 
 Anything it replaces is kept beside it as `repository-identicon.prior.<ext>`,
 so rolling back is a `mv`. One level, overwritten each run — git has the rest.
@@ -105,15 +129,26 @@ so rolling back is a `mv`. One level, overwritten each run — git has the rest.
 a tool asking whether a repository is current; `--json` gives a dependent tool
 the whole result without parsing prose.
 
-If the repository has no git remote the key falls back to its path, which will
-not survive being cloned. `apply` says so, and the fix is a
-`.repository-identicon` file committed at the top level.
+If the repository has no git remote the seed falls back to its path. That is
+still committed and still travels with a clone; if you would rather it named
+the project, edit `identiconSeed` in `.identicon/settings.json` before the
+first `apply`.
+
+**The colour map is beside the seed and never inside the hash.** `colourMap`
+records which map drew this repository's colours. Improving a map — a wider
+gamut, a palette gaining a colour Unicode did not have — repaints marks and
+can never reshape one, because the pattern comes off the seed alone. There is
+one map, numbered `0`.
+
+`doctor` answers what a repository would derive today, if you want to compare
+it against what is stored. `apply` does not raise the subject, because the
+mark standing still through a rename is the design and not a problem.
 
 ## What is here
 
 | file | what it is |
 |---|---|
-| `SPEC.md` | the specification: how to derive the key, and how a key becomes a pattern and a colour |
+| `SPEC.md` | the specification: how to derive the seed, and how a seed becomes a pattern and a colour |
 | `CONTRIBUTING.md` | how to write a conforming port, and what "a repository identicon" means |
 | `vectors.json` | pinned test vectors — the part that makes the spec unambiguous |
 | `repository-identicon.py` | the reference implementation, standard library only. Five commands: `apply`, `show`, `render`, `validate`, `doctor` |
@@ -193,9 +228,9 @@ Three things, often confused, and the reason this repository is separate from
 `Claude-Colophon`:
 
 1. **The standard.** What identifies a project — the git remote, normalised so
-   that every spelling of one repository collapses to one key — and how a key
+   that every spelling of one repository derives one seed — and how a seed
    becomes a pattern and a colour. Language-agnostic. Must never drift.
-2. **An implementation.** Code turning a key into pixels, vector, blocks or a
+2. **An implementation.** Code turning a seed into pixels, vector, blocks or a
    hex colour. There are two already; each carries its own copy of the
    derivation and is held to the vectors by test.
 3. **A delivery.** Getting the mark in front of a human somewhere specific — a

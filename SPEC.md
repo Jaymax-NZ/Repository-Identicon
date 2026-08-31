@@ -5,8 +5,8 @@ itself and from nothing else. Any tool implementing this specification produces
 the same identicon for the same project as any other, without coordination,
 configuration, or a shared registry.
 
-The valuable half of this document is **the key** — deciding what identifies a
-project. The other half, how a key becomes a pattern, should come from an
+The valuable half of this document is **the seed** — deciding what identifies a
+project. The other half, how a seed becomes a pattern, should come from an
 established identicon implementation rather than from here; the derivation
 below records what the tool does today and is not a standard worth conforming
 to.
@@ -28,12 +28,12 @@ project's colour would be worse than none of them having one.
 
 ## Scope
 
-**In:** how to derive a key, and how a key reaches each medium. **Out:** where
+**In:** how to derive a seed, and how a seed reaches each medium. **Out:** where
 any tool chooses to display the result, and what it does with the rest of its
 interface.
 
 That line runs through the renderings rather than around them, and this is
-where it falls. Turning a key into bytes is in: this specification defines the
+where it falls. Turning a seed into bytes is in: this specification defines the
 raster, the vector, the colour, the grid, the tricolour and both lattices, and
 the reference implementation writes every one of them to a file. Addressing
 those bytes to a particular terminal is out — the iTerm2 and kitty escape
@@ -42,138 +42,138 @@ between them are specified here and implemented in
 [`Console-Colophon`](../Console-Colophon), because which of them a terminal can
 read is a fact about that terminal.
 
-## The key
+## The seed
 
-Everything derives from one string. Getting the key right matters more than
-anything else here, because two tools that disagree about the key agree about
+Everything derives from one string. Getting the seed right matters more than
+anything else here, because two tools that disagree about the seed agree about
 nothing else.
 
-The key is the **mapping version, a colon, and the seed**:
+The seed identifies the project. It is `owner/repo` where there is a git
+remote, and a filesystem path where there is not.
 
+An implementation MUST hash the seed **exactly as it is stored**: no prefix, no
+suffix, no case fold, no trimming at hash time. Everything below follows from
+that one rule.
+
+Nothing else enters the hash. In particular the colour map does not; see
+[The colour map](#the-colour-map).
+
+### Where the seed lives
+
+A repository records its seed in **`.identicon/settings.json`**, which is a
+committed file and the only input to its identity:
+
+```json
+{
+  "identiconSeed": "owner/repo",
+  "identiconSeedHistory": [],
+  "colourMap": 0
+}
 ```
-key = "0.3:" + seed        e.g. "0.3:github.com/owner/repo"
-```
 
-The **seed** identifies the project and is resolved as below. The **mapping
-version** says which derivation drew the mark.
+`identiconSeed` MUST be written when it is absent or empty, and MUST NOT be
+rewritten while it holds a value. An implementation MUST read it before
+deriving anything, and MUST NOT run a derivation whose result it will discard.
 
-An implementation MUST hash the key **exactly as recorded**, prefix included,
-and MUST NOT add, strip or rewrite the prefix at hash time. Everything below
-follows from that one rule.
+An empty string and an absent field mean the same thing: not set. Writing
+`""` is how an operator asks the next run to derive a seed.
 
-A key with no version prefix is **mapping version `0`** and is its own seed.
-Version 0 is the derivation that existed before the version did, so an
-unstamped key hashes to itself and still produces the mark it always produced.
+`identiconSeedHistory` lists the seeds this repository has had before the
+current one, **most recent first**. It is a record; nothing derives from it.
 
-A version is **a run of decimal digits, optionally followed by a dot and a
-second run** — `0`, `3`, `0.3`, `0.10`. An implementation MUST recognise the
-prefix only in that form, followed by a colon at the very start of the key, so
-that a seed containing a colon — `ssh://…`, `C:/src/x`, `host:1234/x`,
-`10.0.0.1:8080/x` — is never mistaken for a stamped one. One dot at most is
-what keeps a bare address out, since an IPv4 host carries three.
+An implementation MUST accept a hand-edited `identiconSeed` and MUST apply the
+same normalisation to it as to a derived one. Choosing a seed by hand is a
+supported operation, and it is how a project takes a seed this specification
+would not have derived.
 
-A version is **a label, compared for equality and never ordered.** An
-implementation MUST NOT parse it as a number, and MUST treat `03`, `3` and
-`0.3` as three different versions: the prefix is part of the string being
-hashed, so two spellings are two different keys and two different marks.
+An unreadable or malformed `settings.json` MUST be treated as though it were
+absent, so the next run writes a good one.
 
-### Why the version is in the key, and not in the seed
+### What the seed survives
 
-A change to the derivation is a change to every project's identity. Nothing
-prevented one happening quietly: edit a constant, regenerate the vectors in the
-same commit, and every mark in the world moves while the tests stay green.
+Because `settings.json` is committed, a seed survives being cloned, renamed, or
+moved between forges, **whatever it was derived from** — a path-derived seed
+travels exactly as a remote-derived one does. Derivation runs once in a
+repository's life.
 
-With the version inside the key, "the mark changed" and "the key changed" are
-the same event by construction. The recorded key is a tracked file, so that
-event is a line in a diff that somebody reviews.
+Preferring the remote at derivation time is therefore a statement about which
+derivation is stable across machines at that one moment, and says nothing about
+what survives afterwards.
 
-It stays out of the seed because the seed is the identity. A repository's seed
-MUST NOT be rewritten by a version change: a new mapping is not a rename, and
-MUST NOT be reported as seed drift or require re-seeding.
+An implementation MUST NOT change a seed on its own. Changing one is requested;
+see [Reseeding](#reseeding).
 
-### The recorded key wins
+### Deriving a seed
 
-An implementation MUST derive the mark from the recorded key, verbatim,
-whenever a repository has one. It MUST NOT re-stamp that key with the version
-it happens to ship, and MUST NOT treat a version it does not recognise as an
-error: an unknown mapping version is somebody else's newer mapping, not a
-corrupt file.
+This is how a repository with no seed set gets one. Once set, `identiconSeed`
+outranks every row of this table.
 
-So the version an implementation carries decides one thing only — what a
-**newly seeded** repository is stamped with. It reaches no repository that is
-already seeded. An implementation SHOULD report the difference where one
-exists, and MUST NOT act on it.
-
-Moving an existing repository to a newer mapping is therefore a separate,
-deliberate operation — `apply --remap` in the reference implementation — which
-rewrites the recorded key, keeps the seed, and changes the mark. Its whole
-output is one changed line in a tracked file, which is the record of the
-decision.
-
-### What justifies a bump
-
-A change to the grid rule, to the colour rule, or to either set of constants —
-anything that makes a conforming implementation produce a different mark for an
-unchanged key. Such a change MUST increment the mapping version an
-implementation seeds at, and MUST add vectors for the new version to
-`vectors.json` in the same commit.
-
-It MUST NOT remove the vectors for any version that reached a release. Those
-keys are recorded in repositories, still hash to themselves, and must still draw
-what they always drew; the vectors are what stops that promise being broken by
-accident.
-
-A version that never reached a release is a draft. It MAY be withdrawn, with its
-rule and its vectors, and repositories seeded from a draft build are expected to
-`remap`. This is the only circumstance in which vectors leave.
-
-A change that cannot alter any mark — prose, renderings, tooling, a new file in
-the artifact set, new seeds added to the vectors — MUST NOT increment it.
-
-Neither a rename nor a move is a bump. Those change the seed, which is the
-existing seed-drift path, and they change one repository rather than all of them.
-
-### Resolving a seed
-
-This is how a repository that has **not** been seeded gets its seed. Once it is
-seeded, the recorded key outranks every row of this table; what follows is
-reported as drift, never acted on.
-
-Resolve most specific first, and stop at the first that yields a value:
-
-| # | Source | Seed | Portable |
+| # | Source | Seed | Stable across machines |
 |---|---|---|---|
 | 1 | `explicit` | supplied by the caller | — |
-| 2 | `override` | first non-blank, non-`#` line of `.repository-identicon` at the repository top level, whitespace-stripped | yes, if committed |
-| 3 | `remote` | the normalised git remote, below | **yes** |
-| 4 | `toplevel` | the repository top level, as an absolute path | no |
-| 5 | `path` | the directory itself, as an absolute path | no |
+| 2 | `repo` | the normalised git remote, below | **yes** |
+| 3 | `path` | the repository top level, or the directory itself, as an absolute path | no |
 
-Sources 3 and 2 are the only ones that survive being cloned elsewhere. An
-implementation SHOULD report which source it used, because a project silently
-falling back to a path seed will change identity when checked out on another
-machine, and that is worth seeing before it happens rather than after.
+Resolve most specific first, and stop at the first that yields a value. The git
+remote is `origin` where one exists, otherwise the first remote listed.
 
-The git remote is `origin` where one exists, otherwise the first remote listed.
+**Why the remote is preferred.** A path is not stable across machines,
+containers, cloud sessions, or worktrees. That last one is decisive rather than
+theoretical: a git worktree keeps the same `origin` but has its own top level,
+and Claude Code's desktop app gives every parallel session its own worktree.
+Deriving from a path would therefore give each parallel session in one project
+a different identity — precisely inverting what an identicon is for.
 
-**Why not the path.** A path is not stable across machines, containers, cloud
-sessions, or worktrees. That last one is decisive rather than theoretical: a git
-worktree keeps the same `origin` but has its own top level, and Claude Code's
-desktop app gives every parallel session its own worktree. A path key would
-therefore give each parallel session in one project a different identity —
-precisely inverting what an identicon is for.
+A session started in a subdirectory has the same failure and the same fix,
+since `rev-parse --show-toplevel` reports the repository root from anywhere
+inside it.
 
-A session started in a subdirectory has the same failure and the same fix, since
-`rev-parse --show-toplevel` reports the repository root from anywhere inside it.
+### Reseeding
+
+Changing an identity MUST be requested and MUST NOT happen on its own. A
+request names one source:
+
+| source | derives from |
+|---|---|
+| `auto` | the remote if there is one, otherwise the path |
+| `repo` | the git remote, as `owner/repo` |
+| `path` | the repository directory |
+| `uuid` | a fresh UUID version 4, derived from nothing |
+
+Reseeding is one operation: **push the current seed onto the front of
+`identiconSeedHistory`, and set `identiconSeed` to `""`.** The rule that writes
+an unset seed then derives and stores a new one from the named source. Seeding
+a fresh repository and reseeding an established one are therefore the same
+rule applied to the same empty field, not two mechanisms that must be kept in
+step.
+
+A named source that cannot answer MUST be an error. `repo` in a repository
+with no remote is a question with no answer, and substituting a path would
+hand back something that was not asked for.
+
+`auto` is the only source permitted to choose between two derivations.
+
+### Normalising a seed
+
+One normalisation applies to every seed, whatever produced it — derived from a
+remote, derived from a path, or typed into `settings.json` by hand:
+
+1. Strip whitespace from both ends.
+2. Strip a trailing `/` or platform path separator.
+
+**Case MUST NOT be folded.** The seed is hashed as the file spells it, so a
+port reproduces a mark by hashing that string and needs no Unicode case mapping
+to conform. `vectors.json` pins two spellings of one project name for exactly
+this reason, and an implementation that folds case fails on that pair.
 
 ### Remote normalisation
 
-Every spelling of one repository MUST collapse to one seed. Given a remote URL:
+Every spelling of one repository MUST derive one seed. Given a remote URL:
 
 1. Trim whitespace; strip a trailing `/`.
 2. Reject if empty, if it begins with `/`, or if the scheme is `file`. A
-   local-path remote is no more portable than the working directory and earns no
-   special treatment.
+   local-path remote is no more portable than the working directory and earns
+   no special treatment.
 3. If the URL contains `://`, take the authority as everything up to the next
    `/`, and the path as the remainder. Otherwise, if it contains `:`, treat it
    as scp-like: authority before the first `:`, path after. Otherwise reject.
@@ -182,30 +182,71 @@ Every spelling of one repository MUST collapse to one seed. Given a remote URL:
 5. Strip `/` from both ends of the path, then strip a trailing `.git`,
    case-insensitively.
 6. Reject if either the host or the path is now empty.
-7. The seed is the host and the path segments, joined by `/`, **lowercased**.
+7. The seed is the path segments joined by `/`, normalised as above. **The
+   host is discarded.**
 
-Lowercasing is deliberate: forges treat owner and repository names
-case-insensitively, so `Owner/Repo` and `owner/repo` are one project.
+The host is parsed so that a URL carrying none can be rejected, and then
+dropped, so a project keeps its mark across a move between forges.
+`github.com/a/b` and `gitlab.com/a/b` therefore derive one seed; a repository
+that needs to differ writes its own `identiconSeed`.
 
-The host is retained, so `github.com/a/b` and `gitlab.com/a/b` stay distinct.
-
-All of these MUST yield `github.com/owner/repo`:
+All of these MUST yield `Owner/Repo`:
 
 ```
 https://github.com/Owner/Repo.git      git@github.com:Owner/Repo.git
 https://github.com/Owner/Repo          git@github.com:Owner/Repo
-https://github.com/owner/repo/         ssh://git@github.com/Owner/Repo.git
+https://github.com/Owner/Repo/         ssh://git@github.com/Owner/Repo.git
 https://token@github.com/Owner/Repo.git    ssh://git@github.com:2222/Owner/Repo.git
 https://user:pass@github.com/Owner/Repo.git    git://github.com/Owner/Repo.git
 ```
+
+## The colour map
+
+The colour map says which colour rule drew a repository's colours. It is
+recorded in `settings.json` as `colourMap`, an integer.
+
+**It MUST NOT enter the hash.** The pattern and the hue both come off the
+digest of the seed alone, so a repository's shape is fixed by its seed for
+good. Replacing a colour map repaints every mark and MUST NOT move any of them:
+adding a colour to a palette is not a reason for an identicon's pattern to
+change.
+
+`colourMap` MUST be written when a repository is seeded and MUST NOT be
+rewritten afterwards. No command changes it; changing one is a hand edit.
+
+An implementation encountering a `colourMap` it does not implement MUST refuse
+rather than draw with one it does have, because drawing it would produce a mark
+that `settings.json` does not describe.
+
+There is one colour map, numbered `0`. When a second ships, each map is a file
+carrying its number in its name, and an implementation learns which maps it has
+by seeing which files are present.
+
+### What justifies a new colour map
+
+A change to the colour rule or its constants — anything that makes a
+conforming implementation produce a different colour for an unchanged seed.
+Such a change MUST take the next colour map number and MUST add vectors for it
+to `vectors.json` in the same commit.
+
+**A change to the grid rule is not a new colour map.** The grid does not depend
+on the colour map, so a grid change moves every mark under every map at once.
+This specification does not currently define a way to make one.
+
+A change that cannot alter any mark — prose, renderings, tooling, a new file in
+the artifact set, new seeds added to the vectors — MUST NOT take a number.
+
+Neither a rename nor a move is a colour map change. Those change one
+repository's seed, on request, and leave every other repository alone.
 
 ## The pattern
 
 GitHub-style: a 5×5 grid, mirrored, so every identicon is vertically symmetric
 and reads as a deliberate mark rather than as noise.
 
-Let `h` be the **MD5 digest of the key encoded as UTF-8, as lowercase hex**,
-thirty-two characters. The key, not the seed: `"1:github.com/owner/repo"`.
+Let `h` be the **MD5 digest of the seed encoded as UTF-8, as lowercase hex**,
+thirty-two characters. The seed alone: `"Owner/Repo"`, with nothing prepended
+and nothing appended.
 
 ```
 grid[row][col] = false for all row, col in 0..4
@@ -237,32 +278,31 @@ drift apart:
 hue = hexval(h[-7:]) / 0xfffffff * 360      degrees, the last seven hex chars
 ```
 
-**No rule that reaches a release ever retires.** Once a version has shipped,
-repositories are seeded at it and it is theirs; an implementation MUST keep
+**No colour map that reaches a release ever retires.** Once a map has shipped,
+repositories are seeded under it and it is theirs; an implementation MUST keep
 drawing it, and MUST keep its vectors.
 
-**Before a release, a rule is a draft and may be withdrawn.** Versions `0`,
-`1`, `2` and the bare `3` were drafts — the reference's HSL, then Oklab without
-the warp, then the warped ring under a bare integer — and no release carried
-any of them, so they are gone along with their vectors. An implementation MUST
-NOT reproduce them.
+**Before a release, a map is a draft and may be withdrawn.** Four rules came
+before this one — the reference's HSL, then Oklab without the warp, then the
+warped ring twice under different numbering — and no release carried any of
+them, so they are gone along with their vectors. An implementation MUST NOT
+reproduce them.
 
-**Version `0.3` is that fourth draft renumbered, and the rule is unchanged.**
-It takes the number the wheel it was solved against already carried, so the
-colour rule and the wheel of emoji triples standing over the same gamut are one
-thing numbered once. Renumbering is not a rule change, but it *is* a mark
-change, because the version is inside the string being hashed — which is why it
-is a withdrawal and a re-issue rather than an edit.
+**Colour map `0` is that fourth draft, and the rule is unchanged.** Earlier
+numbering put the version inside the hashed string, so renumbering moved every
+mark; it no longer does. The map is now recorded beside the seed and never
+hashed, so numbering it `0` changes no pattern and no colour.
 
-**A key stamped at a version the implementation does not draw MUST be refused,
-not redrawn.** Drawing it with whatever rule is to hand moves a mark nobody
-asked to move, which is the one thing the stamp exists to prevent. The refusal
-should name `remap` as the way across.
+**A `colourMap` the implementation does not draw MUST be refused, not
+redrawn.** Drawing it with whatever rule is to hand produces a mark that
+`settings.json` does not describe. The refusal should name the file and field
+to edit.
 
-The current release state is in `VERSION` in the reference implementation. While
-it reads `0.0.*`, the mapping is a draft and only the current rule exists.
+The current release state is in `VERSION` in the reference implementation.
+While it reads `0.0.*`, the colour map is a draft and only the current rule
+exists.
 
-### Version 0.3, the only rule
+### Colour map 0, the only rule
 
 Two steps: warp the drawn value into a hue, then build the colour at that hue.
 
@@ -443,14 +483,14 @@ not, so the mark is emitted at two lightnesses instead of on two grounds.
 
 ## What goes in the repository
 
-The mark is a pure function of the key, so a repository does not need to store
+The mark is a pure function of the seed, so a repository does not need to store
 it. It stores it anyway, because a README, a shell prompt and a forge cannot
 run a derivation. **The rendered files are a cache with a canonical location,
-not a source of truth**; if they disagree with the key, the key wins and they
+not a source of truth**; if they disagree with the seed, the seed wins and they
 are stale.
 
-The key file is the exception, and is the source of truth. It is not a note of
-what the mark was made from; it is what the mark is made from.
+`.identicon/settings.json` is the exception, and is the source of truth. It is
+not a note of what the mark was made from; it holds what the mark is made from.
 
 ```
 .identicon/repository-identicon.png            block 5, 27px canvas
@@ -464,8 +504,17 @@ what the mark was made from; it is what the mark is made from.
 .identicon/repository-identicon.sextant        the pattern on the 2×3 lattice
 .identicon/repository-identicon.octant         the pattern on the 2×4 lattice
 .identicon/repository-identicon.txt            .sextant and .tricolour, composed
-.identicon/repository-identicon.key            the key, hashed exactly as it reads
 ```
+
+Beside them, and not one of them:
+
+```
+.identicon/settings.json                       identiconSeed, its history, colourMap
+```
+
+`settings.json` is an **input**, not an artifact. It is not derived from the
+seed, so it is not regenerable from it, is not compared byte-for-byte against
+generated bytes, and is not among the frozen fixtures.
 
 `.colour` and `.grid` are the whole identicon as text: the two values the text
 rendering takes, in the spelling `vectors.json` uses. Together they let a
@@ -473,21 +522,25 @@ consumer with no PNG decoder, no SVG parser and no identicon machinery draw the
 mark. Rows of characters rather than JSON, so a shell can read either without a
 parser and a diff shows one line per changed row.
 
-Both are derived and regenerable. Neither belongs in the key file: that file is
-the source of truth, an implementation SHOULD leave it byte-for-byte alone, and
-a derived value inside it would go stale with nothing entitled to correct it.
+Both are derived and regenerable. Neither belongs in `settings.json`: that file
+is the source of truth, an implementation SHOULD leave it alone once written,
+and a derived value inside it would go stale with nothing entitled to correct
+it.
 
 ### What `vectors.json` pins, and what the byte fixtures pin
 
 Two files hold pinned values, and they hold different things.
 
-`vectors.json` pins the **mapping**: for each key, the MD5 digest, the grid,
-and the foreground colour. It is the portable contract. An implementation in
-any language conforms by reproducing those three values, and nothing in it
-requires producing any particular file.
+`vectors.json` pins the **mapping**: for each seed, the MD5 digest, the grid,
+and the foreground colour, with the colour map each was drawn under. It is the
+portable contract. An implementation in any language conforms by reproducing
+those three values, and nothing in it requires producing any particular file.
 
-`tests/fixtures/` pins the **serialisation**: for each of four keys, the exact
-bytes of all twelve artifacts listed above. It is a contract between this
+The digest and the grid do not depend on the colour map. Only `foreground`
+does, which is what makes a new map a colour change and never a shape change.
+
+`tests/fixtures/` pins the **serialisation**: for each of four seeds, the exact
+bytes of all eleven artifacts listed above. It is a contract between this
 implementation and itself across machines, not a contract with a port. A
 reimplementation is not asked to match it and MUST NOT be judged against it.
 
@@ -495,8 +548,8 @@ The division is the useful part. A grid that changed breaks the vectors; a
 file layout that changed breaks only the fixtures. So a failure names its own
 cause: the mapping moved, or the writer did.
 
-No key appears in both files, and `tests/test_bytes.py` asserts it, so neither
-file can drift into restating the other.
+No seed appears in both files, and `tests/test_bytes.py` asserts it, so
+neither file can drift into restating the other.
 
 ### One file, both grounds
 
@@ -552,7 +605,7 @@ title, a status field. Splitting a file to use half of it is a parser, and this
 directory exists so that nothing needs one.
 
 **Both lattices are written.** Which one a host can draw is a fact about its
-fonts, and neither the key nor this specification knows it. An implementation
+fonts, and neither the seed nor this specification knows it. An implementation
 MUST write both, and MUST compose `.txt` from the sextant lattice: sextants are
 Unicode 13.0 against the octants' 16.0, so the default is the one more fonts
 have.
@@ -563,37 +616,39 @@ dropped into `docs/`, a file called `icon.png` describes nothing. The prefix
 also anticipates a repository carrying more than one mark — a user's alongside
 the repository's — at which point the unqualified name is the ambiguous one.
 
-### The key is recorded, and replacing it MUST be deliberate
+### The seed is written once, and replacing it MUST be deliberate
 
-An implementation MUST record the key, and on every later run MUST hash the
-recorded key rather than re-deriving one. Re-deriving each time means a rename
+An implementation MUST write the seed on the first run and on every later run
+MUST read it rather than deriving one. Deriving each time means a rename
 silently changes a repository's identity, and not doing that is what an
 identity is for.
 
-The recorded key MUST be the whole key, mapping version included. The file
-format is one payload line — the first non-blank line that is not a comment —
-and an implementation MUST take that line verbatim, whitespace-stripped, with
-no further interpretation. It SHOULD leave an existing file byte-for-byte alone
-when the key is unchanged, comments included: a run that rewrites this file
-under its owner makes every run a diff, and not moving is this file's whole
-job.
+An implementation MUST read the stored seed **before** it derives anything, and
+MUST NOT run a derivation whose result it will then discard. Deriving first and
+discarding is indistinguishable in its output from reading first, so it hides
+from every test and from anyone reading the call graph — but it runs git twice
+per invocation and, more seriously, leaves two orderings of the same precedence
+in two places to be kept in step by hand.
 
 This separates two unrelated reasons to re-run, which otherwise collide:
 
 - **Refresh the artifacts.** A better renderer, a different size, a new file in
   the set. This must reach every repository without disturbing any identity, so
   it is the default.
-- **Change the mark.** Only on explicit instruction — a `--reseed` switch to
-  adopt today's seed, a `--remap` switch to keep the seed and move to a newer
-  mapping, or equivalents. An implementation MUST NOT do either because the
-  remote changed, or because it ships a newer mapping version.
+- **Change the mark.** Only on explicit instruction — a reseed naming one of
+  the four sources, or a seed supplied outright. An implementation MUST NOT do
+  either because the remote changed.
 
-Once seeded, the mark is stable against renaming, moving between forges, being
-cloned to a path that would resolve differently, and a newer mapping version
-shipping in the tool. Where the seed would now derive differently an
-implementation SHOULD report it — call it seed drift; where the recorded
-mapping version differs from the one it seeds at, it SHOULD report that too.
-It MUST NOT act on either.
+Once seeded, the mark is stable against renaming, moving between forges, and
+being cloned to a path that would derive differently.
+
+**An implementation MUST NOT report an unrequested rename as a problem.** The
+mark standing still is the design, not a condition needing attention, and a
+message inviting a reseed on every run after a rename teaches its reader to
+reseed when nothing is wrong. Where an implementation offers to compare the
+stored seed against what would derive today, that belongs in a command somebody
+runs to ask — an environment report — and not in the output of a routine
+refresh.
 
 **Whatever is replaced SHOULD be kept beside its replacement**, as
 `repository-identicon.prior.<ext>` — one level, overwritten each time. Anyone
@@ -602,11 +657,15 @@ has replaced a mark and the previous one is not recorded anywhere yet. The
 audience is developers, so a file next to the new one is the whole recovery
 procedure, and it is worth more than any amount of asking first.
 
-For a fixed key the write is idempotent: the mark is a pure function of the
-key, so a later run produces identical bytes and need not touch the files.
+`settings.json` is an input rather than an artifact and is not kept this way.
+Its own history is `identiconSeedHistory`.
+
+For a fixed seed the write is idempotent: the mark is a pure function of the
+seed, so a later run produces identical bytes and need not touch the files.
 
 An implementation SHOULD offer a check mode that reports what would change and
-writes nothing, for CI and for dependent tools.
+writes nothing, for CI and for dependent tools. On a repository with no seed
+set, that mode MUST report the seed it would write and MUST NOT write it.
 
 ### Pointing the README at it
 
@@ -634,18 +693,6 @@ The alt text is empty on purpose. The mark carries no information the project
 name beside it does not already give, so it is decorative in the accessibility
 sense, and an empty `alt` is what tells a screen reader to skip it rather than
 announce a filename.
-
-**Precedence**, most specific first: a key or seed supplied explicitly by the
-caller; the **recorded key**, which is what the mark is; then the resolution
-order in *Resolving a seed* above, of which a committed `.repository-identicon`
-is the first row. The last of these applies on the first run, and after a
-reseed or a remap.
-
-The recorded key outranks a committed override, which reads backwards until you
-notice that they answer different questions: the override says how this
-repository *would* be seeded, and the recorded key says what it *is*. Editing
-the override on a seeded repository is therefore reported as seed drift and not
-acted on, exactly as a rename is. Re-seed to adopt it.
 
 `SVG` carries a declared size so `![]()` renders it as an inline mark rather
 than at column width; a consumer that wants it larger supplies the size
@@ -681,7 +728,7 @@ rasters and `apply --check` compares them: two machines running the same
 version MUST write the same bytes. A general-purpose deflate does not give
 that. `zlib.compress` at a fixed level still selects different matches under
 zlib-ng than under stock zlib, so the level is an input to the search rather
-than a description of its output, and the same key produced different files on
+than a description of its output, and the same seed produced different files on
 a laptop and on a CI runner.
 
 The reference therefore writes 8-bit RGBA, filter type 0 on every row, and one
@@ -771,7 +818,7 @@ containing `kitty`; `KONSOLE_VERSION` or `KONSOLE_DBUS_SESSION`; a known
 `TERM_PROGRAM`. It MUST NOT be by querying the terminal and waiting for a reply:
 this runs in a hook, and a reply that never comes hangs the turn.
 
-**Nothing but the identicon is printed.** No project name, no key, no label. The
+**Nothing but the identicon is printed.** No project name, no seed, no label. The
 mark is the message.
 
 ### Text, the fallback
@@ -802,7 +849,7 @@ the tricolour**; **the tricolour alone** where only one line is available.
 Escape-sequence colour is not part of this rendering.
 
 Both parts are implemented in `text-identicon.py`, which takes a colour and a
-grid and nothing else — no key, no digest — so it can be vendored on its own
+grid and nothing else — no seed, no digest — so it can be vendored on its own
 into a tool with no identicon machinery. The grid feeds the arrangement as well
 as the pattern, and it was already being passed in, so that property is
 unaffected.
@@ -823,7 +870,7 @@ the host, not the mark.
 mark as tofu and the older set is in more fonts. Octants are squarer, a terminal
 cell being roughly twice as tall as it is wide, so they are what to send where
 the glyphs are known to exist. An implementation MUST compose `.txt` from
-sextants and MUST NOT make the choice from anything in the key: it is a fact
+sextants and MUST NOT make the choice from anything in the seed: it is a fact
 about the receiving host.
 
 Bit `i` of a pattern is subcell (`row i // 2`, `col i % 2`), top to bottom, in
@@ -883,7 +930,7 @@ $ python3 text-identicon.py --octant '#2692d9' '01010,01010,10001,10101,01010'
 **Which three colours appear is a function of the colour; what order they
 appear in is a function of the grid.** Both are needed, and a caller rendering
 an identicon holds both, so `text-identicon.py` still takes a colour and a grid
-and nothing else — no key and no digest of its own.
+and nothing else — no seed and no digest of its own.
 
 The order is the low digit of the grid's fifteen bits, read as a number: columns
 0–2 of each row, top to bottom, left to right, since columns 3 and 4 are the
@@ -896,7 +943,7 @@ defended, but it made the order a function of an *output* of the mapping, which
 cannot carry information the mapping has not already spent: two projects landing
 on the same quantised colour got the same order, necessarily. Over four thousand
 projects it produced fewer distinct marks than there were distinct colours. The
-grid is fifteen bits of the key's digest, drawn from a slice disjoint from the
+grid is fifteen bits of the seed's digest, drawn from a slice disjoint from the
 hue's, so the order now separates projects that share a colour.
 
 **Which three of the nine stand for a colour is not yet normative.** The shipped

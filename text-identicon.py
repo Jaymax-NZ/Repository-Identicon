@@ -26,7 +26,7 @@ likely a font is to have the glyphs, not in what they can carry, so which one
 suits is the host's question rather than this file's. `text` draws sextants
 unless told otherwise.
 
-No key, no digest and no palette of its own: `text` takes a grid and a colour,
+No seed, no digest and no palette of its own: `text` takes a grid and a colour,
 so this file can be vendored alone into a tool with no identicon machinery.
 
     python3 text-identicon.py '#2692d9' '.#.#.,.#.#.,#...#,#.#.#,.#.#.'
@@ -43,7 +43,7 @@ import math
 # Both put the 5x5 grid in three characters by two lines, and both are
 # lossless: every one of the ten pinned vectors reconstructs its grid exactly
 # from either. `work-in-progress/lattice-comparison.md` is the two side by side
-# on real keys.
+# on real seeds.
 #
 # Neither is a fallback for the other and both are written, because what
 # separates them is the host, not the mark:
@@ -336,7 +336,7 @@ def arrange(indices, grid):
     **Take the order from the grid, never from the colour.** Hashing an output
     of the mapping cannot add anything the mapping has not already said: over
     four thousand projects it produced fewer distinct marks than there were
-    distinct colours. The grid is fifteen bits of the key's digest, drawn from
+    distinct colours. The grid is fifteen bits of the seed's digest, drawn from
     a slice disjoint from the one the hue comes from, and `text()` is already
     holding it.
 

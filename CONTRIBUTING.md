@@ -28,31 +28,31 @@ time somebody has an opinion about the palette.
 
 A port needs three things and nothing else:
 
-1. Grid and colour derivation from a key, hashing the key exactly as given.
-   `vectors.json` records the keys verbatim, so there is nothing to infer and
-   no version arithmetic to get wrong.
-2. Seed resolution and remote normalisation, per `SPEC.md`, for repositories
-   that are not seeded yet — and reading a recorded key in preference to
-   deriving one, for those that are.
+1. Grid and colour derivation from a seed, hashing the seed exactly as given.
+   `vectors.json` records the seeds verbatim, so there is nothing to infer, no
+   prefix to add and no case to fold.
+2. Seed derivation and remote normalisation, per `SPEC.md`, for repositories
+   that are not seeded yet — and reading `.identicon/settings.json` in
+   preference to deriving, for those that are.
 3. A test that fails loudly when your output and the vectors disagree.
 
 Renderings — image, terminal protocol, text — are optional. A port that only
-derives the key, the grid and the colour is a complete and useful port.
+derives the seed, the grid and the colour is a complete and useful port.
 
-**While this is pre-release, there is one mapping version and the vectors pin
-only that.** A port implements one colour rule and refuses any key stamped at
-another — refuses, rather than drawing it with the rule it has, because that
-would move somebody's mark.
+**While this is pre-release, there is one colour map and the vectors pin only
+that.** A port implements one colour rule and refuses any `colourMap` it does
+not have — refuses, rather than drawing it with the rule it has, because that
+would produce a mark the settings file does not describe.
 
-That changes at the first release. No rule that reaches a release ever retires,
-so from then on a port implements every released rule and picks by the version
-in the key, and `vectors.json` keeps the vectors for each. Versions 0, 1, 2 and
-the bare 3 were drafts and have been withdrawn — 3 is the rule drawn today,
-re-issued as 0.3 — so if you seeded a repository from one of those builds,
-`remap` moves it.
+That changes at the first release. No colour map that reaches a release ever
+retires, so from then on a port implements every released map and picks by the
+`colourMap` a repository records, and `vectors.json` keeps the vectors for
+each. Four earlier rules were drafts and have been withdrawn; the fourth is the
+rule drawn today, numbered 0.
 
-The digest and the grid are the same rule at every version, so a port that
-hashes what it is handed gets those for free.
+The digest and the grid do not depend on the colour map at all, so a port that
+hashes what it is handed gets both for free and keeps them through every future
+map.
 
 ### Checking it
 
@@ -63,7 +63,7 @@ language, so the check is offered as a command instead:
 python3 repository-identicon.py validate -- ./my-identicon --json
 ```
 
-It runs your implementation once per pinned vector, with the key as the last
+It runs your implementation once per pinned vector, with the seed as the last
 argument, and expects `{"grid": [...], "colour": "#rrggbb"}` on stdout. The
 grid rows may be `"01101"`, `[0,1,1,0,1]` or booleans — being fussy about JSON
 shape would only fail correct ports. It exits 1 if any vector disagrees.
