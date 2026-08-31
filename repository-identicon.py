@@ -95,7 +95,7 @@ def large_geometry(canvas):
 # ---- The seed ----
 #
 # Three functions, and the split between them is the point. `extract_repository_name` and
-# `path_seed` each turn one kind of thing into a candidate seed and do nothing
+# `extract_repository_path` each turn one kind of thing into a candidate seed and do nothing
 # else. `normalise_seed` is the single normaliser, and it runs on every seed
 # whatever produced it -- derived from a remote, derived from a path, or typed
 # into `settings.json` by hand.
@@ -169,19 +169,18 @@ def extract_repository_name(repository_url):
     return normalise_seed("/".join(parts))
 
 
-def path_seed(path):
-    """A directory as an absolute path, or None if there is nothing to use.
+def extract_repository_path( repository_root):
+    """The absolute path a repository sits at, or None where none was given.
 
     Expanded and made absolute, so `~/src/foo` and a relative path to the same
-    place derive alike. This is the fallback: a path names one checkout on one
-    machine, where a remote names the project. It is only ever derived once,
-    and what is stored afterwards travels with the repository like any other
-    seed.
+    place give one string. A path names one checkout on one machine where a
+    name names the project, which is why `extract_repository_name` is tried
+    first; once stored, either travels with the repository alike.
     """
-    if not path:
+    if not repository_root:
         return None
-    absolute = os.path.abspath(os.path.expanduser(str(path)))
-    return normalise_seed(absolute)
+    absolute = os.path.abspath(os.path.expanduser(str( repository_root)))
+    return normalise_seed( absolute)
 
 
 def _git(args, cwd=None):
@@ -224,15 +223,20 @@ def locate_repository_root(working_directory=None):
     return str(directory)
 
 
-def repo_remote_url(path):
-    """The origin URL, falling back to whichever remote is listed first."""
-    url = _git(["remote", "get-url", "origin"], path)
+def repo_remote_url( repository_root):
+    """Invokes `git remote get-url origin`, and returns what it prints.
+
+    Falls back to `git remote` and then `git remote get-url <first>` where
+    there is no origin.
+    """
+    url = _git( ["remote", "get-url", "origin"], repository_root)
     if url:
         return url
-    remotes = _git(["remote"], path)
+    remotes = _git( ["remote"], repository_root)
     if not remotes:
         return None
-    return _git(["remote", "get-url", remotes.splitlines()[0].strip()], path)
+    return _git( ["remote", "get-url", remotes.splitlines()[0].strip()],
+                repository_root)
 
 
 # What `--reseed` accepts, and what `derive_identicon_seed` derives from.
@@ -272,7 +276,7 @@ def derive_identicon_seed(repository_root, derive_from="auto"):
             raise ValueError(f"{repository_root} has no git remote, so there "
                              f"is no `repo` seed to derive")
 
-    return path_seed(repository_root)
+    return extract_repository_path(repository_root)
 
 
 # ---- The colour map ----

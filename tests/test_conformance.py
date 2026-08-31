@@ -987,7 +987,7 @@ class TestTheSettingsFile(unittest.TestCase):
         identicon.install_into_repo(self.tmp, readme=False)
         after = identicon.install_into_repo(self.tmp, reseed="path",
                                             readme=False)
-        self.assertEqual(identicon.path_seed(self.tmp), after["identiconSeed"])
+        self.assertEqual(identicon.extract_repository_path(self.tmp), after["identiconSeed"])
 
     def test_a_named_source_that_cannot_answer_raises(self):
         """`--reseed repo` with no remote is a question with no answer.

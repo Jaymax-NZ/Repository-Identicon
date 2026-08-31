@@ -56,7 +56,7 @@
 ┊┊ ┄ ⸖ $section=subcommands
 ┊┊ ┄ ⸆ what the command line offers, and what each one is for
 ┋┋ ━ The dispatcher
-┋┋┋ ━ main(argv)
+┋┋┋ ━ main( argv)
 ┊┊┊┊ ┄ ⸆ Builds five subparsers, runs the one asked for, and turns a stranded repository into exit 1.
 ┊┊┊┊ ┄ ⸖ $number=0.1
 ┊┊┊┊ ┄ ⸖ $fn=main
@@ -128,7 +128,7 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=read_settings
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
-┋┋┋┋ ━ read_settings(repository_root)
+┋┋┋┋ ━ read_settings( repository_root)
 ┊┊┊┊┊ ┄ ⸖ $number=1.1
 ┊┊┊┊┊ ┄ ⸖ $fn=read_settings
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
@@ -143,7 +143,7 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=identicon_seed
 ┊┊┊┊┊ ┄ ⸖ $sides=rl
 ┊┊┊┊┊ ┄ ⸖ $carries=value
-┋┋┋┋ ━ write_settings(repository_root, settings)
+┋┋┋┋ ━ write_settings( repository_root, settings)
 ┊┊┊┊┊ ┄ ⸖ $number=1.2
 ┊┊┊┊┊ ┄ ⸖ $fn=write_settings
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
@@ -163,7 +163,7 @@
 ┊┊┊┊┊ ┄ ⸖ $term=the settings file
 ┊┊┊┊┊ ┄ ⸖ $term=seed history
 ┊┊┊┊┊ ┄ ⸖ $term=colour map
-┋┋┋┋ ━ identicon_seed(settings)
+┋┋┋┋ ━ identicon_seed( settings)
 ┊┊┊┊┊ ┄ ⸖ $number=1.4
 ┊┊┊┊┊ ┄ ⸖ $fn=identicon_seed
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
@@ -173,7 +173,7 @@
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ the seed, or None
 ┋┋┋ ━ WHAT APPLY DERIVES, ON THE FIRST RUN
-┋┋┋┋ ━ derive_identicon_seed(root, derive_from)
+┋┋┋┋ ━ derive_identicon_seed( repository_root, derive_from)
 ┊┊┊┊┊ ┄ ⸖ $number=1.5
 ┊┊┊┊┊ ┄ ⸖ $fn=derive_identicon_seed
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
@@ -190,21 +190,21 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=extract_repository_name
 ┊┊┊┊┊ ┄ ⸖ $sides=rl
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
-┊┊┊┊┊ ┄ ⸖ $edge=path_seed
+┊┊┊┊┊ ┄ ⸖ $edge=extract_repository_path
 ┊┊┊┊┊ ┄ ⸖ $sides=tt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls dashed
-┋┋┋┋ ━ repo_remote_url(path)
+┋┋┋┋ ━ repo_remote_url( repository_root)
 ┊┊┊┊┊ ┄ ⸖ $number=1.6
 ┊┊┊┊┊ ┄ ⸖ $fn=repo_remote_url
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸆ Prefers origin, then whichever remote is listed first.
+┊┊┊┊┊ ┄ ⸆ Invokes `git remote get-url origin`, then falls back to the first remote listed.
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ a remote URL, or None
 ┊┊┊┊┊ ┄ ⸖ $edge=_git
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
-┋┋┋┋ ━ _git(args, cwd)
+┋┋┋┋ ━ _git( args, cwd)
 ┊┊┊┊┊ ┄ ⸖ $number=1.7
 ┊┊┊┊┊ ┄ ⸖ $fn=_git
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
@@ -221,7 +221,7 @@
 ┊┊┊┊┊ ┄ ⸖ $kind=ext
 ┊┊┊┊┊ ┄ ⸆ remote get-url
 ┋┋┋ ━ REDUCING IT TO ONE STRING
-┋┋┋┋ ━ locate_repository_root(working_directory)
+┋┋┋┋ ━ locate_repository_root( working_directory)
 ┊┊┊┊┊ ┄ ⸖ $number=1.9
 ┊┊┊┊┊ ┄ ⸖ $fn=locate_repository_root
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
@@ -229,7 +229,7 @@
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ a directory
-┋┋┋┋ ━ extract_repository_name(repository_url)
+┋┋┋┋ ━ extract_repository_name( repository_url)
 ┊┊┊┊┊ ┄ ⸖ $number=1.10
 ┊┊┊┊┊ ┄ ⸖ $fn=extract_repository_name
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
@@ -241,11 +241,11 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=normalise_seed
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
-┋┋┋┋ ━ path_seed(path)
+┋┋┋┋ ━ extract_repository_path( repository_root)
 ┊┊┊┊┊ ┄ ⸖ $number=1.11
-┊┊┊┊┊ ┄ ⸖ $fn=path_seed
+┊┊┊┊┊ ┄ ⸖ $fn=extract_repository_path
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸆ Expands and absolutises a directory. Used where there is no remote to read.
+┊┊┊┊┊ ┄ ⸆ Expands and absolutises the repository's own directory. Used where there is no remote to read.
 ┊┊┊┊┊ ┄ ⸖ $term=seed
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
@@ -253,7 +253,7 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=normalise_seed
 ┊┊┊┊┊ ┄ ⸖ $sides=rl
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
-┋┋┋┋ ━ normalise_seed(value)
+┋┋┋┋ ━ normalise_seed( value)
 ┊┊┊┊┊ ┄ ⸖ $number=1.12
 ┊┊┊┊┊ ┄ ⸖ $fn=normalise_seed
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
@@ -266,7 +266,7 @@
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=value
 ┋┋┋ ━ WHAT COMES OUT
-┋┋┋┋ ━ clear_identicon_seed(repository_root)
+┋┋┋┋ ━ clear_identicon_seed( repository_root)
 ┊┊┊┊┊ ┄ ⸖ $number=1.13
 ┊┊┊┊┊ ┄ ⸖ $fn=clear_identicon_seed
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
@@ -293,7 +293,7 @@
 ┊┊┊┊┊ ┄ ⸖ $offpage=out
 ┊┊┊┊┊ ┄ ⸖ $target=_digest
 ┊┊┊┊┊ ┄ ⸆ the mark comes off its md5
-┋┋┋┋ ━ cmd_doctor(args)
+┋┋┋┋ ━ cmd_doctor( args)
 ┊┊┊┊┊ ┄ ⸖ $number=1.15
 ┊┊┊┊┊ ┄ ⸖ $fn=cmd_doctor
 ┊┊┊┊┊ ┄ ⸖ $kind=data
@@ -313,7 +313,7 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=_digest
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=value
-┋┋┋┋ ━ _digest(key)
+┋┋┋┋ ━ _digest( key)
 ┊┊┊┊┊ ┄ ⸖ $number=2.1
 ┊┊┊┊┊ ┄ ⸖ $fn=_digest
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
@@ -329,7 +329,7 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=identicon_hue
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=value
-┋┋┋┋ ━ identicon_grid(key)
+┋┋┋┋ ━ identicon_grid( key)
 ┊┊┊┊┊ ┄ ⸖ $number=2.2
 ┊┊┊┊┊ ┄ ⸖ $fn=identicon_grid
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
@@ -343,7 +343,7 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=v_grid
 ┊┊┊┊┊ ┄ ⸖ $sides=rl
 ┊┊┊┊┊ ┄ ⸖ $carries=grid
-┋┋┋┋ ━ identicon_hue(key)
+┋┋┋┋ ━ identicon_hue( key)
 ┊┊┊┊┊ ┄ ⸖ $number=2.3
 ┊┊┊┊┊ ┄ ⸖ $fn=identicon_hue
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
@@ -358,7 +358,7 @@
 ┊┊┊┊┊ ┄ ⸖ $sides=rl
 ┊┊┊┊┊ ┄ ⸖ $carries=colour
 ┋┋┋ ━ THE ANGLE, AND WHAT SRGB WILL TAKE
-┋┋┋┋ ━ warp_hue(degrees, warp=HUE_WARP)
+┋┋┋┋ ━ warp_hue( degrees, warp=HUE_WARP)
 ┊┊┊┊┊ ┄ ⸖ $number=2.4
 ┊┊┊┊┊ ┄ ⸖ $fn=warp_hue
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
@@ -373,7 +373,7 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=gamut_chroma
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=colour
-┋┋┋┋ ━ gamut_chroma(degrees, lightness, cap)
+┋┋┋┋ ━ gamut_chroma( degrees, lightness, cap)
 ┊┊┊┊┊ ┄ ⸖ $number=2.5
 ┊┊┊┊┊ ┄ ⸖ $fn=gamut_chroma
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
@@ -390,7 +390,7 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=identicon_colour
 ┊┊┊┊┊ ┄ ⸖ $sides=rl
 ┊┊┊┊┊ ┄ ⸖ $carries=colour
-┋┋┋┋ ━ _oklch_to_linear(lightness, chroma,
+┋┋┋┋ ━ _oklch_to_linear( lightness, chroma,
 ┊┊┊┊┊ ┄ ⸖ $signature=degrees)
 ┊┊┊┊┊ ┄ ⸖ $number=2.6
 ┊┊┊┊┊ ┄ ⸖ $fn=_oklch_to_linear
@@ -403,7 +403,7 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=_encode
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
-┋┋┋┋ ━ _encode(channel)
+┋┋┋┋ ━ _encode( channel)
 ┊┊┊┊┊ ┄ ⸖ $number=2.7
 ┊┊┊┊┊ ┄ ⸖ $fn=_encode
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
@@ -416,7 +416,7 @@
 ┊┊┊┊┊ ┄ ⸖ $sides=rl
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
 ┋┋┋ ━ THE COLOUR
-┋┋┋┋ ━ identicon_colour(key, chroma=0.26,
+┋┋┋┋ ━ identicon_colour( key, chroma=0.26,
 ┊┊┊┊┊ ┄ ⸖ $signature=lightness=0.60)
 ┊┊┊┊┊ ┄ ⸖ $number=2.8
 ┊┊┊┊┊ ┄ ⸖ $fn=identicon_colour
@@ -439,7 +439,7 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=v_colour
 ┊┊┊┊┊ ┄ ⸖ $sides=rl
 ┊┊┊┊┊ ┄ ⸖ $carries=colour
-┋┋┋┋ ━ UnknownColourMap(ValueError)
+┋┋┋┋ ━ UnknownColourMap( ValueError)
 ┊┊┊┊┊ ┄ ⸖ $number=2.9
 ┊┊┊┊┊ ┄ ⸖ $fn=UnknownColourMap
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
@@ -448,7 +448,7 @@
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ raised, not returned
-┋┋┋┋ ━ _colour_for(key, kwargs)
+┋┋┋┋ ━ _colour_for( key, kwargs)
 ┊┊┊┊┊ ┄ ⸖ $number=2.10
 ┊┊┊┊┊ ┄ ⸖ $fn=_colour_for
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
@@ -494,7 +494,7 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=r_rend
 ┊┊┊┊┊ ┄ ⸖ $sides=ll
 ┊┊┊┊┊ ┄ ⸖ $carries=colour
-┋┋┋┋ ━ grid_text(grid)
+┋┋┋┋ ━ grid_text( grid)
 ┊┊┊┊┊ ┄ ⸖ $number=2.13
 ┊┊┊┊┊ ┄ ⸖ $fn=grid_text
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
@@ -508,7 +508,7 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=r_art
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
-┋┋┋┋ ━ hex_colour(rgb)
+┋┋┋┋ ━ hex_colour( rgb)
 ┊┊┊┊┊ ┄ ⸖ $number=2.14
 ┊┊┊┊┊ ┄ ⸖ $fn=hex_colour
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
@@ -534,7 +534,7 @@
 ┊┊┊ ┄ the canvas maths
 ┋┋┋ ━ GEOMETRY
 ┊┊┊┊ ┄ ⸆ nothing here takes a key
-┋┋┋┋ ━ canvas_edge(block, border)
+┋┋┋┋ ━ canvas_edge( block, border)
 ┊┊┊┊┊ ┄ ⸖ $number=3.5
 ┊┊┊┊┊ ┄ ⸖ $fn=canvas_edge
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
@@ -546,7 +546,7 @@
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ the square canvas those imply
-┋┋┋┋ ━ large_geometry(canvas)
+┋┋┋┋ ━ large_geometry( canvas)
 ┊┊┊┊┊ ┄ ⸖ $number=3.7
 ┊┊┊┊┊ ┄ ⸖ $fn=large_geometry
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
@@ -620,7 +620,7 @@
 ┊┊┊┊┊ ┄ ⸆ Nothing on this page reads the environment.
 ┊┊┊┊┊ ┄ ⸖ $term=rendering
 ┋┋┋ ━ PIXELS
-┋┋┋┋ ━ render_png(key, block, **kwargs)
+┋┋┋┋ ━ render_png( key, block, **kwargs)
 ┊┊┊┊┊ ┄ ⸖ $number=4.2
 ┊┊┊┊┊ ┄ ⸖ $fn=render_png
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
@@ -634,7 +634,7 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=render_rgba
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
-┋┋┋┋ ━ render_rgba(key, block, border, chroma,
+┋┋┋┋ ━ render_rgba( key, block, border, chroma,
 ┊┊┊┊┊ ┄ ⸖ $signature=lightness, background, edge)
 ┊┊┊┊┊ ┄ ⸖ $number=4.3
 ┊┊┊┊┊ ┄ ⸖ $fn=render_rgba
@@ -650,7 +650,7 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=encode_png
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
-┋┋┋┋ ━ encode_png(rgba, width, height)
+┋┋┋┋ ━ encode_png( rgba, width, height)
 ┊┊┊┊┊ ┄ ⸖ $number=4.4
 ┊┊┊┊┊ ┄ ⸖ $fn=encode_png
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
@@ -659,7 +659,7 @@
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ PNG bytes
-┋┋┋┋ ━ render_svg(key, block, border, chroma,
+┋┋┋┋ ━ render_svg( key, block, border, chroma,
 ┊┊┊┊┊ ┄ ⸖ $signature=lightness, background)
 ┊┊┊┊┊ ┄ ⸖ $number=4.5
 ┊┊┊┊┊ ┄ ⸖ $fn=render_svg
@@ -725,7 +725,7 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=t_text
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=grid
-┋┋┋┋ ━ text(grid, rgb, lattice=SEXTANT_LATTICE)
+┋┋┋┋ ━ text( grid, rgb, lattice=SEXTANT_LATTICE)
 ┊┊┊┊┊ ┄ ⸖ $number=5.1
 ┊┊┊┊┊ ┄ ⸖ $fn=t_text
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
@@ -744,7 +744,7 @@
 ┊┊┊┊┊ ┄ ⸖ $sides=rl
 ┊┊┊┊┊ ┄ ⸖ $carries=colour
 ┊┊┊┊┊ ┄ ⸖ $term=lattice
-┋┋┋┋ ━ octant(grid) · sextant(grid)
+┋┋┋┋ ━ octant( grid) · sextant(grid)
 ┊┊┊┊┊ ┄ ⸖ $number=5.2
 ┊┊┊┊┊ ┄ ⸖ $fn=t_octant
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
@@ -759,7 +759,7 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=t_lattice
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
-┋┋┋┋ ━ lattice_lines(grid, lattice)
+┋┋┋┋ ━ lattice_lines( grid, lattice)
 ┊┊┊┊┊ ┄ ⸖ $number=5.3
 ┊┊┊┊┊ ┄ ⸖ $fn=t_lattice
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
@@ -806,7 +806,7 @@
 ┊┊┊┊┊ ┄ ⸖ $term=sextant
 ┊┊┊┊┊ ┄ ⸖ $term=lattice
 ┋┋┋ ━ WHICH THREE COLOURS
-┋┋┋┋ ━ chosen_indices(rgb)
+┋┋┋┋ ━ chosen_indices( rgb)
 ┊┊┊┊┊ ┄ ⸆ Picks the nearest colour twice, plus the third that best corrects the mix.
 ┊┊┊┊┊ ┄ ⸖ $number=5.6
 ┊┊┊┊┊ ┄ ⸖ $fn=chosen_indices
@@ -820,7 +820,7 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=nearest_colour
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
-┋┋┋┋ ━ nearest_colour(rgb)
+┋┋┋┋ ━ nearest_colour( rgb)
 ┊┊┊┊┊ ┄ ⸆ Breaks ties towards the lower index.
 ┊┊┊┊┊ ┄ ⸖ $number=5.7
 ┊┊┊┊┊ ┄ ⸖ $fn=nearest_colour
@@ -833,7 +833,7 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=_mix
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=weak dashed
-┋┋┋┋ ━ _mix(indices)
+┋┋┋┋ ━ _mix( indices)
 ┊┊┊┊┊ ┄ ⸖ $number=5.8
 ┊┊┊┊┊ ┄ ⸖ $fn=_mix
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
@@ -860,7 +860,7 @@
 ┊┊┊┊┊ ┄ ⸖ $carries=weak dashed
 ┋┋┋ ━ IN WHAT ORDER
 ┊┊┊┊ ┄ ⸆ Which colours is a function of the colour asked for; what order is a function of the grid. Two inputs, and they must stay two.
-┋┋┋┋ ━ tricolour(rgb, grid)
+┋┋┋┋ ━ tricolour( rgb, grid)
 ┊┊┊┊┊ ┄ ⸆ Combines the chosen colours with the order the grid puts them in. `tricolour_indices` stops one step short, at the indices.
 ┊┊┊┊┊ ┄ ⸖ $signature=tricolour_indices(rgb, grid)
 ┊┊┊┊┊ ┄ ⸖ $number=5.10
@@ -878,7 +878,7 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=arrange
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=grid
-┋┋┋┋ ━ arrange(indices, grid)
+┋┋┋┋ ━ arrange( indices, grid)
 ┊┊┊┊┊ ┄ ⸆ Selects the permutation with the fifteen grid bits, never with the colour.
 ┊┊┊┊┊ ┄ ⸖ $number=5.11
 ┊┊┊┊┊ ┄ ⸖ $fn=arrange
@@ -892,7 +892,7 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=grid_bits
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=grid
-┋┋┋┋ ━ grid_bits(grid)
+┋┋┋┋ ━ grid_bits( grid)
 ┊┊┊┊┊ ┄ ⸖ $number=5.12
 ┊┊┊┊┊ ┄ ⸖ $fn=grid_bits
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
@@ -903,7 +903,7 @@
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ a 15-bit integer
-┋┋┋┋ ━ _oklab(linear_rgb) · _linear(component)
+┋┋┋┋ ━ _oklab( linear_rgb) · _linear(component)
 ┊┊┊┊┊ ┄ ⸖ $signature=_encode(value)
 ┊┊┊┊┊ ┄ ⸖ $number=5.13
 ┊┊┊┊┊ ┄ ⸖ $fn=_oklab
@@ -916,7 +916,7 @@
 ┋┋┋┋┋┋ ━ linear light
 ┋┋┋┋┋┋ ━ sRGB
 ┋┋┋ ━ PUBLIC SURFACE, NOT CALLED FROM HERE
-┋┋┋┋ ━ parse_grid(text) · parse_hex(value)
+┋┋┋┋ ━ parse_grid( text) · parse_hex(value)
 ┊┊┊┊┊ ┄ ⸖ $number=5.15
 ┊┊┊┊┊ ┄ ⸖ $fn=parse_grid
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
@@ -953,7 +953,7 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=install_into_repo
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
-┋┋┋┋ ━ install_into_repo(path, seed, block, check,
+┋┋┋┋ ━ install_into_repo( path, seed, block, check,
 ┊┊┊┊┊ ┄ ⸆ Decides the key once, then writes the artifacts and the README line from it.
 ┊┊┊┊┊ ┄ ⸖ $signature=reseed, readme, **render_kwargs)
 ┊┊┊┊┊ ┄ ⸖ $number=6.1
@@ -1019,7 +1019,7 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=artifact_paths
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
-┋┋┋┋ ━ artifact_paths(root)
+┋┋┋┋ ━ artifact_paths( root)
 ┊┊┊┊┊ ┄ ⸆ Gives each artifact its path inside a project.
 ┊┊┊┊┊ ┄ ⸖ $number=6.4
 ┊┊┊┊┊ ┄ ⸖ $fn=artifact_paths
@@ -1029,7 +1029,7 @@
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ {name: path}
-┋┋┋┋ ━ artifact_bytes(key, block, **render_kwargs)
+┋┋┋┋ ━ artifact_bytes( key, block, **render_kwargs)
 ┊┊┊┊┊ ┄ ⸆ Builds the contents of each artifact, in parts as well as whole.
 ┊┊┊┊┊ ┄ ⸖ $number=6.5
 ┊┊┊┊┊ ┄ ⸖ $fn=artifact_bytes
@@ -1060,7 +1060,7 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=f_artifacts
 ┊┊┊┊┊ ┄ ⸖ $sides=rl
 ┊┊┊┊┊ ┄ ⸖ $carries=io
-┋┋┋┋ ━ prior_path(target)
+┋┋┋┋ ━ prior_path( target)
 ┊┊┊┊┊ ┄ ⸖ $signature=keep_prior(target, current)
 ┊┊┊┊┊ ┄ ⸖ $number=6.6
 ┊┊┊┊┊ ┄ ⸖ $fn=prior_path
@@ -1076,7 +1076,7 @@
 ┊┊┊┊┊ ┄ ⸖ $sides=rl
 ┊┊┊┊┊ ┄ ⸖ $carries=io
 ┋┋┋ ━ THE README LINE
-┋┋┋┋ ━ find_readme(root)
+┋┋┋┋ ━ find_readme( root)
 ┊┊┊┊┊ ┄ ⸖ $number=6.7
 ┊┊┊┊┊ ┄ ⸖ $fn=find_readme
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
@@ -1085,7 +1085,7 @@
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ the README path, or None
-┋┋┋┋ ━ without_code_fences(body)
+┋┋┋┋ ━ without_code_fences( body)
 ┊┊┊┊┊ ┄ ⸖ $number=6.8
 ┊┊┊┊┊ ┄ ⸖ $fn=without_code_fences
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
@@ -1094,7 +1094,7 @@
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ the prose, fences blanked
-┋┋┋┋ ━ readme_state(root, check)
+┋┋┋┋ ━ readme_state( root, check)
 ┊┊┊┊┊ ┄ ⸖ $number=6.9
 ┊┊┊┊┊ ┄ ⸖ $fn=readme_state
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
@@ -1318,7 +1318,7 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=load_vectors
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
-┋┋┋┋ ━ load_vectors(path=None)
+┋┋┋┋ ━ load_vectors( path=None)
 ┊┊┊┊┊ ┄ ⸖ $number=9.2
 ┊┊┊┊┊ ┄ ⸖ $fn=load_vectors
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
@@ -1351,7 +1351,7 @@
 ┊┊┊┊┊ ┄ ⸆ parse_key, to read each stamp
 ┋┋┋ ━ RUNNING SOMEBODY ELSE'S CODE
 ┊┊┊┊ ┄ ⸆ It reaches into nothing, runs what it is given, and compares stdout. A non-zero exit or a timeout is recorded as a problem rather than raised, so one broken vector does not hide the other nine.
-┋┋┋┋ ━ validate_command(argv, vectors, timeout=30)
+┋┋┋┋ ━ validate_command( argv, vectors, timeout=30)
 ┊┊┊┊┊ ┄ ⸖ $number=9.4
 ┊┊┊┊┊ ┄ ⸖ $fn=validate_command
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
@@ -1378,7 +1378,7 @@
 ┊┊┊┊┊ ┄ ⸖ $kind=ext
 ┊┊┊┊┊ ┄ ⸆ prints {"grid": […], "colour": "#rrggbb"}
 ┋┋┋ ━ COMPARING IT
-┋┋┋┋ ━ check_output(text, vector)
+┋┋┋┋ ━ check_output( text, vector)
 ┊┊┊┊┊ ┄ ⸖ $number=9.6
 ┊┊┊┊┊ ┄ ⸖ $fn=check_output
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
@@ -1392,7 +1392,7 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=_normalise_grid
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
-┋┋┋┋ ━ _normalise_grid(value)
+┋┋┋┋ ━ _normalise_grid( value)
 ┊┊┊┊┊ ┄ ⸖ $number=9.7
 ┊┊┊┊┊ ┄ ⸖ $fn=_normalise_grid
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
@@ -1405,7 +1405,7 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=_cell
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
-┋┋┋┋ ━ _cell(value)
+┋┋┋┋ ━ _cell( value)
 ┊┊┊┊┊ ┄ ⸖ $number=9.8
 ┊┊┊┊┊ ┄ ⸖ $fn=_cell
 ┊┊┊┊┊ ┄ ⸖ $kind=fn

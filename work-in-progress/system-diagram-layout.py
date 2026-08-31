@@ -7,7 +7,7 @@ diagram says; this file is the source of where it goes.
 
 # page -> column widths, left to right
 COLUMNS = {
-    1: [376, 376, 376, 306],
+    1: [376, 392, 376, 290],
     2: [376, 376, 376, 286],
     3: [396, 396, 396],
     4: [386, 376, 376, 356],
@@ -128,7 +128,7 @@ ROUTES = {
     (2, '_encode', 'identicon_colour', 0): {'sides': 'rl', 'bt': 0.8},
     (2, 'identicon_colour', 'UnknownMappingVersion', 0): {'sides': 'bt', 'at': 0.3, 'bt': 0.3},
     (2, 'identicon_colour', '_colour_for', 0): {'sides': 'bt', 'at': 0.75, 'bt': 0.8},
-    (2, 'identicon_grid', 'v_grid', 0): {'sides': 'rl', 'mid': 427.0, 'wide': True},
+    (2, 'identicon_grid', 'v_grid', 0): {'sides': 'rl', 'wide': True},
     (2, 'identicon_colour', 'v_colour', 0): {'sides': 'rl', 'at': 0.3, 'wide': True},
     (2, 'v_grid', 'grid_text', 0): {'sides': 'bt', 'at': 0.3, 'bt': 0.3, 'wide': True},
     (2, 'v_colour', 'hex_colour', 0): {'sides': 'bt', 'at': 0.7, 'bt': 0.7, 'wide': True},
@@ -184,7 +184,7 @@ ROUTES = {
     (6, 'install_into_repo', 'artifact_bytes', 0): {'sides': 'rl', 'at': 0.45, 'bt': 0.3, 'mid': 461.0},
     (6, 'install_into_repo', 'r_keypath6', 0): {'sides': 'rl', 'at': 0.6, 'mid': 455.0},
     (6, 'install_into_repo', 'prior_path', 0): {'sides': 'rl', 'at': 0.75, 'bt': 0.3, 'mid': 449.0},
-    (6, 'install_into_repo', 'readme_state', 0): {'sides': 'rl', 'at': 0.9, 'mid': 873.0},
+    (6, 'install_into_repo', 'readme_state', 0): {'sides': 'rl', 'at': 0.9},
     (6, 'readme_state', 'find_readme', 0): {'sides': 'll', 'at': 0.3, 'ext': 14},
     (6, 'readme_state', 'without_code_fences', 0): {'sides': 'll', 'ext': 22},
     (6, 'artifact_bytes', 'f_artifacts', 0): {'sides': 'rl', 'at': 0.3, 'bt': 0.12},

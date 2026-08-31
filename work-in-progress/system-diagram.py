@@ -229,6 +229,101 @@ class Page:
             return round(n["x"] + n["w"] * t, 1), n["y"]
         return round(n["x"] + n["w"] * t, 1), n["y"] + n["h"]
 
+    # -------------------------------------------------------- edge routing ---
+    #
+    # **An arrow through a box is unreadable, and the reader cannot tell it
+    # from an arrow that ends there.** The route is built as points, tested
+    # against every other item on the page, and pushed out into a clear lane
+    # when it collides.
+    #
+    # A `mid` in the layout table is a hand-placed route and is left alone:
+    # somebody looked at that arrow and decided where it goes.
+
+    def boxes_apart_from(self, *skip):
+        """Every placed item's rectangle, minus the ones this edge joins."""
+        return [(n["x"], n["y"], n["x"] + n["w"], n["y"] + n["h"])
+                for key, n in self.nodes.items() if key not in skip]
+
+    @staticmethod
+    def crosses(points, boxes, pad=5):
+        """Whether any segment of `points` passes through a box.
+
+        `pad` keeps a line that runs along an edge from counting as a
+        crossing: those are the routes that read correctly.
+        """
+        for (ax, ay), (bx, by) in zip(points, points[1:]):
+            low_x, high_x = sorted((ax, bx))
+            low_y, high_y = sorted((ay, by))
+            for x1, y1, x2, y2 in boxes:
+                if (low_x < x2 - pad and high_x > x1 + pad
+                        and low_y < y2 - pad and high_y > y1 + pad):
+                    return True
+        return False
+
+    def lanes(self):
+        """The clear vertical lines beside each column."""
+        found = []
+        for x, w in self.colx:
+            found.append(x - self.gutter / 2)
+            found.append(x + w + self.gutter / 2)
+        return sorted(set(found))
+
+    def bands(self):
+        """Clear horizontal lines: above everything, below it, and row gaps.
+
+        A right-to-left arrow across columns crosses on its *horizontal* run,
+        which no vertical lane can help. It needs a y to travel along.
+        """
+        if not self.nodes:
+            return []
+        tops = sorted(n["y"] for n in self.nodes.values())
+        bottoms = sorted(n["y"] + n["h"] for n in self.nodes.values())
+        found = [tops[0] - 16, bottoms[-1] + 16]
+        for bottom in bottoms:
+            above = [t for t in tops if t > bottom + 12]
+            if above:
+                found.append((bottom + above[0]) / 2)
+        return sorted(set(round(v, 1) for v in found))
+
+    # How far an arrow steps clear of its own box before turning for a lane.
+    # Several, because the row gap varies down a column: one fixed step lands
+    # inside the box below wherever the gap is smaller than it.
+    STEPS = (7, 10, 14, 20, 28)
+
+    def detour(self, direct, obstacles, aside, bside, start, end, hor):
+        """A route to the same two points that misses every other box.
+
+        Tries each lane, nearest first, at each step-out distance, and returns
+        the first that is clear. Returns the direct route where none is: a
+        crossing arrow beats no arrow, and the layout table is where a human
+        settles the ones this cannot.
+        """
+        (x1, y1), (x2, y2) = start, end
+
+        if aside in hor and bside in hor:
+            # The horizontal run is what crosses, so travel along a clear band.
+            for band in sorted(self.bands(), key=lambda v: abs(v - y1)):
+                for step in self.STEPS:
+                    out = x1 + (step if aside == "r" else -step)
+                    into = x2 + (-step if bside == "l" else step)
+                    trial = [(x1, y1), (out, y1), (out, band),
+                             (into, band), (into, y2), (x2, y2)]
+                    if not self.crosses(trial, obstacles):
+                        return trial
+
+        for lane in sorted(self.lanes(), key=lambda v: abs(v - x1)):
+            for step in self.STEPS:
+                if aside in hor:
+                    trial = [(x1, y1), (lane, y1), (lane, y2), (x2, y2)]
+                else:
+                    leave = y1 + (step if aside == "b" else -step)
+                    arrive = y2 + (-step if bside == "t" else step)
+                    trial = [(x1, y1), (x1, leave), (lane, leave),
+                             (lane, arrive), (x2, arrive), (x2, y2)]
+                if not self.crosses(trial, obstacles):
+                    return trial
+        return direct
+
     def edge(self, a, aside, b, bside, colour=LINE, at=0.5, bt=0.5, dash=None,
              ext=18, mid=None, wide=False):
         self.links.append((a, b, aside + bside, colour, bool(dash),
@@ -237,29 +332,37 @@ class Page:
         hor = {"l", "r"}
         if aside in hor and bside in hor:
             if aside != bside and abs(y1 - y2) < 1.5:
-                d = f"M{x1},{y1} L{x2},{y2}"
+                points = [(x1, y1), (x2, y2)]
             elif aside != bside:
                 m = mid if mid is not None else (x1 + x2) / 2
-                d = f"M{x1},{y1} H{m} V{y2} H{x2}"
+                points = [(x1, y1), (m, y1), (m, y2), (x2, y2)]
             else:
                 m = mid if mid is not None else (
                     max(x1, x2) + ext if aside == "r" else min(x1, x2) - ext)
-                d = f"M{x1},{y1} H{m} V{y2} H{x2}"
+                points = [(x1, y1), (m, y1), (m, y2), (x2, y2)]
         elif aside not in hor and bside not in hor:
             if abs(x1 - x2) < 1.5:
-                d = f"M{x1},{y1} L{x2},{y2}"
+                points = [(x1, y1), (x2, y2)]
             elif aside != bside:
                 m = mid if mid is not None else (y1 + y2) / 2
-                d = f"M{x1},{y1} V{m} H{x2} V{y2}"
+                points = [(x1, y1), (x1, m), (x2, m), (x2, y2)]
             else:
                 m = mid if mid is not None else (
                     max(y1, y2) + ext if aside == "b" else min(y1, y2) - ext)
-                d = f"M{x1},{y1} V{m} H{x2} V{y2}"
+                points = [(x1, y1), (x1, m), (x2, m), (x2, y2)]
         elif aside in hor:
-            d = f"M{x1},{y1} H{x2} V{y2}"
+            points = [(x1, y1), (x2, y1), (x2, y2)]
         else:
-            d = f"M{x1},{y1} V{y2} H{x2}"
-        self.emit(d, colour, dash, wide)
+            points = [(x1, y1), (x1, y2), (x2, y2)]
+
+        obstacles = self.boxes_apart_from(a, b)
+        if mid is None and self.crosses(points, obstacles):
+            points = self.detour(points, obstacles, aside, bside,
+                                 (x1, y1), (x2, y2), hor)
+
+        head = points[0]
+        d = f"M{head[0]},{head[1]} " + " ".join(f"L{x},{y}" for x, y in points[1:])
+        self.emit(d.strip(), colour, dash, wide)
 
     # ------------------------------------------------------------- labels ---
     def gut(self, i):
