@@ -159,29 +159,29 @@ class TestRemoteNormalisation(unittest.TestCase):
     def test_every_spelling_in_the_specification_derives_one_seed(self):
         for url in self.SPELLINGS:
             with self.subTest(url=url):
-                self.assertEqual(self.EXPECTED, identicon.remote_seed(url))
+                self.assertEqual(self.EXPECTED, identicon.extract_repository_name(url))
 
     def test_a_local_path_remote_is_refused(self):
         """It is no more portable than the working directory, so it earns no
         special treatment and must fall through to a path-shaped source."""
         for url in ("/srv/git/repo.git", "file:///srv/git/repo.git", "", None):
             with self.subTest(url=url):
-                self.assertIsNone(identicon.remote_seed(url))
+                self.assertIsNone(identicon.extract_repository_name(url))
 
     def test_the_host_is_dropped_so_a_move_between_forges_keeps_the_mark(self):
         """The seed names the project, not where it is hosted. Two projects
         that genuinely share an owner and name across forges write their own
         seed into settings.json."""
-        self.assertEqual(identicon.remote_seed("git@github.com:a/b"),
-                         identicon.remote_seed("git@gitlab.com:a/b"))
+        self.assertEqual(identicon.extract_repository_name("git@github.com:a/b"),
+                         identicon.extract_repository_name("git@gitlab.com:a/b"))
 
     def test_the_case_of_the_remote_is_carried_through(self):
         """`normalise_seed` strips and never folds. The seed is hashed as the
         file spells it, so a port needs no Unicode case mapping to conform."""
         self.assertEqual("Owner/Repo",
-                         identicon.remote_seed("git@github.com:Owner/Repo.git"))
-        self.assertNotEqual(identicon.remote_seed("git@github.com:Owner/Repo"),
-                            identicon.remote_seed("git@github.com:owner/repo"))
+                         identicon.extract_repository_name("git@github.com:Owner/Repo.git"))
+        self.assertNotEqual(identicon.extract_repository_name("git@github.com:Owner/Repo"),
+                            identicon.extract_repository_name("git@github.com:owner/repo"))
 
 
 class TestTheOneNormaliser(unittest.TestCase):
@@ -208,7 +208,7 @@ class TestTheOneNormaliser(unittest.TestCase):
             settings.parent.mkdir(parents=True)
             settings.write_text(json.dumps({"identiconSeed": "  Hand/Typed/ "}))
             self.assertEqual("Hand/Typed",
-                             identicon.read_identicon_seed(tmp))
+                             identicon.identicon_seed(identicon.read_settings(tmp)))
 
 
 class TestTheTextRendering(unittest.TestCase):
@@ -688,7 +688,7 @@ class TestInstallingIntoARepository(unittest.TestCase):
         result = identicon.install_into_repo(self.tmp)
         self.assertEqual("derived from auto", result["source"])
         self.assertEqual(result["identiconSeed"],
-                         identicon.read_identicon_seed(self.tmp))
+                         identicon.identicon_seed(identicon.read_settings(self.tmp)))
         self.assertEqual(identicon.COLOUR_MAP_LATEST, result["colourMap"])
 
     def test_a_rename_does_not_change_the_mark(self):
@@ -718,7 +718,7 @@ class TestInstallingIntoARepository(unittest.TestCase):
         self.assertEqual("someone/renamed", after["identiconSeed"])
         self.assertNotEqual(before["colour"], after["colour"])
         self.assertEqual("someone/renamed",
-                         identicon.read_identicon_seed(self.tmp))
+                         identicon.identicon_seed(identicon.read_settings(self.tmp)))
         self.assertEqual([before["identiconSeed"]],
                          after["identiconSeedHistory"])
 
@@ -732,7 +732,7 @@ class TestInstallingIntoARepository(unittest.TestCase):
         self.assertEqual([before["identiconSeed"]],
                          after["identiconSeedHistory"])
         self.assertEqual("chosen/by-hand",
-                         identicon.read_identicon_seed(self.tmp))
+                         identicon.identicon_seed(identicon.read_settings(self.tmp)))
 
     def test_git_helpers_accept_a_default_cwd(self):
         """`git -C None` fails and reads as "not a repository", which is the
@@ -741,7 +741,7 @@ class TestInstallingIntoARepository(unittest.TestCase):
         os.chdir(self.tmp)
         self.addCleanup(os.chdir, original)
         self.assertEqual("someone/a-project",
-                         identicon.remote_seed(
+                         identicon.extract_repository_name(
                              identicon.repo_remote_url(None)))
 
     def _readme(self, body):
@@ -887,7 +887,7 @@ class TestTheSettingsFile(unittest.TestCase):
         existed. A seeded repository must not shell out to answer this."""
         identicon.install_into_repo(self.tmp, readme=False)
         with mock.patch.object(identicon, "_git") as never:
-            self.assertEqual(self.SEED, identicon.read_identicon_seed(self.tmp))
+            self.assertEqual(self.SEED, identicon.identicon_seed(identicon.read_settings(self.tmp)))
         never.assert_not_called()
 
     def test_a_rename_does_not_change_the_mark(self):
@@ -1027,7 +1027,7 @@ class TestTheSettingsFile(unittest.TestCase):
         artifacts do not have."""
         applied = identicon.install_into_repo(self.tmp, readme=False)
         self.assertEqual(applied["identiconSeed"],
-                         identicon.read_identicon_seed(self.tmp))
+                         identicon.identicon_seed(identicon.read_settings(self.tmp)))
 
 
 # ---- The validator, and the pair of files ----

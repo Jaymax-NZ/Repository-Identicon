@@ -124,34 +124,34 @@
 ┊┊┊┊┊ ┄ ⸆ apply, and only apply, seeds a repository
 ┊┊┊┊┊ ┄ ⸖ $fn=r_apply
 ┊┊┊┊┊ ┄ ⸖ $offpage=in
-┊┊┊┊┊ ┄ ⸖ $target=read_identicon_seed
-┊┊┊┊┊ ┄ ⸖ $edge=read_identicon_seed
-┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=calls
-┋┋┋┋ ━ read_identicon_seed(repository_root)
-┊┊┊┊┊ ┄ ⸖ $number=1.1
-┊┊┊┊┊ ┄ ⸖ $fn=read_identicon_seed
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸆ Opens the settings file and reads one field. This is what show and render call, and all they call.
-┊┊┊┊┊ ┄ ⸖ $term=stored seed
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ the stored seed, or None
+┊┊┊┊┊ ┄ ⸖ $target=read_settings
 ┊┊┊┊┊ ┄ ⸖ $edge=read_settings
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
-┊┊┊┊┊ ┄ ⸖ $edge=read_settings_seed
-┊┊┊┊┊ ┄ ⸖ $sides=rl
-┊┊┊┊┊ ┄ ⸖ $carries=calls
 ┋┋┋┋ ━ read_settings(repository_root)
-┊┊┊┊┊ ┄ ⸖ $number=1.2
+┊┊┊┊┊ ┄ ⸖ $number=1.1
 ┊┊┊┊┊ ┄ ⸖ $fn=read_settings
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸆ Parses the file. An unreadable one reads as empty, so the next apply writes a good one.
+┊┊┊┊┊ ┄ ⸆ Parses the settings file. An unreadable one reads as empty, so the next apply writes a good one.
 ┊┊┊┊┊ ┄ ⸖ $term=the settings file
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ the settings, or {}
+┊┊┊┊┊ ┄ ⸖ $edge=f_settings
+┊┊┊┊┊ ┄ ⸖ $sides=bt
+┊┊┊┊┊ ┄ ⸖ $carries=io
+┊┊┊┊┊ ┄ ⸖ $edge=identicon_seed
+┊┊┊┊┊ ┄ ⸖ $sides=rl
+┊┊┊┊┊ ┄ ⸖ $carries=value
+┋┋┋┋ ━ write_settings(repository_root, settings)
+┊┊┊┊┊ ┄ ⸖ $number=1.2
+┊┊┊┊┊ ┄ ⸖ $fn=write_settings
+┊┊┊┊┊ ┄ ⸖ $kind=fn
+┊┊┊┊┊ ┄ ⸆ Writes the settings file and returns the bytes written. The one writer of it.
+┊┊┊┊┊ ┄ ⸖ $term=the settings file
+┋┋┋┋┋ ━ returns
+┊┊┊┊┊┊ ┄ ⸖ $role=returns
+┋┋┋┋┋┋ ━ the bytes written
 ┊┊┊┊┊ ┄ ⸖ $edge=f_settings
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=io
@@ -163,11 +163,11 @@
 ┊┊┊┊┊ ┄ ⸖ $term=the settings file
 ┊┊┊┊┊ ┄ ⸖ $term=seed history
 ┊┊┊┊┊ ┄ ⸖ $term=colour map
-┋┋┋┋ ━ read_settings_seed(settings)
+┋┋┋┋ ━ identicon_seed(settings)
 ┊┊┊┊┊ ┄ ⸖ $number=1.4
-┊┊┊┊┊ ┄ ⸖ $fn=read_settings_seed
+┊┊┊┊┊ ┄ ⸖ $fn=identicon_seed
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸆ Takes the seed out of a loaded settings mapping. An empty string counts as unset, which is what makes a reseed one rule.
+┊┊┊┊┊ ┄ ⸆ Takes the seed out of a settings mapping. Empty counts as unset, and a hand-typed value is normalised here.
 ┊┊┊┊┊ ┄ ⸖ $term=stored seed
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
@@ -187,7 +187,7 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=repo_remote_url
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
-┊┊┊┊┊ ┄ ⸖ $edge=remote_seed
+┊┊┊┊┊ ┄ ⸖ $edge=extract_repository_name
 ┊┊┊┊┊ ┄ ⸖ $sides=rl
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
 ┊┊┊┊┊ ┄ ⸖ $edge=path_seed
@@ -221,17 +221,17 @@
 ┊┊┊┊┊ ┄ ⸖ $kind=ext
 ┊┊┊┊┊ ┄ ⸆ remote get-url
 ┋┋┋ ━ REDUCING IT TO ONE STRING
-┋┋┋┋ ━ repository_root(path)
+┋┋┋┋ ━ locate_repository_root(working_directory)
 ┊┊┊┊┊ ┄ ⸖ $number=1.9
-┊┊┊┊┊ ┄ ⸖ $fn=repository_root
+┊┊┊┊┊ ┄ ⸖ $fn=locate_repository_root
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
 ┊┊┊┊┊ ┄ ⸆ Walks up to the nearest ancestor holding a .git, which is where .identicon/ sits. A worktree has a file there, a checkout a dir.
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ a directory
-┋┋┋┋ ━ remote_seed(url)
+┋┋┋┋ ━ extract_repository_name(repository_url)
 ┊┊┊┊┊ ┄ ⸖ $number=1.10
-┊┊┊┊┊ ┄ ⸖ $fn=remote_seed
+┊┊┊┊┊ ┄ ⸖ $fn=extract_repository_name
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
 ┊┊┊┊┊ ┄ ⸆ Accepts ssh, https and scp-like URLs. Keeps the path segments and drops the host, so a move between forges keeps the mark.
 ┊┊┊┊┊ ┄ ⸖ $term=seed
@@ -266,16 +266,16 @@
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=value
 ┋┋┋ ━ WHAT COMES OUT
-┋┋┋┋ ━ clear_identicon_seed(settings)
+┋┋┋┋ ━ clear_identicon_seed(repository_root)
 ┊┊┊┊┊ ┄ ⸖ $number=1.13
 ┊┊┊┊┊ ┄ ⸖ $fn=clear_identicon_seed
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸆ Moves the current seed to the history and empties the field. The whole of a reseed; the rule above then writes the next one.
+┊┊┊┊┊ ┄ ⸆ Moves the seed to the front of the history and empties the field, on disk. apply then reads the file back.
 ┊┊┊┊┊ ┄ ⸖ $term=reseed
 ┊┊┊┊┊ ┄ ⸖ $term=seed history
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ the settings, seed emptied
+┋┋┋┋┋┋ ━ the cleared settings, as written
 ┋┋┋┋ ━ seed
 ┊┊┊┊┊ ┄ ⸖ $number=1.14
 ┊┊┊┊┊ ┄ ⸖ $fn=v_seed

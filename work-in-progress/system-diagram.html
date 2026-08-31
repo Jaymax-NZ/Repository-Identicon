@@ -283,8 +283,8 @@ points the way the work goes. Out of scope and drawn nowhere:
 <text x="1238" y="51" class="hd">WHAT COMES OUT</text>
 <line x1="1238" y1="59" x2="1544" y2="59" class="rule"/>
 <path d="M144.8,98 L144.8,108" fill="none" stroke="#5c636b" stroke-width="1.15" stroke-linejoin="round" marker-end="url(#a0p1)"/>
-<path d="M144.8,179.3 L144.8,189.3" fill="none" stroke="#5c636b" stroke-width="1.15" stroke-linejoin="round" marker-end="url(#a0p1)"/>
-<path d="M408,157.9 H220.0 V362.4 H32" fill="none" stroke="#5c636b" stroke-width="1.15" stroke-linejoin="round" marker-end="url(#a0p1)"/>
+<path d="M220.0,179.3 L220.0,270.6" fill="none" stroke="#a8761a" stroke-width="1.15" stroke-linejoin="round" marker-end="url(#a3p1)"/>
+<path d="M408,157.9 H220.0 V362.4 H32" fill="none" stroke="#15181c" stroke-width="1.15" stroke-linejoin="round" marker-end="url(#a4p1)"/>
 <path d="M144.8,260.6 L144.8,270.6" fill="none" stroke="#a8761a" stroke-width="1.15" stroke-linejoin="round" marker-end="url(#a3p1)"/>
 <path d="M546.8,135.3 L546.8,145.3" fill="none" stroke="#5c636b" stroke-width="1.15" stroke-linejoin="round" marker-end="url(#a0p1)"/>
 <path d="M810,85.4 H823.0 V177.4 H836" fill="none" stroke="#5c636b" stroke-width="1.15" stroke-linejoin="round" marker-end="url(#a0p1)"/>
@@ -297,22 +297,22 @@ points the way the work goes. Out of scope and drawn nowhere:
 <path d="M1329.8,229.2 L1329.8,239.2" fill="none" stroke="#15181c" stroke-width="1.8" stroke-linejoin="round" marker-end="url(#a4p1)"/>
 <a href="#i1-1"><path d="M44,64 H408 V98 H44 L32,81.0 Z" class="bref"/><text x="54" y="85" class="refn">1.1</text><text x="88" y="85" class="reft">apply, and only apply, seeds a repository</text></a>
 <g id="i1-1" class="item">
-<title>stored seed — str | None — The identiconSeed field. Written when it is not set and never rewritten, so a rename, a move between forges and a clone all leave it alone.</title>
+<title>the settings file — file → dict — .identicon/settings.json, committed. The only input to a repository&#x27;s identity.</title>
 <rect x="32" y="108" width="376" height="71.3" rx="5" class="bfn"/>
 <text x="44" y="128" class="badge">1.1</text>
-<text xml:space="preserve" x="78" y="128.0" class="ti">read_identicon_seed(repository_root)</text>
-<text xml:space="preserve" x="44" y="142.5" class="ret">→ the stored seed, or None</text>
-<text xml:space="preserve" x="44" y="155.1" class="sb">Opens the settings file and reads one field. This is what show and</text>
-<text xml:space="preserve" x="44" y="167.7" class="sb">render call, and all they call.</text>
+<text xml:space="preserve" x="78" y="128.0" class="ti">read_settings(repository_root)</text>
+<text xml:space="preserve" x="44" y="142.5" class="ret">→ the settings, or {}</text>
+<text xml:space="preserve" x="44" y="155.1" class="sb">Parses the settings file. An unreadable one reads as empty, so the</text>
+<text xml:space="preserve" x="44" y="167.7" class="sb">next apply writes a good one.</text>
 </g>
 <g id="i1-2" class="item">
 <title>the settings file — file → dict — .identicon/settings.json, committed. The only input to a repository&#x27;s identity.</title>
 <rect x="32" y="189.3" width="376" height="71.3" rx="5" class="bfn"/>
 <text x="44" y="209.3" class="badge">1.2</text>
-<text xml:space="preserve" x="78" y="209.3" class="ti">read_settings(repository_root)</text>
-<text xml:space="preserve" x="44" y="223.8" class="ret">→ the settings, or {}</text>
-<text xml:space="preserve" x="44" y="236.4" class="sb">Parses the file. An unreadable one reads as empty, so the next</text>
-<text xml:space="preserve" x="44" y="249.0" class="sb">apply writes a good one.</text>
+<text xml:space="preserve" x="78" y="209.3" class="ti">write_settings(repository_root, settings)</text>
+<text xml:space="preserve" x="44" y="223.8" class="ret">→ the bytes written</text>
+<text xml:space="preserve" x="44" y="236.4" class="sb">Writes the settings file and returns the bytes written. The one</text>
+<text xml:space="preserve" x="44" y="249.0" class="sb">writer of it.</text>
 </g>
 <g id="i1-3" class="item">
 <title>the settings file — file → dict — .identicon/settings.json, committed. The only input to a repository&#x27;s identity.
@@ -327,10 +327,10 @@ colour map — int — Which colour rule drew this repository, recorded in setti
 <title>stored seed — str | None — The identiconSeed field. Written when it is not set and never rewritten, so a rename, a move between forges and a clone all leave it alone.</title>
 <rect x="32" y="326.70000000000005" width="376" height="71.3" rx="5" class="bfn"/>
 <text x="44" y="346.70000000000005" class="badge">1.4</text>
-<text xml:space="preserve" x="78" y="346.70000000000005" class="ti">read_settings_seed(settings)</text>
+<text xml:space="preserve" x="78" y="346.70000000000005" class="ti">identicon_seed(settings)</text>
 <text xml:space="preserve" x="44" y="361.20000000000005" class="ret">→ the seed, or None</text>
-<text xml:space="preserve" x="44" y="373.80000000000007" class="sb">Takes the seed out of a loaded settings mapping. An empty string</text>
-<text xml:space="preserve" x="44" y="386.40000000000003" class="sb">counts as unset, which is what makes a reseed one rule.</text>
+<text xml:space="preserve" x="44" y="373.80000000000007" class="sb">Takes the seed out of a settings mapping. Empty counts as unset,</text>
+<text xml:space="preserve" x="44" y="386.40000000000003" class="sb">and a hand-typed value is normalised here.</text>
 </g>
 <g id="i1-5" class="item">
 <title>seed — str — The one string the mark depends on, hashed exactly as settings.json spells it. owner/repo, or a path where there is no remote.
@@ -370,7 +370,7 @@ seed source — str, one of four — What a derivation draws from: auto, repo, p
 
 <rect x="836" y="64" width="376" height="71.3" rx="5" class="bfn"/>
 <text x="848" y="84" class="badge">1.9</text>
-<text xml:space="preserve" x="882" y="84.0" class="ti">repository_root(path)</text>
+<text xml:space="preserve" x="882" y="84.0" class="ti">locate_repository_root(working_directory)</text>
 <text xml:space="preserve" x="848" y="98.5" class="ret">→ a directory</text>
 <text xml:space="preserve" x="848" y="111.1" class="sb">Walks up to the nearest ancestor holding a .git, which is where</text>
 <text xml:space="preserve" x="848" y="123.7" class="sb">.identicon/ sits. A worktree has a file there, a checkout a dir.</text>
@@ -379,7 +379,7 @@ seed source — str, one of four — What a derivation draws from: auto, repo, p
 <title>seed — str — The one string the mark depends on, hashed exactly as settings.json spells it. owner/repo, or a path where there is no remote.</title>
 <rect x="836" y="145.3" width="376" height="71.3" rx="5" class="bfn"/>
 <text x="848" y="165.3" class="badge">1.10</text>
-<text xml:space="preserve" x="882" y="165.3" class="ti">remote_seed(url)</text>
+<text xml:space="preserve" x="882" y="165.3" class="ti">extract_repository_name(repository_url)</text>
 <text xml:space="preserve" x="848" y="179.8" class="ret">→ owner/repo, or None</text>
 <text xml:space="preserve" x="848" y="192.4" class="sb">Accepts ssh, https and scp-like URLs. Keeps the path segments and</text>
 <text xml:space="preserve" x="848" y="205.0" class="sb">drops the host, so a move between forges keeps the mark.</text>
@@ -407,11 +407,11 @@ seed source — str, one of four — What a derivation draws from: auto, repo, p
 seed history — list[str] — identiconSeedHistory: the seeds this repository had before the current one, most recent first. Nothing derives from it.</title>
 <rect x="1238" y="64" width="306" height="83.9" rx="5" class="bfn"/>
 <text x="1250" y="84" class="badge">1.13</text>
-<text xml:space="preserve" x="1284" y="84.0" class="ti">clear_identicon_seed(settings)</text>
-<text xml:space="preserve" x="1250" y="98.5" class="ret">→ the settings, seed emptied</text>
-<text xml:space="preserve" x="1250" y="111.1" class="sb">Moves the current seed to the history and empties the</text>
-<text xml:space="preserve" x="1250" y="123.7" class="sb">field. The whole of a reseed; the rule above then</text>
-<text xml:space="preserve" x="1250" y="136.3" class="sb">writes the next one.</text>
+<text xml:space="preserve" x="1284" y="84.0" class="ti">clear_identicon_seed(repository_root)</text>
+<text xml:space="preserve" x="1250" y="98.5" class="ret">→ the cleared settings, as written</text>
+<text xml:space="preserve" x="1250" y="111.1" class="sb">Moves the seed to the front of the history and</text>
+<text xml:space="preserve" x="1250" y="123.7" class="sb">empties the field, on disk. apply then reads the file</text>
+<text xml:space="preserve" x="1250" y="136.3" class="sb">back.</text>
 </g>
 <g id="i1-14" class="item">
 <title>seed — str — The one string the mark depends on, hashed exactly as settings.json spells it. owner/repo, or a path where there is no remote.</title>
@@ -1761,19 +1761,19 @@ rendering — bytes | str — Bytes for one medium, derived from the key. Not pa
 <tr><td class="n"><a href="#i0-5">0.5</a></td><td class="s">● render</td><td class="w">—</td></tr>
 <tr><td class="n"><a href="#i0-6">0.6</a></td><td class="s">validate</td><td class="w">—</td></tr>
 <tr><td class="n"><a href="#i0-7">0.7</a></td><td class="s">● doctor</td><td class="w">—</td></tr>
-<tr><td class="n"><a href="#i1-1">1.1</a></td><td class="s">read_identicon_seed(repository_root)</td><td class="w">—</td></tr>
-<tr><td class="n"><a href="#i1-2">1.2</a></td><td class="s">read_settings(repository_root)</td><td class="w">—</td></tr>
+<tr><td class="n"><a href="#i1-1">1.1</a></td><td class="s">read_settings(repository_root)</td><td class="w">—</td></tr>
+<tr><td class="n"><a href="#i1-2">1.2</a></td><td class="s">write_settings(repository_root, settings)</td><td class="w">—</td></tr>
 <tr><td class="n"><a href="#i1-3">1.3</a></td><td class="s">.identicon/settings.json</td><td class="w">—</td></tr>
-<tr><td class="n"><a href="#i1-4">1.4</a></td><td class="s">read_settings_seed(settings)</td><td class="w">—</td></tr>
+<tr><td class="n"><a href="#i1-4">1.4</a></td><td class="s">identicon_seed(settings)</td><td class="w">—</td></tr>
 <tr><td class="n"><a href="#i1-5">1.5</a></td><td class="s">derive_identicon_seed(root, derive_from)</td><td class="w">—</td></tr>
 <tr><td class="n"><a href="#i1-6">1.6</a></td><td class="s">repo_remote_url(path)</td><td class="w">—</td></tr>
 <tr><td class="n"><a href="#i1-7">1.7</a></td><td class="s">_git(args, cwd)</td><td class="w">—</td></tr>
 <tr><td class="n"><a href="#i1-8">1.8</a></td><td class="s">git</td><td class="w">—</td></tr>
-<tr><td class="n"><a href="#i1-9">1.9</a></td><td class="s">repository_root(path)</td><td class="w">—</td></tr>
-<tr><td class="n"><a href="#i1-10">1.10</a></td><td class="s">remote_seed(url)</td><td class="w">—</td></tr>
+<tr><td class="n"><a href="#i1-9">1.9</a></td><td class="s">locate_repository_root(working_directory)</td><td class="w">—</td></tr>
+<tr><td class="n"><a href="#i1-10">1.10</a></td><td class="s">extract_repository_name(repository_url)</td><td class="w">—</td></tr>
 <tr><td class="n"><a href="#i1-11">1.11</a></td><td class="s">path_seed(path)</td><td class="w">—</td></tr>
 <tr><td class="n"><a href="#i1-12">1.12</a></td><td class="s">normalise_seed(value)</td><td class="w">—</td></tr>
-<tr><td class="n"><a href="#i1-13">1.13</a></td><td class="s">clear_identicon_seed(settings)</td><td class="w">—</td></tr>
+<tr><td class="n"><a href="#i1-13">1.13</a></td><td class="s">clear_identicon_seed(repository_root)</td><td class="w">—</td></tr>
 <tr><td class="n"><a href="#i1-14">1.14</a></td><td class="s">seed</td><td class="w">—</td></tr>
 <tr><td class="n"><a href="#i1-15">1.15</a></td><td class="s">cmd_doctor(args)</td><td class="w">—</td></tr>
 <tr><td class="n"><a href="#i2-1">2.1</a></td><td class="s">_digest(key)</td><td class="w">repository-identicon.py:325</td></tr>

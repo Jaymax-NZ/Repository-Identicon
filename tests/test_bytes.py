@@ -93,14 +93,14 @@ FIXTURE_SEEDS = (
     (
         "ordinary-remote",
         "octocat/hello-world",
-        # The common case: `owner/repo`, which is what `remote_seed` returns
+        # The common case: `owner/repo`, which is what `extract_repository_name` returns
         # for an SSH or an HTTPS checkout of the same project.
         "a git remote, normalised",
     ),
     (
         "hand-written-seed",
         "my-local-project",
-        # A bare name. `remote_seed` returns None for a string with no host and
+        # A bare name. `extract_repository_name` returns None for a string with no host and
         # no path, so no git remote produces this seed: it comes from a hand
         # edit of settings.json or from `--seed`. It is also the one seed here
         # whose colour reaches the chroma cap, so it takes `gamut_chroma`'s

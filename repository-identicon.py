@@ -94,7 +94,7 @@ def large_geometry(canvas):
 
 # ---- The seed ----
 #
-# Three functions, and the split between them is the point. `remote_seed` and
+# Three functions, and the split between them is the point. `extract_repository_name` and
 # `path_seed` each turn one kind of thing into a candidate seed and do nothing
 # else. `normalise_seed` is the single normaliser, and it runs on every seed
 # whatever produced it -- derived from a remote, derived from a path, or typed
@@ -118,8 +118,8 @@ def normalise_seed(value):
     return str(value).strip().rstrip("/").rstrip(os.sep) or os.sep
 
 
-def remote_seed(url):
-    """A git remote URL as `owner/repo`, or None.
+def extract_repository_name(repository_url):
+    """The `owner/repo` a git remote URL names, or None.
 
     Every way of naming one repository collapses to one seed, so an SSH
     checkout and an HTTPS checkout of the same project derive alike:
@@ -137,20 +137,21 @@ def remote_seed(url):
     Returns None for a local-path remote, which is no more portable than the
     working directory and so earns no special treatment.
     """
-    if not url:
+    if not repository_url:
         return None
-    url = url.strip().rstrip("/")
-    if not url or url.startswith("/") or url.startswith("file://"):
+    repository_url = repository_url.strip().rstrip("/")
+    if (not repository_url or repository_url.startswith("/")
+            or repository_url.startswith("file://")):
         return None
 
-    if "://" in url:
-        scheme, _, rest = url.partition("://")
+    if "://" in repository_url:
+        scheme, _, rest = repository_url.partition("://")
         if scheme.lower() == "file":
             return None
         authority, _, path = rest.partition("/")
-    elif ":" in url:
+    elif ":" in repository_url:
         # scp-like: [user@]host:path
-        authority, _, path = url.partition(":")
+        authority, _, path = repository_url.partition(":")
     else:
         return None
 
@@ -202,12 +203,12 @@ def _git(args, cwd=None):
     return completed.stdout.strip() or None
 
 
-def repository_root(path=None):
+def locate_repository_root(working_directory=None):
     """The directory holding `.identicon/`: the nearest ancestor with a `.git`.
 
-    Walks up from `path`, or from the working directory. Returns the starting
-    directory where no ancestor has one, so a directory outside a repository
-    still has somewhere to keep its settings.
+    Walks up from `working_directory`, or from the process's own. Returns the
+    starting directory where no ancestor has one, so a directory outside a
+    repository still has somewhere to keep its settings.
 
     A worktree has a `.git` file where a main checkout has a `.git` directory,
     and both sit at the root that owns the `.identicon/`, so `exists` answers
@@ -215,8 +216,8 @@ def repository_root(path=None):
     costs a subprocess; walking is what lets a seeded repository resolve its
     seed without running git at all.
     """
-    directory = pathlib.Path(os.path.abspath(
-        os.path.expanduser(str(path) if path else os.getcwd())))
+    directory = pathlib.Path(os.path.abspath(os.path.expanduser(
+        str(working_directory) if working_directory else os.getcwd())))
     for candidate in (directory, *directory.parents):
         if (candidate / ".git").exists():
             return str(candidate)
@@ -264,7 +265,7 @@ def derive_identicon_seed(repository_root, derive_from="auto"):
 
     if derive_from in ("auto", "repo"):
         url = repo_remote_url(repository_root)
-        derived = remote_seed(url) if url else None
+        derived = extract_repository_name(url) if url else None
         if derived:
             return derived
         if derive_from == "repo":
@@ -955,30 +956,24 @@ def read_settings(repository_root):
     return loaded if isinstance(loaded, dict) else {}
 
 
-def read_settings_seed(settings):
-    """The seed held in an already-loaded settings mapping, or None.
+def identicon_seed(settings):
+    """The seed a settings mapping holds, or None where none is set.
 
-    An empty string counts as unset, so `{"identiconSeed": ""}` and a file with
-    no seed field both mean "derive one". That is what makes a reseed a single
-    rule: `clear_identicon_seed` empties the field and this reports it unset.
+    Three rules, which is why this is not a key lookup. A non-string is not a
+    seed. An empty string counts as unset, so `clear_identicon_seed` empties
+    the field and the ordinary rule writes the next one -- that is what makes
+    a reseed one rule rather than two. And a hand-edited value is normalised
+    on the way out, so typing a seed into the file is as supported as deriving
+    one.
+
+    Takes the mapping rather than a directory because `apply` asks it about
+    settings it has just emptied in memory. Reading the file there would
+    return the seed being retired.
     """
     seed = settings.get(SEED_FIELD)
     if not isinstance(seed, str) or not seed.strip():
         return None
     return normalise_seed(seed)
-
-
-def read_identicon_seed(repository_root):
-    """The seed a repository is drawing with, or None where none is set.
-
-    Opens `settings.json` and reads one field. `derive_identicon_seed` is the
-    other half of the pair and runs git; two verbs for two operations, so a
-    caller states which one it wants.
-
-    `show` and `render` call this and nothing else. Only `apply` goes on to
-    derive.
-    """
-    return read_settings_seed(read_settings(repository_root))
 
 
 def read_colour_map(repository_root):
@@ -1022,23 +1017,41 @@ def keep_prior(target, current):
     return keep
 
 
-def clear_identicon_seed(settings):
-    """`settings` with the current seed moved to the history and the field emptied.
+def write_settings(repository_root, settings):
+    """Write the settings file. Returns the bytes written."""
+    path = settings_path(repository_root)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    wanted = settings_bytes(settings)
+    path.write_bytes(wanted)
+    return wanted
+
+
+def clear_identicon_seed(repository_root, check=False):
+    """Move the seed to the front of the history and empty the field, on disk.
+
+    Reads the file, rewrites it, and returns what it wrote, so a caller can
+    read the file back and get the same thing. There is no settings mapping
+    held across the change that could disagree with what is stored.
 
     This is the whole of a reseed. An empty seed is an unset seed, so the rule
     that seeds a fresh repository writes the next one -- one rule for both,
     rather than two that have to agree.
+
+    `check` is the dry run: the cleared settings are returned and the file is
+    left alone, because `apply --check` writes nothing.
     """
+    settings = read_settings(repository_root)
     history = settings.get(HISTORY_FIELD)
     history = [entry for entry in history if isinstance(entry, str)] \
         if isinstance(history, list) else []
     current = settings.get(SEED_FIELD)
-    updated = dict(settings)
-    updated[HISTORY_FIELD] = ([current] + history
-                              if isinstance(current, str) and current.strip()
-                              else history)
-    updated[SEED_FIELD] = ""
-    return updated
+    settings[HISTORY_FIELD] = ([current] + history
+                               if isinstance(current, str) and current.strip()
+                               else history)
+    settings[SEED_FIELD] = ""
+    if not check:
+        write_settings(repository_root, settings)
+    return settings
 
 
 def artifact_bytes(seed, block=ARTIFACT_BLOCK, **render_kwargs):
@@ -1189,20 +1202,29 @@ def install_into_repo(path=None, seed=None, block=ARTIFACT_BLOCK, check=False,
 
     Returns a dict describing what happened, suitable for --json.
     """
-    root = repository_root(path)
-    settings = read_settings(root)
+    root = locate_repository_root(path)
 
     # **`apply` is the only command that derives or writes a seed.** `show`
     # and `render` read the stored one and stop; `doctor` reads and derives
     # separately, to report both. Keeping derivation here is what stops a
     # command whose job is to draw from deciding what to draw it from.
+    #
+    # **A reseed empties the field on disk first, and then this reads the
+    # file.** Emptying a copy in memory instead would leave a settings mapping
+    # that says one thing while the file says another, for as long as the run
+    # lasts. Under `--check` nothing is written, so the cleared settings are
+    # handed straight back -- a dry run has no file to re-read.
     if seed or reseed:
-        settings = clear_identicon_seed(settings)
+        settings = clear_identicon_seed(root, check)
+        if not check:
+            settings = read_settings(root)
+    else:
+        settings = read_settings(root)
 
     if seed:
         resolved_seed, source = normalise_seed(seed), "explicit"
     else:
-        stored = read_settings_seed(settings)
+        stored = identicon_seed(settings)
         if stored is not None:
             resolved_seed, source = stored, "settings"
         else:
@@ -1244,6 +1266,11 @@ def install_into_repo(path=None, seed=None, block=ARTIFACT_BLOCK, check=False,
     #
     # It is an input and not an artifact: it is not in `artifact_names`, and a
     # run that changes nothing else leaves it byte-for-byte alone.
+    #
+    # A reseed writes it twice: `clear_identicon_seed` empties the field and
+    # this puts the new seed in. Two writes of a file this size cost nothing,
+    # and the alternative is carrying a cleared copy in memory for the length
+    # of the run.
     settings_file = settings_path(root)
     current_settings = (settings_file.read_bytes()
                         if settings_file.is_file() else None)
@@ -1252,8 +1279,7 @@ def install_into_repo(path=None, seed=None, block=ARTIFACT_BLOCK, check=False,
                       else "unchanged" if current_settings == settings_wanted
                       else "updated")
     if settings_state != "unchanged" and not check:
-        settings_file.parent.mkdir(parents=True, exist_ok=True)
-        settings_file.write_bytes(settings_wanted)
+        write_settings(root, settings)
     changes["settings"] = settings_state
     paths["settings"] = settings_file
 
@@ -1295,8 +1321,8 @@ def _seed_to_draw(args):
     explicit = getattr(args, "seed", None)
     if explicit:
         return normalise_seed(explicit)
-    root = repository_root(getattr(args, "path", None))
-    stored = read_identicon_seed(root)
+    root = locate_repository_root(getattr(args, "path", None))
+    stored = identicon_seed(read_settings(root))
     if stored is None:
         raise NotSeeded(f"{root} has no seed set in "
                         f"{IDENTICON_DIR}/{SETTINGS_NAME}")
@@ -1568,8 +1594,8 @@ def cmd_doctor(args):
                                    else "NOT FOUND - validate cannot run"))
     print(f"{'colour map':16} {COLOUR_MAP_LATEST}")
 
-    root = repository_root(getattr(args, "path", None))
-    stored = read_identicon_seed(root)
+    root = locate_repository_root(getattr(args, "path", None))
+    stored = identicon_seed(read_settings(root))
     print(f"{'seed here':16} "
           + (f"{stored}  (settings)" if stored is not None else "not seeded"))
 
