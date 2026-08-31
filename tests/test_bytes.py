@@ -2,19 +2,23 @@
 
 **What this file owns, and what `vectors.json` owns.**
 
-`vectors.json` pins the *mapping*: key to MD5 digest, digest to grid, digest to
-foreground colour. It is the contract another implementation has to meet, and
-it stops at the three values a reimplementation can compute without agreeing to
-produce any particular file.
+`vectors.json` pins the *mapping*: seed to MD5 digest, digest to grid, digest
+to foreground colour. It is the contract another implementation has to meet,
+and it stops at the three values a reimplementation can compute without
+agreeing to produce any particular file.
 
 This file pins the *serialisation*: the exact bytes this implementation writes
-into `.identicon/` for a given key. A port is not asked to reproduce these. The
-reference implementation is, on every machine that runs it.
+into `.identicon/` for a given seed. A port is not asked to reproduce these.
+The reference implementation is, on every machine that runs it.
 
-The two do not overlap. No key here appears in `vectors.json`, and a test
+The two do not overlap. No seed here appears in `vectors.json`, and a test
 enforces that: a grid that changed would break the vectors, and a file layout
 that changed breaks only these fixtures. Reading a failure is then unambiguous.
 The mapping moved, or the writer did.
+
+`.identicon/settings.json` is not among the fixtures. It is the input a
+repository's identity is read from, not an artifact derived from one, and
+`artifact_bytes` does not produce it.
 
 **Why the bytes and not their hashes.** A digest that disagrees says only that
 something disagrees. `.txt`, `.grid`, `.svg` and the rest are text, and a
@@ -26,19 +30,24 @@ failing test prints the diff.
 
 It rewrites every fixture file from the current code.
 
-Running it is legitimate when the mapping version changes deliberately, or
-when a seed in `FIXTURE_SEEDS` is deliberately changed or replaced. Those are
-the two edits that change what the correct bytes are. Make the edit, run the
-command, and review the diff.
+Running it is legitimate when the colour map changes deliberately, or when a
+seed in `FIXTURE_SEEDS` is deliberately changed or replaced. Those are the two
+edits that change what the correct bytes are. Make the edit, run the command,
+and review the diff.
+
+A new colour map repaints these fixtures and never reshapes them: the grid
+comes off the seed alone, so a regeneration after a map change must show
+colour bytes moving and grid bytes standing still. That is the property to
+read the diff for.
 
 Running it is not legitimate as a way to make a failing test pass. A failure
-with `FIXTURE_MAPPING_VERSION` and `FIXTURE_SEEDS` untouched means the writer
+with `FIXTURE_COLOUR_MAP` and `FIXTURE_SEEDS` untouched means the writer
 changed, and reporting that is the whole purpose of this suite. Regenerating
 then deletes the evidence rather than fixing anything.
 
-The mapping version is written once, in `FIXTURE_MAPPING_VERSION`, and each
-seed is written once, in `FIXTURE_SEEDS`. Nothing below repeats either, so a
-version bump is a one-line edit and a regeneration.
+The colour map is written once, in `FIXTURE_COLOUR_MAP`, and each seed is
+written once, in `FIXTURE_SEEDS`. Nothing below repeats either, so a map
+change is a one-line edit and a regeneration.
 
     python3 -m unittest discover -s tests -t tests
 """
@@ -63,60 +72,54 @@ def load(name, module):
 
 identicon = load("repository-identicon.py", "repository_identicon")
 
-# **The mapping version, written once.** Every fixture key is stamped with
-# this and nothing below repeats the literal. Changing the mapping is then a
-# one-line edit here plus a regeneration, and the assertion in
-# `test_the_fixtures_are_stamped_at_the_version_this_build_draws` is what makes
-# a bump announce itself instead of passing quietly.
-FIXTURE_MAPPING_VERSION = "0.3"
+# **The colour map, written once.** Nothing below repeats the literal.
+# Changing the map is a one-line edit here plus a regeneration, and the
+# assertion in `test_the_fixtures_are_drawn_at_the_colour_map_this_build_draws`
+# is what makes a change announce itself instead of passing quietly.
+FIXTURE_COLOUR_MAP = 0
 
 # **Four seeds, each covering something the others do not.**
 #
-# Seeds, not keys: the version is added by `fixture_key`, so it lives in one
-# place. The set is small on purpose. Every seed multiplies twelve files, and a
+# The set is small on purpose. Every seed multiplies eleven files, and a
 # fixture nobody can say the purpose of is a fixture nobody dares change.
 #
-# The colours named below are what these seeds produce at mapping version 0.3.
-# A new mapping moves them, and the property each seed was chosen for is
-# asserted in `test_the_seeds_cover_both_branches_of_the_chroma_rule` rather
-# than left to these comments -- so a bump that costs the set its coverage
-# fails rather than rots.
+# The colours named below are what these seeds produce under colour map 0. A
+# new map moves them and leaves every grid alone, and the property each seed
+# was chosen for is asserted in
+# `test_the_seeds_cover_both_branches_of_the_chroma_rule` rather than left to
+# these comments -- so a change that costs the set its coverage fails rather
+# than rots.
 FIXTURE_SEEDS = (
     (
         "ordinary-remote",
-        "github.com/octocat/hello-world",
-        # The common case: `host/owner/repo`, lowercased, which is what
-        # `normalise_remote_url` returns for an SSH or an HTTPS checkout of the
-        # same project. Colour #df3f00, whose blue channel is 0.
+        "octocat/hello-world",
+        # The common case: `owner/repo`, which is what `remote_seed` returns
+        # for an SSH or an HTTPS checkout of the same project.
         "a git remote, normalised",
     ),
     (
-        "recorded-key-override",
+        "hand-written-seed",
         "my-local-project",
-        # A bare name. `normalise_remote_url` returns None for a string with no
-        # host and no path, so no git remote produces this seed: it can only
-        # come from a committed `.repository-identicon` or from `--seed`. It is
-        # also the one seed here whose colour reaches the chroma cap, so it
-        # takes `gamut_chroma`'s early return while the other three run the
-        # binary search. Colour #b335eb, no channel at 0 or 255.
-        "a committed override, and the uncapped chroma branch",
+        # A bare name. `remote_seed` returns None for a string with no host and
+        # no path, so no git remote produces this seed: it comes from a hand
+        # edit of settings.json or from `--seed`. It is also the one seed here
+        # whose colour reaches the chroma cap, so it takes `gamut_chroma`'s
+        # early return while the other three run the binary search.
+        "a seed somebody typed, and the uncapped chroma branch",
     ),
     (
         "non-ascii-seed",
-        "github.com/日本語/リポジトリ",
+        "日本語/リポジトリ",
         # Every non-ASCII character here is three bytes of UTF-8. The fixtures
-        # fail if the key is hashed as anything but UTF-8, and the `.key`
-        # fixture fails if the file is written or read back in another
-        # encoding. Colour #9e7b00.
+        # fail if the seed is hashed as anything but UTF-8.
         "a seed outside ASCII, three bytes per character",
     ),
     (
-        "gamut-edge",
-        "github.com/widgets-inc/quarry",
-        # The most strongly clamped colour found in a scan of remote-shaped
-        # seeds: `gamut_chroma` searches down to 0.1020 against a cap of 0.26,
-        # and the red channel lands on exactly 0. Colour #009299.
-        "a colour clamped hard onto the sRGB boundary",
+        "mixed-case-seed",
+        "Jaymax-NZ/Widgets-Inc",
+        # Case is carried into the hash rather than folded away, so a writer
+        # that started lowercasing would fail here as well as in the vectors.
+        "a seed whose case is part of it",
     ),
 )
 
@@ -125,28 +128,20 @@ FIXTURE_SEEDS = (
 # alone.
 
 
-def fixture_key(seed):
-    """The key a fixture seed is frozen under: the pinned version, then it."""
-    return identicon.stamp_key(seed, FIXTURE_MAPPING_VERSION)
-
-
-# `.key` is written by `install_into_repo`, not by `artifact_bytes`, so
-# `expected_bytes` adds it. Twelve files per key.
+# Eleven files per seed: the artifact set exactly. `settings.json` is the
+# input the seed is read from and is not derived from it, so it is not here.
 #
 # Artifacts compared as text, so a failure prints a diff. Everything else is
 # compared as bytes and reported by length.
-TEXT_SUFFIXES = (".key", ".grid", ".colour", ".octant", ".sextant",
+TEXT_SUFFIXES = (".grid", ".colour", ".octant", ".sextant",
                  ".tricolour", ".txt", ".svg")
 
 
-def expected_bytes(key):
-    """Every artifact for `key` as {filename: bytes}, the `.key` file included."""
-    built = identicon.artifact_bytes(key)
-    wanted = {filename: built[name]
-              for name, filename in identicon.artifact_names()}
-    wanted[identicon.KEY_NAME] = (
-        identicon.KEY_FILE_TEMPLATE.format(key=key).encode("utf-8"))
-    return wanted
+def expected_bytes(seed):
+    """Every artifact for `seed` as {filename: bytes}."""
+    built = identicon.artifact_bytes(seed)
+    return {filename: built[name]
+            for name, filename in identicon.artifact_names()}
 
 
 def fixture_dir(slug):
@@ -156,15 +151,16 @@ def fixture_dir(slug):
 class TestTheFixtureSet(unittest.TestCase):
     """The shape of the set, before any byte is compared."""
 
-    def test_the_fixtures_are_stamped_at_the_version_this_build_draws(self):
-        """A mapping bump moves every key, so it must land here as a failure.
+    def test_the_fixtures_are_drawn_at_the_colour_map_this_build_draws(self):
+        """A new colour map repaints every fixture, so it must land here as a
+        failure.
 
-        The way through is to change `FIXTURE_MAPPING_VERSION` and regenerate,
+        The way through is to change `FIXTURE_COLOUR_MAP` and regenerate,
         which is a reviewed decision. See the module docstring.
         """
         self.assertEqual(
-            FIXTURE_MAPPING_VERSION, identicon.MAPPING_VERSION,
-            "the fixtures are frozen at a different mapping version than this "
+            FIXTURE_COLOUR_MAP, identicon.COLOUR_MAP_LATEST,
+            "the fixtures are frozen under a different colour map than this "
             "build draws; see the regeneration note in the module docstring")
 
     def test_no_two_fixtures_share_a_seed_or_a_slug(self):
@@ -180,17 +176,16 @@ class TestTheFixtureSet(unittest.TestCase):
 
     def test_the_fixtures_do_not_restate_the_vectors(self):
         """The boundary, enforced. `vectors.json` owns the mapping and this
-        file owns the serialisation, so a key belongs to one or the other."""
-        pinned = {vector["key"] for vector
+        file owns the serialisation, so a seed belongs to one or the other."""
+        pinned = {vector["seed"] for vector
                   in json.loads((ROOT / "vectors.json").read_text())["vectors"]}
         for slug, seed, _reason in FIXTURE_SEEDS:
             with self.subTest(slug=slug):
-                self.assertNotIn(fixture_key(seed), pinned)
+                self.assertNotIn(seed, pinned)
 
     def test_each_fixture_directory_holds_exactly_the_artifact_set(self):
         """A file that stopped being written must not linger as a fixture."""
         wanted = {filename for _name, filename in identicon.artifact_names()}
-        wanted.add(identicon.KEY_NAME)
         for slug, _seed, _reason in FIXTURE_SEEDS:
             with self.subTest(slug=slug):
                 directory = fixture_dir(slug)
@@ -208,8 +203,7 @@ class TestTheFixtureSet(unittest.TestCase):
         """
         chromas = []
         for _slug, seed, _reason in FIXTURE_SEEDS:
-            key = fixture_key(seed)
-            degrees = identicon.warp_hue(identicon.identicon_hue(key) * 360.0)
+            degrees = identicon.warp_hue(identicon.identicon_hue(seed) * 360.0)
             chromas.append(identicon.gamut_chroma(degrees))
         cap = identicon.MARK_CHROMA
         self.assertTrue(any(value >= cap for value in chromas),
@@ -223,13 +217,13 @@ class TestTheFrozenBytes(unittest.TestCase):
 
     This is the two-machine claim. The fixtures were written on one machine and
     CI runs on another; a difference in the PNG encoder, the SVG text, the
-    lattices or the key file shows up here and nowhere else.
+    lattices or the settings file shows up here and nowhere else.
     """
 
     def test_every_artifact_matches_its_fixture(self):
         for slug, seed, _reason in FIXTURE_SEEDS:
             directory = fixture_dir(slug)
-            wanted = expected_bytes(fixture_key(seed))
+            wanted = expected_bytes(seed)
             for filename in sorted(wanted):
                 with self.subTest(slug=slug, artifact=filename):
                     frozen = directory / filename
@@ -251,8 +245,7 @@ class TestTheFrozenBytes(unittest.TestCase):
         comparison against a stored file can show."""
         for slug, seed, _reason in FIXTURE_SEEDS:
             with self.subTest(slug=slug):
-                key = fixture_key(seed)
-                self.assertEqual(expected_bytes(key), expected_bytes(key))
+                self.assertEqual(expected_bytes(seed), expected_bytes(seed))
 
 
 class TestThePngEncoderIsThisFilesOwn(unittest.TestCase):
@@ -275,14 +268,14 @@ class TestThePngEncoderIsThisFilesOwn(unittest.TestCase):
         """The encoder is lossless: what comes back out is what went in."""
         import struct
         import zlib
-        key = fixture_key(FIXTURE_SEEDS[0][1])
+        seed = FIXTURE_SEEDS[0][1]
         for block, border in ((identicon.ARTIFACT_BLOCK, identicon.BORDER),
                               (identicon.ARTIFACT_BLOCK
                                * identicon.ARTIFACT_SCALE,
                                identicon.SCALED_BORDER)):
             with self.subTest(block=block):
                 edge = identicon.canvas_edge(block, border)
-                rgba = identicon.render_rgba(key, block, border=border)
+                rgba = identicon.render_rgba(seed, block, border=border)
                 png = identicon.encode_png(rgba, edge, edge)
                 idat = b""
                 pos = 8
@@ -334,15 +327,14 @@ def write_fixtures():
     for slug, seed, reason in FIXTURE_SEEDS:
         directory = fixture_dir(slug)
         directory.mkdir(parents=True, exist_ok=True)
-        key = fixture_key(seed)
-        wanted = expected_bytes(key)
+        wanted = expected_bytes(seed)
         if directory.is_dir():
             for stale in directory.iterdir():
                 if stale.name not in wanted:
                     stale.unlink()
         for filename, blob in sorted(wanted.items()):
             (directory / filename).write_bytes(blob)
-        print(f"{slug:24} {len(wanted):2} files  {key}  ({reason})")
+        print(f"{slug:24} {len(wanted):2} files  {seed}  ({reason})")
 
 
 if __name__ == "__main__":

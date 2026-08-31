@@ -1,124 +1,134 @@
 {
- "vectors": [
-  {
-   "key": "0.3:github.com/justin-maxwell/claude-state-panel",
-   "md5": "1015ef6009965a402fc380f4fc89fa12",
-   "grid": [
-    "00000",
-    "11111",
-    "01010",
-    "11011",
-    "10101"
-   ],
-   "foreground": "#a63df8"
-  },
-  {
-   "key": "0.3:github.com/justin-maxwell/glyph-hunter",
-   "md5": "9c0b4dd7e461ca7aec77115112d52458",
-   "grid": [
-    "10001",
-    "00100",
-    "10101",
-    "11011",
-    "01110"
-   ],
-   "foreground": "#cf5500"
-  },
-  {
-   "key": "0.3:github.com/justin-maxwell/sentry-mcp",
-   "md5": "a92d47893285e5d86dc7c4375fdfa1d4",
-   "grid": [
-    "10101",
-    "01010",
-    "10101",
-    "00000",
-    "01110"
-   ],
-   "foreground": "#e60080"
-  },
-  {
-   "key": "0.3:github.com/justin-maxwell/markright",
-   "md5": "5b1102c01379612359e54a4cffa6771f",
-   "grid": [
-    "01010",
-    "01010",
-    "11011",
-    "00000",
-    "10101"
-   ],
-   "foreground": "#e40089"
-  },
-  {
-   "key": "0.3:gitlab.com/justin-maxwell/claude-state-panel",
-   "md5": "3c16e6cfaf907fffb8cfa6235485a4cc",
-   "grid": [
-    "01010",
-    "11111",
-    "00000",
-    "01110",
-    "00100"
-   ],
-   "foreground": "#af7100"
-  },
-  {
-   "key": "0.3:github.com/torvalds/linux",
-   "md5": "99800112457eb78ce3d27e7bdc9340b5",
-   "grid": [
-    "00000",
-    "10001",
-    "01110",
-    "01110",
-    "10101"
-   ],
-   "foreground": "#a73cf7"
-  },
-  {
-   "key": "0.3:Code/Projects/MarkRight",
-   "md5": "77d7bc6ae85db182b53e93223691c78e",
-   "grid": [
-    "01010",
-    "01010",
-    "01010",
-    "01010",
-    "11011"
-   ],
-   "foreground": "#8d8300"
-  },
-  {
-   "key": "0.3:/opt/checkouts/Thing",
-   "md5": "f0bce237e42c313e22ab730cd6773a81",
-   "grid": [
-    "11011",
-    "10101",
-    "00000",
-    "01110",
-    "01110"
-   ],
-   "foreground": "#8f8200"
-  },
-  {
-   "key": "0.3:",
-   "md5": "10b2ae5354bb4a5b3d4ea74e3718050d",
-   "grid": [
-    "01010",
-    "00100",
-    "10001",
-    "10101",
-    "01110"
-   ],
-   "foreground": "#828700"
-  },
-  {
-   "key": "0.3:a",
-   "md5": "40fcabad9f89be398419f7ff7e173348",
-   "grid": [
-    "10101",
-    "01110",
-    "00000",
-    "10101",
-    "00100"
-   ],
-   "foreground": "#cd1dc8"
-  }
- ]
+  "vectors": [
+    {
+      "seed": "justin-maxwell/claude-state-panel",
+      "colourMap": 0,
+      "md5": "933c893c2ce1f17c68026b0f4fdf584d",
+      "grid": [
+        "10001",
+        "00000",
+        "01010",
+        "01110",
+        "01110"
+      ],
+      "foreground": "#e60080"
+    },
+    {
+      "seed": "justin-maxwell/glyph-hunter",
+      "colourMap": 0,
+      "md5": "ac8346e5a4f1684bf3c3fe117f08d36a",
+      "grid": [
+        "01110",
+        "01110",
+        "10101",
+        "11011",
+        "11111"
+      ],
+      "foreground": "#de00a3"
+    },
+    {
+      "seed": "justin-maxwell/sentry-mcp",
+      "colourMap": 0,
+      "md5": "b3d68a1f823c56e9cf257bbe5a68e67e",
+      "grid": [
+        "01010",
+        "10001",
+        "00000",
+        "11111",
+        "11111"
+      ],
+      "foreground": "#007eef"
+    },
+    {
+      "seed": "justin-maxwell/markright",
+      "colourMap": 0,
+      "md5": "e398de2fcc0fe5bd8a7b4a8df5d4684f",
+      "grid": [
+        "11111",
+        "01010",
+        "10001",
+        "01110",
+        "01010"
+      ],
+      "foreground": "#9a7d00"
+    },
+    {
+      "seed": "Jaymax-NZ/Repository-Identicon",
+      "colourMap": 0,
+      "md5": "12cf4ba42d9f2a93e66ecf7d39bcaead",
+      "grid": [
+        "00000",
+        "01110",
+        "11111",
+        "11011",
+        "00100"
+      ],
+      "foreground": "#008fa9"
+    },
+    {
+      "seed": "jaymax-nz/repository-identicon",
+      "colourMap": 0,
+      "md5": "cf0d2d3db57c73e9651dbac0be2787ba",
+      "grid": [
+        "00100",
+        "10001",
+        "00100",
+        "00000",
+        "10101"
+      ],
+      "foreground": "#ce1bc6"
+    },
+    {
+      "seed": "torvalds/linux",
+      "colourMap": 0,
+      "md5": "73257b80b6bdd24de474272741267953",
+      "grid": [
+        "00000",
+        "01010",
+        "01110",
+        "10001",
+        "11011"
+      ],
+      "foreground": "#ed0045"
+    },
+    {
+      "seed": "Code/Projects/MarkRight",
+      "colourMap": 0,
+      "md5": "8f324116d08826afef39fb29e4ee047c",
+      "grid": [
+        "10101",
+        "10001",
+        "11011",
+        "10101",
+        "11111"
+      ],
+      "foreground": "#a87500"
+    },
+    {
+      "seed": "/opt/checkouts/Thing",
+      "colourMap": 0,
+      "md5": "166185c80e8b9dc314462032e0c8433f",
+      "grid": [
+        "10001",
+        "01110",
+        "01110",
+        "01010",
+        "11111"
+      ],
+      "foreground": "#eb0058"
+    },
+    {
+      "seed": "a",
+      "colourMap": 0,
+      "md5": "0cc175b9c0f1b6a831c399e269772661",
+      "grid": [
+        "00100",
+        "00100",
+        "00100",
+        "11011",
+        "11011"
+      ],
+      "foreground": "#009297"
+    }
+  ]
 }

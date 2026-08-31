@@ -1497,28 +1497,28 @@ def check_output(text, vector):
 
 
 def validate_command(argv, vectors, timeout=30):
-    """Run `argv + [key]` once per vector and collect the results.
+    """Run `argv + [seed]` once per vector and collect the results.
 
-    The key, not the seed. A port hashes what it is handed and has no business
-    knowing about mapping versions -- that is the point of putting the version
-    in the key rather than in everybody's code.
+    The seed is the whole of what a port is handed, because the seed is the
+    whole of what is hashed. A port needs no notion of a colour map to
+    reproduce a grid, and needs only this build's map to reproduce a colour.
     """
     results = []
     for vector in vectors:
-        key = vector["key"]
+        seed = vector["seed"]
         try:
-            completed = subprocess.run([*argv, key],
+            completed = subprocess.run([*argv, seed],
                                        capture_output=True, text=True,
                                        timeout=timeout)
         except (OSError, subprocess.SubprocessError) as error:
-            results.append({"key": key, "problems": [str(error)]})
+            results.append({"seed": seed, "problems": [str(error)]})
             continue
         if completed.returncode != 0:
             detail = (completed.stderr or completed.stdout).strip()
-            results.append({"key": key,
+            results.append({"seed": seed,
                             "problems": [f"exited {completed.returncode}: {detail}"]})
             continue
-        results.append({"key": key,
+        results.append({"seed": seed,
                         "problems": check_output(completed.stdout, vector)})
     return results
 
@@ -1528,8 +1528,8 @@ def cmd_validate(args):
     if not args.command:
         print("give the command that runs your implementation, for example:\n"
               "  repository-identicon validate -- ./my-identicon --json\n"
-              "It is run once per vector with the key as its last argument, and\n"
-              "must print {\"grid\": [...], \"colour\": \"#rrggbb\"} on stdout.",
+              "It is run once per vector with the seed as its last argument,\n"
+              "and must print {\"grid\": [...], \"colour\": \"#rrggbb\"} on stdout.",
               file=sys.stderr)
         return 2
 
@@ -1542,11 +1542,11 @@ def cmd_validate(args):
     else:
         for result in results:
             if result["problems"]:
-                print(f"FAIL {result['key']}")
+                print(f"FAIL {result['seed']}")
                 for problem in result["problems"]:
                     print(f"       {problem}")
             else:
-                print(f"ok   {result['key']}")
+                print(f"ok   {result['seed']}")
         print()
         print(f"{len(results) - len(failed)}/{len(results)} vectors reproduced")
         if failed:
