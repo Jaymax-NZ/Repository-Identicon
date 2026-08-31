@@ -154,13 +154,6 @@ implementation SHOULD report which source it used, because a project silently
 falling back to a path seed will change identity when checked out on another
 machine, and that is worth seeing before it happens rather than after.
 
-The override file was formerly `.claude-state-identicon`, named for one
-consumer of a specification that has several and none of which is Claude. An
-implementation SHOULD still honour that name where the current one is absent,
-and MUST prefer the current one where both exist: the file is committed into
-other people's repositories, and dropping it silently changes the identity it
-was written to pin — the one outcome an override exists to prevent.
-
 The git remote is `origin` where one exists, otherwise the first remote listed.
 
 **Why not the path.** A path is not stable across machines, containers, cloud
@@ -447,30 +440,6 @@ invariance: the mark never depends on the page. What it costs is the rectangle.
 This specification takes the opposite trade, and the dark variant is the price.
 A fixed ground makes a fixed lightness work forever; an unknown ground does
 not, so the mark is emitted at two lightnesses instead of on two grounds.
-
-## Derived names
-
-From `sha256(key)` as lowercase hex, take:
-
-| Name | Definition | Purpose |
-|---|---|---|
-| short id | first **12** characters | icon file names, uniqueness |
-| discriminator | first **6** characters | distinguishing two projects that share a basename |
-
-The project name is the last `/`-separated segment of the key, or the key itself
-if it contains no `/`.
-
-An icon theme name is `<tool-prefix>-<short id>`. The prefix belongs to the
-implementing tool: `Console-Colophon` uses `console-colophon`, `Claude-State-Panel`
-uses `claude-state-identicon`, and this repository's reference implementation
-forms the name under `repository-identicon` without installing anything. The
-specification fixes the short id, not the prefix, so two tools installing icons
-into the same theme do not collide.
-
-**Badge label**, for media that can only show one or two characters: split the
-project name on `-`, `_`, `.` and space. If two or more parts result, take the
-first character of each of the first two. Otherwise take the first two
-characters of the name. Upper-case the result.
 
 ## What goes in the repository
 

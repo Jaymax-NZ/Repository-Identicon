@@ -309,23 +309,6 @@ class TestTheBlocksAndTheCanvas(unittest.TestCase):
                 self.assertEqual((edge, edge),
                                  struct.unpack(">II", png[16:24]))
 
-    # The sizes a consumer that fixes its canvas is likely to ask for. The icon
-    # theme wants 48 pixels at `48x48/apps/` whatever that divides into, which
-    # is what `edge` is for -- but installing icons is Console-Colophon's job,
-    # so the list is written here rather than imported from a constant.
-    FIXED_CANVASES = (16, 22, 24, 32, 48, 64, 128, 256)
-
-    def test_a_canvas_somebody_else_fixed_is_filled_exactly(self):
-        """`edge` pads the grid rather than changing the file's size."""
-        for edge in self.FIXED_CANVASES:
-            with self.subTest(edge=edge):
-                block = identicon.fit_block(edge)
-                self.assertLessEqual(block * identicon.GRID, edge,
-                                     f"the block overflows the {edge}px canvas")
-                png = identicon.render_png(self.KEY, block, edge=edge)
-                self.assertEqual((edge, edge),
-                                 struct.unpack(">II", png[16:24]))
-
     def test_every_large_canvas_is_exact(self):
         for canvas in identicon.LARGE_CANVASES:
             with self.subTest(canvas=canvas):
@@ -685,7 +668,7 @@ class TestInstallingIntoARepository(unittest.TestCase):
                          identicon.recorded_key(self.tmp))
         self.assertIsNone(after["seed_drift"])
 
-    def test_an_override_masking_a_renamed_remote_is_reported(self):
+    def test_an_override_outranking_a_renamed_remote_is_reported(self):
         """An override outranks the remote, which is the point of it and the
         one way a rename can pass unnoticed. It is reported, not resolved."""
         pinned = "github.com/someone/a-project"
@@ -698,13 +681,13 @@ class TestInstallingIntoARepository(unittest.TestCase):
         result = identicon.install_into_repo(self.tmp, check=True)
         self.assertEqual("override", result["source"])
         self.assertEqual(pinned, result["seed"])
-        self.assertEqual("github.com/someone/moved-on", result["masking"])
+        self.assertEqual("github.com/someone/moved-on", result["overridden_remote"])
 
     def test_an_override_agreeing_with_the_remote_is_not_reported(self):
         (pathlib.Path(self.tmp) / identicon.OVERRIDE_FILENAME).write_text(
             "github.com/someone/a-project\n")
         result = identicon.install_into_repo(self.tmp, check=True)
-        self.assertIsNone(result["masking"])
+        self.assertIsNone(result["overridden_remote"])
 
     def test_git_helpers_accept_a_default_cwd(self):
         """`git -C None` fails and reads as "not a repository", which is the

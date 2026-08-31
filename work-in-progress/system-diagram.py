@@ -109,8 +109,9 @@ MAP_CAPTION = [
 
 # Items whose id is not the name of the routine they stand for. None means the
 # item is a file, a value or a summary and has no single definition.
-ALIAS = {"argh": "_key_from_args", "t_text": "T:text",
-         "t_encode": "T:_encode", "OCTANTS": None, "PALETTE": None,
+ALIAS = {"t_text": "T:text", "t_encode": "T:_encode",
+         "t_octant": "T:octant", "t_lattice": "T:lattice_lines",
+         "OCTANTS": None, "PALETTE": None,
          "LATTICES": None, "scope_line": None, "moved": None}
 
 
@@ -484,6 +485,17 @@ def add_item(page, node, x, y, w):
         src = node.attr("$source")
         if src:
             WHERE[key] = tuple(src.rsplit(":", 1))
+        # An item of kind `fn` names a function in one of the two sources.
+        # Delete that function and nothing else here notices: the edges still
+        # resolve, the glossary still resolves, and the page publishes a
+        # description of code that is gone. Only the source can answer it, so
+        # ask the source.
+        if node.attr("$kind", "fn") == "fn":
+            look = ALIAS.get(key, key)
+            if look and look not in LINES and "T:" + look not in LINES:
+                WARNINGS.append(
+                    f"item {number} documents {look}, which no longer exists "
+                    f"in repository-identicon.py or text-identicon.py")
 
 
 def add_edges(page, node):

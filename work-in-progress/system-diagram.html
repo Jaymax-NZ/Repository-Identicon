@@ -75,7 +75,7 @@ the glossary's job — <strong>hover any item</strong> for the entries it uses, 
 A notched connector is an off-page reference: click it to jump to the item it names. An arrow
 points the way the work goes. Out of scope and drawn nowhere:
 <code>work-in-progress/</code>, <code>tests/</code> and <code>reference/</code>.</p>
-<nav><a href="#page-0">0. The map</a> · <a href="#page-1">1. Identity</a> · <a href="#page-2">2. Derivation</a> · <a href="#page-3">3. Names and geometry</a> · <a href="#page-4">4. Rendering</a> · <a href="#page-5">5. The text mark — text-identicon.py</a> · <a href="#page-6">6. Into the repository</a> · <a href="#page-7">7. Gone to Console-Colophon — the terminal half</a> · <a href="#page-8">8. Gone to Console-Colophon — the desktop half</a> · <a href="#page-9">9. Conformance</a> · <a href="#terms">Terms</a> · <a href="#index">Index</a></nav>
+<nav><a href="#page-0">0. The map</a> · <a href="#page-1">1. Identity</a> · <a href="#page-2">2. Derivation</a> · <a href="#page-3">3. Geometry</a> · <a href="#page-4">4. Rendering</a> · <a href="#page-5">5. The text mark — text-identicon.py</a> · <a href="#page-6">6. Into the repository</a> · <a href="#page-7">7. Gone to Console-Colophon — the terminal half</a> · <a href="#page-8">8. Gone to Console-Colophon — the desktop half</a> · <a href="#page-9">9. Conformance</a> · <a href="#terms">Terms</a> · <a href="#index">Index</a></nav>
 <div class="key">
   <span><i class="k-fn"></i>a routine</span>
   <span><i class="k-data"></i>a table, or a summary</span>
@@ -164,16 +164,6 @@ points the way the work goes. Out of scope and drawn nowhere:
 <text xml:space="preserve" x="44" y="87.1" class="sb">Builds five subparsers, runs the one asked for, and turns a</text>
 <text xml:space="preserve" x="44" y="99.7" class="sb">stranded repository into exit 1.</text>
 </g>
-<g id="i0-2" class="item">
-
-<rect x="32" y="132" width="356" height="86.8" rx="5" class="bthin"/>
-<text x="44" y="152" class="badge">0.2</text>
-<text xml:space="preserve" x="78" y="152.0" class="ti">_key_from_args → _resolve_from_args</text>
-<text xml:space="preserve" x="44" y="167.5" class="ti">→ resolve_key_for(path, seed)</text>
-<text xml:space="preserve" x="44" y="182.0" class="ret">→ (key, source) for the path a command was given</text>
-<text xml:space="preserve" x="44" y="194.6" class="sb">add_common() gives the path commands --seed, and the drawing</text>
-<text xml:space="preserve" x="44" y="207.2" class="sb">ones --chroma, --lightness and --background.</text>
-</g>
 <g id="i0-3" class="item">
 
 <rect x="414" y="40" width="238" height="96.5" rx="6" class="bcmd"/>
@@ -233,7 +223,7 @@ points the way the work goes. Out of scope and drawn nowhere:
 <a href="#page-8"><rect x="1142" y="496" width="386" height="76" rx="6" class="bmod"/><text x="1156" y="523" class="modn">PAGE 8</text><text x="1156" y="544" class="modt">GONE: THE DESKTOP HALF</text><text x="1156" y="561" class="modx">Konsole and D-Bus</text></a>
 <a href="#page-9"><rect x="32" y="496" width="340" height="76" rx="6" class="bmod"/><text x="46" y="523" class="modn">PAGE 9</text><text x="46" y="544" class="modt">CONFORMANCE</text><text x="46" y="561" class="modx">`validate`, offered outward</text></a>
 </svg></div></section>
-<section id="page-1"><h2><span class="pn">1</span>Identity</h2><p class="note">the key, and nothing else, decides the mark</p><div class="scroll"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1576 592" width="1576" height="592" font-family="ui-sans-serif, system-ui, sans-serif" class="sheet">
+<section id="page-1"><h2><span class="pn">1</span>Identity</h2><p class="note">the key, and nothing else, decides the mark</p><div class="scroll"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1576 579" width="1576" height="579" font-family="ui-sans-serif, system-ui, sans-serif" class="sheet">
 <defs>
 <marker id="a0p1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5c636b"/></marker>
 <marker id="a1p1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1d4ed8"/></marker>
@@ -283,7 +273,7 @@ points the way the work goes. Out of scope and drawn nowhere:
  .elab { font-family: ui-monospace, monospace; font-size: 10.5px; fill: #6b7280; }
  .elabg { font-family: ui-monospace, monospace; font-size: 10.5px; fill: #1d4ed8; }
 </style>
-<rect width="1576" height="592" fill="#ffffff"/>
+<rect width="1576" height="579" fill="#ffffff"/>
 <text x="32" y="51" class="hd">WHAT DRAWS WITH IT</text>
 <line x1="32" y1="59" x2="408" y2="59" class="rule"/>
 <text x="434" y="51" class="hd">DERIVING A SEED, WHEN NOTHING IS RECORDED</text>
@@ -301,17 +291,16 @@ points the way the work goes. Out of scope and drawn nowhere:
 <path d="M144.8,292.0 L144.8,302.0" fill="none" stroke="#5c636b" stroke-width="1.15" stroke-linejoin="round" marker-end="url(#a0p1)"/>
 <path d="M144.8,360.7 L144.8,370.7" fill="none" stroke="#a8761a" stroke-width="1.15" stroke-linejoin="round" marker-end="url(#a3p1)"/>
 <path d="M546.8,135.3 L546.8,145.3" fill="none" stroke="#5c636b" stroke-width="1.15" stroke-linejoin="round" marker-end="url(#a0p1)"/>
-<path d="M810,124.6 H826 V304.1 H810" fill="none" stroke="#5c636b" stroke-width="1.15" stroke-linejoin="round" marker-end="url(#a0p1)"/>
+<path d="M810,124.6 H826 V291.5 H810" fill="none" stroke="#5c636b" stroke-width="1.15" stroke-linejoin="round" marker-end="url(#a0p1)"/>
 <path d="M772.4,64 V80 H948.8 V145.3" fill="none" stroke="#5c636b" stroke-width="1.15" stroke-linejoin="round" marker-end="url(#a0p1)"/>
 <path d="M546.8,216.60000000000002 L546.8,226.60000000000002" fill="none" stroke="#a8761a" stroke-width="1.15" stroke-linejoin="round" marker-end="url(#a3p1)"/>
-<path d="M546.8,354.00000000000006 L546.8,364.00000000000006" fill="none" stroke="#9aa2ab" stroke-width="1.15" stroke-dasharray="4 3" stroke-linejoin="round" marker-end="url(#a5p1)"/>
-<path d="M546.8,422.70000000000005 L546.8,432.70000000000005" fill="none" stroke="#5c636b" stroke-width="1.15" stroke-linejoin="round" marker-end="url(#a0p1)"/>
-<path d="M810,381.6 H823.0 V89.0 H836" fill="none" stroke="#5c636b" stroke-width="1.15" stroke-linejoin="round" marker-end="url(#a0p1)"/>
-<path d="M546.8,491.40000000000003 L546.8,501.40000000000003" fill="none" stroke="#a8761a" stroke-width="1.15" stroke-linejoin="round" marker-end="url(#a3p1)"/>
+<path d="M546.8,341.40000000000003 L546.8,351.40000000000003" fill="none" stroke="#9aa2ab" stroke-width="1.15" stroke-dasharray="4 3" stroke-linejoin="round" marker-end="url(#a5p1)"/>
+<path d="M546.8,410.1 L546.8,420.1" fill="none" stroke="#5c636b" stroke-width="1.15" stroke-linejoin="round" marker-end="url(#a0p1)"/>
+<path d="M810,369.0 H823.0 V89.0 H836" fill="none" stroke="#5c636b" stroke-width="1.15" stroke-linejoin="round" marker-end="url(#a0p1)"/>
+<path d="M546.8,478.8 L546.8,488.8" fill="none" stroke="#a8761a" stroke-width="1.15" stroke-linejoin="round" marker-end="url(#a3p1)"/>
 <path d="M948.8,135.3 L948.8,214.0" fill="none" stroke="#5c636b" stroke-width="1.15" stroke-linejoin="round" marker-end="url(#a0p1)"/>
 <path d="M1212,243.3 H1225.0 V93.3 H1238" fill="none" stroke="#15181c" stroke-width="1.8" stroke-linejoin="round" marker-end="url(#a4p1)"/>
 <path d="M1329.8,122.7 L1329.8,132.7" fill="none" stroke="#15181c" stroke-width="1.8" stroke-linejoin="round" marker-end="url(#a4p1)"/>
-<path d="M1452.2,122.7 L1452.2,176.7" fill="none" stroke="#15181c" stroke-width="1.15" stroke-linejoin="round" marker-end="url(#a4p1)"/>
 <a href="#i0-4"><path d="M44,64 H408 V98 H44 L32,81.0 Z" class="bref"/><text x="54" y="85" class="refn">0.4</text><text x="88" y="85" class="reft">and render · doctor</text></a>
 <g id="i1-1" class="item">
 <title>key — str — The one string the mark depends on: &lt;mapping version&gt;:&lt;seed&gt;, hashed verbatim.
@@ -373,42 +362,41 @@ override — file → str — A committed .repository-identicon holding a seed, 
 <g id="i1-7" class="item">
 <title>override — file → str — A committed .repository-identicon holding a seed, outranking the git remote.
 seed — str — The identity alone, without the version: github.com/owner/repo.</title>
-<rect x="434" y="226.60000000000002" width="376" height="46.1" rx="5" class="bext"/>
+<rect x="434" y="226.60000000000002" width="376" height="33.5" rx="5" class="bext"/>
 <text x="446" y="246.60000000000002" class="badge">1.7</text>
 <text xml:space="preserve" x="480" y="246.60000000000002" class="tie">.repository-identicon</text>
-<text xml:space="preserve" x="446" y="261.1" class="sbe">and .claude-state-identicon, on read only</text>
 </g>
 <g id="i1-8" class="item">
 
-<rect x="434" y="282.70000000000005" width="376" height="71.3" rx="5" class="bfn"/>
-<text x="446" y="302.70000000000005" class="badge">1.8</text>
-<text xml:space="preserve" x="480" y="302.70000000000005" class="ti">repo_toplevel(path)</text>
-<text xml:space="preserve" x="446" y="317.20000000000005" class="ret">→ the worktree root, or None</text>
-<text xml:space="preserve" x="446" y="329.80000000000007" class="sb">Returns the worktree&#x27;s own root, which differs between worktrees of</text>
-<text xml:space="preserve" x="446" y="342.40000000000003" class="sb">one repository.</text>
+<rect x="434" y="270.1" width="376" height="71.3" rx="5" class="bfn"/>
+<text x="446" y="290.1" class="badge">1.8</text>
+<text xml:space="preserve" x="480" y="290.1" class="ti">repo_toplevel(path)</text>
+<text xml:space="preserve" x="446" y="304.6" class="ret">→ the worktree root, or None</text>
+<text xml:space="preserve" x="446" y="317.20000000000005" class="sb">Returns the worktree&#x27;s own root, which differs between worktrees of</text>
+<text xml:space="preserve" x="446" y="329.8" class="sb">one repository.</text>
 </g>
 <g id="i1-9" class="item">
 
-<rect x="434" y="364.00000000000006" width="376" height="58.7" rx="5" class="bfn"/>
-<text x="446" y="384.00000000000006" class="badge">1.9</text>
-<text xml:space="preserve" x="480" y="384.00000000000006" class="ti">repo_remote_url(path)</text>
-<text xml:space="preserve" x="446" y="398.50000000000006" class="ret">→ a remote URL, or None</text>
-<text xml:space="preserve" x="446" y="411.1000000000001" class="sb">Prefers origin, then whichever remote is listed first.</text>
+<rect x="434" y="351.40000000000003" width="376" height="58.7" rx="5" class="bfn"/>
+<text x="446" y="371.40000000000003" class="badge">1.9</text>
+<text xml:space="preserve" x="480" y="371.40000000000003" class="ti">repo_remote_url(path)</text>
+<text xml:space="preserve" x="446" y="385.90000000000003" class="ret">→ a remote URL, or None</text>
+<text xml:space="preserve" x="446" y="398.50000000000006" class="sb">Prefers origin, then whichever remote is listed first.</text>
 </g>
 <g id="i1-10" class="item">
 
-<rect x="434" y="432.70000000000005" width="376" height="58.7" rx="5" class="bfn"/>
-<text x="446" y="452.70000000000005" class="badge">1.10</text>
-<text xml:space="preserve" x="480" y="452.70000000000005" class="ti">_git(args, cwd)</text>
-<text xml:space="preserve" x="446" y="467.20000000000005" class="ret">→ stripped stdout, or None on any failure</text>
-<text xml:space="preserve" x="446" y="479.80000000000007" class="sb">The only subprocess this repository runs.</text>
+<rect x="434" y="420.1" width="376" height="58.7" rx="5" class="bfn"/>
+<text x="446" y="440.1" class="badge">1.10</text>
+<text xml:space="preserve" x="480" y="440.1" class="ti">_git(args, cwd)</text>
+<text xml:space="preserve" x="446" y="454.6" class="ret">→ stripped stdout, or None on any failure</text>
+<text xml:space="preserve" x="446" y="467.20000000000005" class="sb">The only subprocess this repository runs.</text>
 </g>
 <g id="i1-11" class="item">
 
-<rect x="434" y="501.40000000000003" width="376" height="46.1" rx="5" class="bext"/>
-<text x="446" y="521.4000000000001" class="badge">1.11</text>
-<text xml:space="preserve" x="480" y="521.4000000000001" class="tie">git</text>
-<text xml:space="preserve" x="446" y="535.9000000000001" class="sbe">rev-parse --show-toplevel · remote get-url</text>
+<rect x="434" y="488.8" width="376" height="46.1" rx="5" class="bext"/>
+<text x="446" y="508.8" class="badge">1.11</text>
+<text xml:space="preserve" x="480" y="508.8" class="tie">git</text>
+<text xml:space="preserve" x="446" y="523.3" class="sbe">rev-parse --show-toplevel · remote get-url</text>
 </g>
 <g id="i1-12" class="item">
 <title>seed — str — The identity alone, without the version: github.com/owner/repo.</title>
@@ -458,15 +446,14 @@ mapping version — str, dotted — The label stamped into the key saying which 
 <text xml:space="preserve" x="1250" y="111.1" class="sbw">Hashed exactly as it reads.</text>
 </g>
 <a href="#i2-1"><path d="M1238,132.7 H1532 L1544,149.7 L1532,166.7 H1238 Z" class="bref"/><text x="1250" y="153.7" class="refn">2.1</text><text x="1284" y="153.7" class="reft">the mark comes off its md5</text></a>
-<a href="#i3-1"><path d="M1238,176.7 H1532 L1544,193.7 L1532,210.7 H1238 Z" class="bref"/><text x="1250" y="197.7" class="refn">3.1</text><text x="1284" y="197.7" class="reft">the names come off a sha256</text></a>
 <g id="i1-17" class="item">
 
-<rect x="1238" y="220.7" width="306" height="71.3" rx="5" class="bdata"/>
-<text x="1250" y="240.7" class="badge">1.17</text>
-<text xml:space="preserve" x="1284" y="240.7" class="tid">cmd_doctor(args)</text>
-<text xml:space="preserve" x="1250" y="255.2" class="ret">→ 0</text>
-<text xml:space="preserve" x="1250" y="267.8" class="sbd">Reports what this tool needs that is not in</text>
-<text xml:space="preserve" x="1250" y="280.4" class="sbd">this file, and writes nothing.</text>
+<rect x="1238" y="176.7" width="306" height="71.3" rx="5" class="bdata"/>
+<text x="1250" y="196.7" class="badge">1.17</text>
+<text xml:space="preserve" x="1284" y="196.7" class="tid">cmd_doctor(args)</text>
+<text xml:space="preserve" x="1250" y="211.2" class="ret">→ 0</text>
+<text xml:space="preserve" x="1250" y="223.79999999999998" class="sbd">Reports what this tool needs that is not in</text>
+<text xml:space="preserve" x="1250" y="236.39999999999998" class="sbd">this file, and writes nothing.</text>
 </g>
 </svg></div></section>
 <section id="page-2"><h2><span class="pn">2</span>Derivation</h2><p class="note">what SPEC.md pins and vectors.json holds a port to</p><div class="scroll"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1556 472" width="1556" height="472" font-family="ui-sans-serif, system-ui, sans-serif" class="sheet">
@@ -684,7 +671,7 @@ artifact — file, one of eleven — One of the eleven rendered files in .identi
 <a href="#i4-3"><path d="M1238,349.6 H1512 L1524,366.6 L1512,383.6 H1238 Z" class="bref"/><text x="1250" y="370.6" class="refn">4.3</text><text x="1284" y="370.6" class="reft">every renderer takes both</text></a>
 <a href="#i6-5"><path d="M1238,393.6 H1512 L1524,410.6 L1512,427.6 H1238 Z" class="bref"/><text x="1250" y="414.6" class="refn">6.5</text><text x="1284" y="414.6" class="reft">.colour and .grid</text></a>
 </svg></div></section>
-<section id="page-3"><h2><span class="pn">3</span>Names and geometry</h2><p class="note">the rest of what the key decides, and the canvas maths</p><div class="scroll"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 441" width="1400" height="441" font-family="ui-sans-serif, system-ui, sans-serif" class="sheet">
+<section id="page-3"><h2><span class="pn">3</span>Geometry</h2><p class="note"></p><div class="scroll"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 316" width="1400" height="316" font-family="ui-sans-serif, system-ui, sans-serif" class="sheet">
 <defs>
 <marker id="a0p3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5c636b"/></marker>
 <marker id="a1p3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1d4ed8"/></marker>
@@ -734,61 +721,12 @@ artifact — file, one of eleven — One of the eleven rendered files in .identi
  .elab { font-family: ui-monospace, monospace; font-size: 10.5px; fill: #6b7280; }
  .elabg { font-family: ui-monospace, monospace; font-size: 10.5px; fill: #1d4ed8; }
 </style>
-<rect width="1400" height="441" fill="#ffffff"/>
-<text x="32" y="51" class="hd">NAMES</text>
-<text x="32" y="65" class="hn">all four are fixed by SPEC.md § Derived names</text>
-<line x1="32" y1="71" x2="428" y2="71" class="rule"/>
+<rect width="1400" height="316" fill="#ffffff"/>
 <text x="454" y="51" class="hd">GEOMETRY</text>
 <text x="454" y="65" class="hn">nothing here takes a key</text>
 <line x1="454" y1="71" x2="850" y2="71" class="rule"/>
 <text x="876" y="51" class="hd">WHO USES THEM</text>
-<text x="876" y="65" class="hn">SPEC.md fixes the short id, the discriminator, the project name, the</text>
-<text x="876" y="77" class="hn">badge label and the icon theme name. It says nothing about how a terminal</text>
-<text x="876" y="89" class="hn">emulator names a profile, which is why those three left with the code</text>
-<text x="876" y="101" class="hn">that installed them.</text>
-<line x1="876" y1="107" x2="1272" y2="107" class="rule"/>
-<path d="M150.8,110 L150.8,120" fill="none" stroke="#15181c" stroke-width="1.8" stroke-linejoin="round" marker-end="url(#a4p3)"/>
-<path d="M368.6,178.7 L368.6,188.7" fill="none" stroke="#9aa2ab" stroke-width="1.15" stroke-dasharray="4 3" stroke-linejoin="round" marker-end="url(#a5p3)"/>
-<path d="M428,143.5 H442 V362.2 H428" fill="none" stroke="#5c636b" stroke-width="1.15" stroke-linejoin="round" marker-end="url(#a0p3)"/>
-<path d="M150.8,247.39999999999998 L150.8,257.4" fill="none" stroke="#5c636b" stroke-width="1.15" stroke-linejoin="round" marker-end="url(#a0p3)"/>
-<a href="#i1-16"><path d="M44,76 H428 V110 H44 L32,93.0 Z" class="bref"/><text x="54" y="97" class="refn">1.16</text><text x="88" y="97" class="reft">the key, through a second digest</text></a>
-<g id="i3-1" class="item">
-<title>short id — str, 12 hex — The first 12 characters of sha256(key).
-discriminator — str, 6 hex — The first 6, for telling apart two projects sharing a basename.
-key — str — The one string the mark depends on: &lt;mapping version&gt;:&lt;seed&gt;, hashed verbatim.</title>
-<rect x="32" y="120" width="396" height="58.7" rx="5" class="bfn"/>
-<text x="44" y="140" class="badge">3.1</text>
-<text xml:space="preserve" x="78" y="140.0" class="ti">short_hash(key, length=12)</text>
-<text xml:space="preserve" x="44" y="154.5" class="ret">→ the first `length` hex characters</text>
-<text xml:space="preserve" x="44" y="167.1" class="sb">Returns sha256 of the key, not the md5 the mark is drawn from.</text>
-</g>
-<g id="i3-2" class="item">
-<title>project name — str — The last /-separated segment of the key, or all of it.</title>
-<rect x="32" y="188.7" width="396" height="58.7" rx="5" class="bfn"/>
-<text x="44" y="208.7" class="badge">3.2</text>
-<text xml:space="preserve" x="78" y="208.7" class="ti">project_name(key)</text>
-<text xml:space="preserve" x="44" y="223.2" class="ret">→ the last path segment of the key</text>
-<text xml:space="preserve" x="44" y="235.79999999999998" class="sb">Used by badge_label, and printed by `show`.</text>
-</g>
-<g id="i3-3" class="item">
-<title>badge label — str, 1–2 chars — One or two upper-case characters, for a medium that can show no more.
-project name — str — The last /-separated segment of the key, or all of it.</title>
-<rect x="32" y="257.4" width="396" height="71.3" rx="5" class="bfn"/>
-<text x="44" y="277.4" class="badge">3.3</text>
-<text xml:space="preserve" x="78" y="277.4" class="ti">badge_label(key, limit=2)</text>
-<text xml:space="preserve" x="44" y="291.9" class="ret">→ one or two upper-case characters</text>
-<text xml:space="preserve" x="44" y="304.5" class="sb">Initials where the name has separators, otherwise the leading</text>
-<text xml:space="preserve" x="44" y="317.09999999999997" class="sb">characters.</text>
-</g>
-<g id="i3-4" class="item">
-<title>icon theme name — str — &lt;tool prefix&gt;-&lt;short id&gt;. A name resolved through the icon theme, never a path.
-short id — str, 12 hex — The first 12 characters of sha256(key).</title>
-<rect x="32" y="338.7" width="396" height="58.7" rx="5" class="bfn"/>
-<text x="44" y="358.7" class="badge">3.4</text>
-<text xml:space="preserve" x="78" y="358.7" class="ti">icon_name(key)</text>
-<text xml:space="preserve" x="44" y="373.2" class="ret">→ &lt;ICON_PREFIX&gt;-&lt;short id&gt;</text>
-<text xml:space="preserve" x="44" y="385.8" class="sb">Formats the icon theme name. Nothing in this repository installs icons.</text>
-</g>
+<line x1="876" y1="59" x2="1272" y2="59" class="rule"/>
 <g id="i3-5" class="item">
 <title>block — int, px — The pixel edge of one grid cell — the specified quantity.
 border — int, px — The margin in pixels on each side. Chrome rather than content.
@@ -799,37 +737,28 @@ canvas — int, px — 5·block + 2·border. Always derived, never specified.</t
 <text xml:space="preserve" x="466" y="110.5" class="ret">→ the square canvas those imply</text>
 <text xml:space="preserve" x="466" y="123.1" class="sb">The canvas is always derived from the block, never the reverse.</text>
 </g>
-<g id="i3-6" class="item">
-<title>fitting — int px → int — Choosing the largest block that fits a canvas someone else fixed.
-canvas — int, px — 5·block + 2·border. Always derived, never specified.</title>
-<rect x="454" y="144.7" width="396" height="58.7" rx="5" class="bfn"/>
-<text x="466" y="164.7" class="badge">3.6</text>
-<text xml:space="preserve" x="500" y="164.7" class="ti">fit_block(edge, border=1)</text>
-<text xml:space="preserve" x="466" y="179.2" class="ret">→ the largest block that fits</text>
-<text xml:space="preserve" x="466" y="191.79999999999998" class="sb">Used where the canvas size is fixed by something else.</text>
-</g>
 <g id="i3-7" class="item">
 <title>block — int, px — The pixel edge of one grid cell — the specified quantity.
 border — int, px — The margin in pixels on each side. Chrome rather than content.
 canvas — int, px — 5·block + 2·border. Always derived, never specified.</title>
-<rect x="454" y="213.39999999999998" width="396" height="58.7" rx="5" class="bfn"/>
-<text x="466" y="233.39999999999998" class="badge">3.7</text>
-<text xml:space="preserve" x="500" y="233.39999999999998" class="ti">large_geometry(canvas)</text>
-<text xml:space="preserve" x="466" y="247.89999999999998" class="ret">→ (block, border), or it raises</text>
-<text xml:space="preserve" x="466" y="260.5" class="sb">Raises unless the canvas is a multiple of 32.</text>
+<rect x="454" y="144.7" width="396" height="58.7" rx="5" class="bfn"/>
+<text x="466" y="164.7" class="badge">3.7</text>
+<text xml:space="preserve" x="500" y="164.7" class="ti">large_geometry(canvas)</text>
+<text xml:space="preserve" x="466" y="179.2" class="ret">→ (block, border), or it raises</text>
+<text xml:space="preserve" x="466" y="191.79999999999998" class="sb">Raises unless the canvas is a multiple of 32.</text>
 </g>
 <g id="i3-8" class="item">
 
-<rect x="454" y="282.09999999999997" width="396" height="58.7" rx="5" class="bdata"/>
-<text x="466" y="302.09999999999997" class="badge">3.8</text>
-<text xml:space="preserve" x="500" y="302.09999999999997" class="tid">gone to Console-Colophon</text>
-<text xml:space="preserve" x="466" y="316.59999999999997" class="sbd">profile_name · profile_filename · profile_body · install_icon</text>
-<text xml:space="preserve" x="466" y="329.2" class="sbd">· install_profile</text>
+<rect x="454" y="213.39999999999998" width="396" height="58.7" rx="5" class="bdata"/>
+<text x="466" y="233.39999999999998" class="badge">3.8</text>
+<text xml:space="preserve" x="500" y="233.39999999999998" class="tid">gone to Console-Colophon</text>
+<text xml:space="preserve" x="466" y="247.89999999999998" class="sbd">profile_name · profile_filename · profile_body · install_icon</text>
+<text xml:space="preserve" x="466" y="260.5" class="sbd">· install_profile</text>
 </g>
-<a href="#i0-4"><path d="M888,112 H1272 V146 H888 L876,129.0 Z" class="bref"/><text x="898" y="133" class="refn">0.4</text><text x="932" y="133" class="reft">show prints all four names</text></a>
-<a href="#i4-3"><path d="M876,156 H1260 L1272,173.0 L1260,190 H876 Z" class="bref"/><text x="888" y="177" class="refn">4.3</text><text x="922" y="177" class="reft">canvas_edge sizes the canvas</text></a>
-<a href="#i6-5"><path d="M876,200 H1260 L1272,217.0 L1260,234 H876 Z" class="bref"/><text x="888" y="221" class="refn">6.5</text><text x="922" y="221" class="reft">large_geometry sizes 128 and 256</text></a>
-<a href="#i0-5"><path d="M888,244 H1272 V278 H888 L876,261.0 Z" class="bref"/><text x="898" y="265" class="refn">0.5</text><text x="932" y="265" class="reft">fit_block fits --edge</text></a>
+<a href="#i0-4"><path d="M888,64 H1272 V98 H888 L876,81.0 Z" class="bref"/><text x="898" y="85" class="refn">0.4</text><text x="932" y="85" class="reft">show prints all four names</text></a>
+<a href="#i4-3"><path d="M876,108 H1260 L1272,125.0 L1260,142 H876 Z" class="bref"/><text x="888" y="129" class="refn">4.3</text><text x="922" y="129" class="reft">canvas_edge sizes the canvas</text></a>
+<a href="#i6-5"><path d="M876,152 H1260 L1272,169.0 L1260,186 H876 Z" class="bref"/><text x="888" y="173" class="refn">6.5</text><text x="922" y="173" class="reft">large_geometry sizes 128 and 256</text></a>
+<a href="#i0-5"><path d="M888,196 H1272 V230 H888 L876,213.0 Z" class="bref"/><text x="898" y="217" class="refn">0.5</text><text x="932" y="217" class="reft"></text></a>
 </svg></div></section>
 <section id="page-4"><h2><span class="pn">4</span>Rendering</h2><p class="note">one key, five kinds of bytes — and the line § Scope draws just past them</p><div class="scroll"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1636 416" width="1636" height="416" font-family="ui-sans-serif, system-ui, sans-serif" class="sheet">
 <defs>
@@ -909,8 +838,7 @@ canvas — int, px — 5·block + 2·border. Always derived, never specified.</t
 <a href="#i0-5"><path d="M44,64 H418 V98 H44 L32,81.0 Z" class="bref"/><text x="54" y="85" class="refn">0.5</text><text x="88" y="85" class="reft">render · apply · show · doctor</text></a>
 <a href="#i2-11"><path d="M44,108 H418 V142 H44 L32,125.0 Z" class="bref"/><text x="54" y="129" class="refn">2.11</text><text x="88" y="129" class="reft">the grid and the colour, from page 2</text></a>
 <g id="i4-1" class="item">
-<title>rendering — bytes | str — Bytes for one medium, derived from the key. Not part of conformance.
-style — str, one of six — Which rendering a consumer asks for: icon, image, text, full, banner or line. SPEC.md ranks the renderings; these names are Console-Colophon&#x27;s, and left with it.</title>
+<title>rendering — bytes | str — Bytes for one medium, derived from the key. Not part of conformance.</title>
 <rect x="32" y="152" width="386" height="121.7" rx="5" class="bdata"/>
 <text x="44" y="172" class="badge">4.1</text>
 <text xml:space="preserve" x="78" y="172.0" class="tid">where § Scope cuts</text>
@@ -934,8 +862,7 @@ block — int, px — The pixel edge of one grid cell — the specified quantity
 <g id="i4-3" class="item">
 <title>block — int, px — The pixel edge of one grid cell — the specified quantity.
 border — int, px — The margin in pixels on each side. Chrome rather than content.
-canvas — int, px — 5·block + 2·border. Always derived, never specified.
-fitting — int px → int — Choosing the largest block that fits a canvas someone else fixed.</title>
+canvas — int, px — 5·block + 2·border. Always derived, never specified.</title>
 <rect x="444" y="132.7" width="376" height="74.2" rx="5" class="bfn"/>
 <text x="456" y="152.7" class="badge">4.3</text>
 <text xml:space="preserve" x="490" y="152.7" class="ti">render_rgba(key, block, border, chroma,</text>
@@ -960,15 +887,6 @@ block — int, px — The pixel edge of one grid cell — the specified quantity
 <text xml:space="preserve" x="456" y="321.09999999999997" class="ti">           lightness, background)</text>
 <text xml:space="preserve" x="456" y="335.59999999999997" class="ret">→ an SVG document</text>
 <text xml:space="preserve" x="456" y="348.2" class="sb">One &lt;rect&gt; per foreground cell, at the same geometry as the raster.</text>
-</g>
-<g id="i4-6" class="item">
-<title>grid — 5×5 of bool — From digest characters 0–14, drawn down the centre column and mirrored outwards.
-rendering — bytes | str — Bytes for one medium, derived from the key. Not part of conformance.</title>
-<rect x="846" y="100" width="376" height="58.7" rx="5" class="bfn"/>
-<text x="858" y="120" class="badge">4.6</text>
-<text xml:space="preserve" x="892" y="120.0" class="ti">render_ansi(key)</text>
-<text xml:space="preserve" x="858" y="134.5" class="ret">→ five lines of escape sequences</text>
-<text xml:space="preserve" x="858" y="147.1" class="sb">Two spaces per cell on a background colour, for `show`.</text>
 </g>
 <g id="i4-7" class="item">
 
@@ -1202,37 +1120,25 @@ arrangement — tuple of 3 int — The order the three colours are laid out in, 
 <text xml:space="preserve" x="868" y="384.8" class="ret">→ Oklab coordinates · linear light · sRGB</text>
 <text xml:space="preserve" x="868" y="397.40000000000003" class="sb">Converts between sRGB, linear light and Oklab.</text>
 </g>
-<g id="i5-14" class="item">
-<title>the triple — 3 of 9 colours — Three of the palette&#x27;s nine colours standing for the mark&#x27;s colour, where neither an image nor an escape sequence survives. One emoji each.
-vendoring — a practice — Carrying your own copy of the derivation rather than depending on this one.</title>
-<rect x="1278" y="64" width="366" height="102.3" rx="5" class="bfn"/>
-<text x="1290" y="84" class="badge">5.14</text>
-<text xml:space="preserve" x="1324" y="84.0" class="ti">tricolour_names(rgb, grid)</text>
-<text xml:space="preserve" x="1290" y="99.5" class="ti">                tricolour_detail(rgb, grid)</text>
-<text xml:space="preserve" x="1290" y="115.0" class="ti">                hex_colour(rgb)</text>
-<text xml:space="preserve" x="1290" y="129.5" class="ret">→ the colour names · everything about the choice · #rrggbb</text>
-<text xml:space="preserve" x="1290" y="142.1" class="sb">Called by the tools that vendor this file, to log or explain a</text>
-<text xml:space="preserve" x="1290" y="154.7" class="sb">mark.</text>
-</g>
 <g id="i5-15" class="item">
 <title>grid — 5×5 of bool — From digest characters 0–14, drawn down the centre column and mirrored outwards.</title>
-<rect x="1278" y="176.3" width="366" height="58.7" rx="5" class="bfn"/>
-<text x="1290" y="196.3" class="badge">5.15</text>
-<text xml:space="preserve" x="1324" y="196.3" class="ti">parse_grid(text) · parse_hex(value)</text>
-<text xml:space="preserve" x="1290" y="210.8" class="ret">→ a grid · an (r, g, b) triple</text>
-<text xml:space="preserve" x="1290" y="223.4" class="sb">Used by this file&#x27;s own command line.</text>
+<rect x="1278" y="64" width="366" height="58.7" rx="5" class="bfn"/>
+<text x="1290" y="84" class="badge">5.15</text>
+<text xml:space="preserve" x="1324" y="84.0" class="ti">parse_grid(text) · parse_hex(value)</text>
+<text xml:space="preserve" x="1290" y="98.5" class="ret">→ a grid · an (r, g, b) triple</text>
+<text xml:space="preserve" x="1290" y="111.1" class="sb">Used by this file&#x27;s own command line.</text>
 </g>
 <g id="i5-16" class="item">
 <title>octant — str, 1 char — One of 256 patterns over a 2×4 lattice; one glyph carries a 2×4 patch of the grid.
 sextant — str, 1 char — One of 64 patterns over a 2×3 lattice; four years older in Unicode, so more fonts have it, and what .txt is drawn on.
 the palette — 9 colours — Nine colours, each anchored on the colour word in the name of the character that carries it. A colour is drawn as a square here; shape is a separate channel.</title>
-<rect x="1278" y="245.0" width="366" height="86.8" rx="5" class="bfn"/>
-<text x="1290" y="265.0" class="badge">5.16</text>
-<text xml:space="preserve" x="1324" y="265.0" class="ti">selftest() · _recover(lines, lattice)</text>
-<text xml:space="preserve" x="1290" y="280.5" class="ti">         _main(argv)</text>
-<text xml:space="preserve" x="1290" y="295.0" class="ret">→ True, or an assertion fails</text>
-<text xml:space="preserve" x="1290" y="307.6" class="sb">Re-derives both tables from unicodedata, and reads every rendered</text>
-<text xml:space="preserve" x="1290" y="320.2" class="sb">mark back to its grid.</text>
+<rect x="1278" y="132.7" width="366" height="86.8" rx="5" class="bfn"/>
+<text x="1290" y="152.7" class="badge">5.16</text>
+<text xml:space="preserve" x="1324" y="152.7" class="ti">selftest() · _recover(lines, lattice)</text>
+<text xml:space="preserve" x="1290" y="168.2" class="ti">         _main(argv)</text>
+<text xml:space="preserve" x="1290" y="182.7" class="ret">→ True, or an assertion fails</text>
+<text xml:space="preserve" x="1290" y="195.29999999999998" class="sb">Re-derives both tables from unicodedata, and reads every rendered</text>
+<text xml:space="preserve" x="1290" y="207.89999999999998" class="sb">mark back to its grid.</text>
 </g>
 </svg></div></section>
 <section id="page-6"><h2><span class="pn">6</span>Into the repository</h2><p class="note">`apply` — what the project is for</p><div class="scroll"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1660 537" width="1660" height="537" font-family="ui-sans-serif, system-ui, sans-serif" class="sheet">
@@ -1318,7 +1224,7 @@ the palette — 9 colours — Nine colours, each anchored on the colour word in 
 <g id="i6-1" class="item">
 <title>key — str — The one string the mark depends on: &lt;mapping version&gt;:&lt;seed&gt;, hashed verbatim.
 seed drift — str | None — What this repository would seed as today, differing from what is recorded. Reported, never acted on.
-masking — str | None — An override in force while the git remote says something else.
+overridden_remote — str | None — An override in force while the git remote says something else.
 reseed / remap — bool, bool — The two deliberate acts that move a mark: reseed adopts today&#x27;s seed, remap keeps the seed and moves the mapping.
 current — bool — True when every artifact already holds the bytes it should.
 recorded key — str | None — The payload line of the key file, which outranks every derivation.</title>
@@ -1337,7 +1243,7 @@ recorded key — str | None — The payload line of the key file, which outranks
 <text x="44" y="273.4" class="badge">6.2</text>
 <text xml:space="preserve" x="78" y="273.4" class="tid">the keys of that dict</text>
 <text xml:space="preserve" x="44" y="287.9" class="sbd">key · seed · mapping_version · source · root · colour</text>
-<text xml:space="preserve" x="44" y="300.5" class="sbd">files · changes · current · checked · masking</text>
+<text xml:space="preserve" x="44" y="300.5" class="sbd">files · changes · current · checked · overridden_remote</text>
 <text xml:space="preserve" x="44" y="313.09999999999997" class="sbd">seed_drift · mapping_drift · reseeded · remapped</text>
 </g>
 <a href="#i1-5"><path d="M32,334.7 H436 L448,351.7 L436,368.7 H32 Z" class="bref"/><text x="44" y="355.7" class="refn">1.5</text><text x="78" y="355.7" class="reft">and 1.4 · 1.10 · 1.11 beside it</text></a>
@@ -1505,8 +1411,7 @@ prior — file — stem.prior.suffix — the bytes a run replaced, kept one leve
 <text x="936" y="77" class="hn">the two ideas that would close it.</text>
 <line x1="936" y1="83" x2="1362" y2="83" class="rule"/>
 <g id="i7-1" class="item">
-<title>rendering — bytes | str — Bytes for one medium, derived from the key. Not part of conformance.
-style — str, one of six — Which rendering a consumer asks for: icon, image, text, full, banner or line. SPEC.md ranks the renderings; these names are Console-Colophon&#x27;s, and left with it.</title>
+<title>rendering — bytes | str — Bytes for one medium, derived from the key. Not part of conformance.</title>
 <rect x="32" y="88" width="426" height="121.7" rx="5" class="bdata"/>
 <text x="44" y="108" class="badge">7.1</text>
 <text xml:space="preserve" x="78" y="108.0" class="tid">SPEC.md § Terminal</text>
@@ -1549,8 +1454,7 @@ style — str, one of six — Which rendering a consumer asks for: icon, image, 
 <text xml:space="preserve" x="496" y="210.7" class="sbd">caller rather than of a rendering.</text>
 </g>
 <g id="i7-4" class="item">
-<title>artifact — file, one of eleven — One of the eleven rendered files in .identicon/ — a cache with a canonical location, not a source.
-style — str, one of six — Which rendering a consumer asks for: icon, image, text, full, banner or line. SPEC.md ranks the renderings; these names are Console-Colophon&#x27;s, and left with it.</title>
+<title>artifact — file, one of eleven — One of the eleven rendered files in .identicon/ — a cache with a canonical location, not a source.</title>
 <rect x="484" y="232.3" width="426" height="109.1" rx="5" class="bdata"/>
 <text x="496" y="252.3" class="badge">7.4</text>
 <text xml:space="preserve" x="530" y="252.3" class="tid">what a consumer does instead</text>
@@ -1576,9 +1480,7 @@ canvas — int, px — 5·block + 2·border. Always derived, never specified.</t
 <text xml:space="preserve" x="948" y="185.5" class="sbd">ignores the protocol&#x27;s own width and height.</text>
 </g>
 <g id="i7-6" class="item">
-<title>vendoring — a practice — Carrying your own copy of the derivation rather than depending on this one.
-vector — dict of 4 — One pinned (key, md5, grid, foreground) in vectors.json.
-conforming — bool — Reproduces the grid and the colour of every vector.</title>
+<title>vector — dict of 4 — One pinned (key, md5, grid, foreground) in vectors.json.</title>
 <rect x="936" y="207.1" width="426" height="83.9" rx="5" class="bext"/>
 <text x="948" y="227.1" class="badge">7.6</text>
 <text xml:space="preserve" x="982" y="227.1" class="tie">Console-Colophon</text>
@@ -1676,37 +1578,29 @@ conforming — bool — Reproduces the grid and the colour of every vector.</tit
 </g>
 <g id="i8-4" class="item">
 
-<rect x="718" y="64" width="660" height="96.5" rx="5" class="bdata"/>
+<rect x="718" y="64" width="660" height="58.7" rx="5" class="bdata"/>
 <text x="730" y="84" class="badge">8.4</text>
-<text xml:space="preserve" x="764" y="84.0" class="tid">three that look like they should have gone</text>
-<text xml:space="preserve" x="730" y="98.5" class="sbd">icon_name      SPEC.md § Derived names defines it, so it is the</text>
-<text xml:space="preserve" x="730" y="111.1" class="sbd">specification&#x27;s and not a delivery detail</text>
-<text xml:space="preserve" x="730" y="123.7" class="sbd">ICON_PREFIX    it forms that name; nothing here installs anything</text>
-<text xml:space="preserve" x="730" y="136.3" class="sbd">render_png     SPEC.md § Renderings mandates the raster and the</text>
-<text xml:space="preserve" x="730" y="148.9" class="sbd">render_svg     vector, so they are the standard and stay</text>
+<text xml:space="preserve" x="764" y="84.0" class="tid">two that look like they should have gone</text>
+<text xml:space="preserve" x="730" y="98.5" class="sbd">render_png     SPEC.md § Renderings mandates the raster and the</text>
+<text xml:space="preserve" x="730" y="111.1" class="sbd">render_svg     vector, so they are the standard and stay</text>
 </g>
 <g id="i8-5" class="item">
-<title>vendoring — a practice — Carrying your own copy of the derivation rather than depending on this one.
-vector — dict of 4 — One pinned (key, md5, grid, foreground) in vectors.json.
-conforming — bool — Reproduces the grid and the colour of every vector.
-icon theme name — str — &lt;tool prefix&gt;-&lt;short id&gt;. A name resolved through the icon theme, never a path.</title>
-<rect x="718" y="170.5" width="660" height="109.1" rx="5" class="bext"/>
-<text x="730" y="190.5" class="badge">8.5</text>
-<text xml:space="preserve" x="764" y="190.5" class="tie">Console-Colophon</text>
-<text xml:space="preserve" x="730" y="205.0" class="sbe">Vendors the derivation rather than importing it, and is held to the same</text>
-<text xml:space="preserve" x="730" y="217.6" class="sbe">vectors.json by its own suite — 26 tests, and `derive` prints the shape</text>
-<text xml:space="preserve" x="730" y="230.2" class="sbe">`validate` expects so the copy can be checked from outside:</text>
-<text xml:space="preserve" x="730" y="242.8" class="sbe">repository-identicon validate -- console-colophon derive</text>
-<text xml:space="preserve" x="730" y="255.4" class="sbe">Its ICON_PREFIX is `console-colophon`; the specification fixes the short id</text>
-<text xml:space="preserve" x="730" y="268.0" class="sbe">and leaves the prefix to the implementing tool.</text>
+<title>vector — dict of 4 — One pinned (key, md5, grid, foreground) in vectors.json.</title>
+<rect x="718" y="132.7" width="660" height="83.9" rx="5" class="bext"/>
+<text x="730" y="152.7" class="badge">8.5</text>
+<text xml:space="preserve" x="764" y="152.7" class="tie">Console-Colophon</text>
+<text xml:space="preserve" x="730" y="167.2" class="sbe">Vendors the derivation rather than importing it, and is held to the same</text>
+<text xml:space="preserve" x="730" y="179.79999999999998" class="sbe">vectors.json by its own suite — 26 tests, and `derive` prints the shape</text>
+<text xml:space="preserve" x="730" y="192.39999999999998" class="sbe">`validate` expects so the copy can be checked from outside:</text>
+<text xml:space="preserve" x="730" y="205.0" class="sbe">repository-identicon validate -- console-colophon derive</text>
 </g>
 <g id="i8-6" class="item">
 
-<rect x="718" y="289.6" width="660" height="58.7" rx="5" class="bdata"/>
-<text x="730" y="309.6" class="badge">8.6</text>
-<text xml:space="preserve" x="764" y="309.6" class="tid">nothing open</text>
-<text xml:space="preserve" x="730" y="324.1" class="sbd">`emit` and `hooks` were the last thing waiting on somebody</text>
-<text xml:space="preserve" x="730" y="336.70000000000005" class="sbd">else. They are gone, and page 7 is what is left of them.</text>
+<rect x="718" y="226.6" width="660" height="58.7" rx="5" class="bdata"/>
+<text x="730" y="246.6" class="badge">8.6</text>
+<text xml:space="preserve" x="764" y="246.6" class="tid">nothing open</text>
+<text xml:space="preserve" x="730" y="261.1" class="sbd">`emit` and `hooks` were the last thing waiting on somebody</text>
+<text xml:space="preserve" x="730" y="273.70000000000005" class="sbd">else. They are gone, and page 7 is what is left of them.</text>
 </g>
 </svg></div></section>
 <section id="page-9"><h2><span class="pn">9</span>Conformance</h2><p class="note">`validate` — offered outward, so a port in another language does not have to build a harness to find out whether it agrees</p><div class="scroll"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 367" width="1400" height="367" font-family="ui-sans-serif, system-ui, sans-serif" class="sheet">
@@ -1806,7 +1700,6 @@ mapping version — str, dotted — The label stamped into the key saying which 
 <g id="i9-4" class="item">
 <title>key — str — The one string the mark depends on: &lt;mapping version&gt;:&lt;seed&gt;, hashed verbatim.
 seed — str — The identity alone, without the version: github.com/owner/repo.
-port — an implementation — Another implementation of the specification, in any language.
 vector — dict of 4 — One pinned (key, md5, grid, foreground) in vectors.json.</title>
 <rect x="484" y="100" width="426" height="71.3" rx="5" class="bfn"/>
 <text x="496" y="120" class="badge">9.4</text>
@@ -1816,16 +1709,14 @@ vector — dict of 4 — One pinned (key, md5, grid, foreground) in vectors.json
 <text xml:space="preserve" x="496" y="159.7" class="sb">⊗ runs the command you name</text>
 </g>
 <g id="i9-5" class="item">
-<title>port — an implementation — Another implementation of the specification, in any language.
-vendoring — a practice — Carrying your own copy of the derivation rather than depending on this one.</title>
+
 <rect x="484" y="181.3" width="426" height="46.1" rx="5" class="bext"/>
 <text x="496" y="201.3" class="badge">9.5</text>
 <text xml:space="preserve" x="530" y="201.3" class="tie">another implementation</text>
 <text xml:space="preserve" x="496" y="215.8" class="sbe">prints {&quot;grid&quot;: […], &quot;colour&quot;: &quot;#rrggbb&quot;}</text>
 </g>
 <g id="i9-6" class="item">
-<title>conforming — bool — Reproduces the grid and the colour of every vector.
-vector — dict of 4 — One pinned (key, md5, grid, foreground) in vectors.json.
+<title>vector — dict of 4 — One pinned (key, md5, grid, foreground) in vectors.json.
 rendering — bytes | str — Bytes for one medium, derived from the key. Not part of conformance.</title>
 <rect x="936" y="64" width="426" height="58.7" rx="5" class="bfn"/>
 <text x="948" y="84" class="badge">9.6</text>
@@ -1834,8 +1725,7 @@ rendering — bytes | str — Bytes for one medium, derived from the key. Not pa
 <text xml:space="preserve" x="948" y="111.1" class="sb">Compares the grid and the colour only.</text>
 </g>
 <g id="i9-7" class="item">
-<title>port — an implementation — Another implementation of the specification, in any language.
-grid — 5×5 of bool — From digest characters 0–14, drawn down the centre column and mirrored outwards.</title>
+<title>grid — 5×5 of bool — From digest characters 0–14, drawn down the centre column and mirrored outwards.</title>
 <rect x="936" y="132.7" width="426" height="58.7" rx="5" class="bfn"/>
 <text x="948" y="152.7" class="badge">9.7</text>
 <text xml:space="preserve" x="982" y="152.7" class="ti">_normalise_grid(value)</text>
@@ -1859,7 +1749,7 @@ grid — 5×5 of bool — From digest characters 0–14, drawn down the centre c
 <tr><td class="t">override</td><td class="ty">file → str</td><td class="d">A committed .repository-identicon holding a seed, outranking the git remote.</td><td class="n"><a href="#i1-6">1.6</a> · <a href="#i1-7">1.7</a></td></tr>
 <tr><td class="t">recorded key</td><td class="ty">str | None</td><td class="d">The payload line of the key file, which outranks every derivation.</td><td class="n"><a href="#i1-2">1.2</a> · <a href="#i1-4">1.4</a></td></tr>
 <tr><td class="t">seed drift</td><td class="ty">str | None</td><td class="d">What this repository would seed as today, differing from what is recorded. Reported, never acted on.</td><td class="n"><a href="#i6-1">6.1</a></td></tr>
-<tr><td class="t">masking</td><td class="ty">str | None</td><td class="d">An override in force while the git remote says something else.</td><td class="n"><a href="#i6-1">6.1</a></td></tr>
+<tr><td class="t">overridden_remote</td><td class="ty">str | None</td><td class="d">An override in force while the git remote says something else.</td><td class="n"><a href="#i6-1">6.1</a></td></tr>
 <tr><td class="t">reseed / remap</td><td class="ty">bool, bool</td><td class="d">The two deliberate acts that move a mark: reseed adopts today&#x27;s seed, remap keeps the seed and moves the mapping.</td><td class="n"><a href="#i6-1">6.1</a></td></tr>
 <tr class="g"><td colspan="4">The mark</td></tr>
 <tr><td class="t">the mark</td><td class="ty">(grid, colour)</td><td class="d">The grid and the colour together — what a reader recognises.</td><td class="n"><a href="#i2-11">2.11</a> · <a href="#i2-12">2.12</a></td></tr>
@@ -1872,13 +1762,7 @@ grid — 5×5 of bool — From digest characters 0–14, drawn down the centre c
 <tr><td class="t">block</td><td class="ty">int, px</td><td class="d">The pixel edge of one grid cell — the specified quantity.</td><td class="n"><a href="#i3-5">3.5</a></td></tr>
 <tr><td class="t">border</td><td class="ty">int, px</td><td class="d">The margin in pixels on each side. Chrome rather than content.</td><td class="n"><a href="#i3-5">3.5</a></td></tr>
 <tr><td class="t">canvas</td><td class="ty">int, px</td><td class="d">5·block + 2·border. Always derived, never specified.</td><td class="n"><a href="#i3-5">3.5</a></td></tr>
-<tr><td class="t">fitting</td><td class="ty">int px → int</td><td class="d">Choosing the largest block that fits a canvas someone else fixed.</td><td class="n"><a href="#i3-6">3.6</a></td></tr>
 <tr class="g"><td colspan="4">Names</td></tr>
-<tr><td class="t">short id</td><td class="ty">str, 12 hex</td><td class="d">The first 12 characters of sha256(key).</td><td class="n"><a href="#i3-1">3.1</a></td></tr>
-<tr><td class="t">discriminator</td><td class="ty">str, 6 hex</td><td class="d">The first 6, for telling apart two projects sharing a basename.</td><td class="n"><a href="#i3-1">3.1</a></td></tr>
-<tr><td class="t">project name</td><td class="ty">str</td><td class="d">The last /-separated segment of the key, or all of it.</td><td class="n"><a href="#i3-2">3.2</a></td></tr>
-<tr><td class="t">badge label</td><td class="ty">str, 1–2 chars</td><td class="d">One or two upper-case characters, for a medium that can show no more.</td><td class="n"><a href="#i3-3">3.3</a></td></tr>
-<tr><td class="t">icon theme name</td><td class="ty">str</td><td class="d">&lt;tool prefix&gt;-&lt;short id&gt;. A name resolved through the icon theme, never a path.</td><td class="n"><a href="#i3-4">3.4</a></td></tr>
 <tr class="g"><td colspan="4">In the repository</td></tr>
 <tr><td class="t">artifact</td><td class="ty">file, one of eleven</td><td class="d">One of the eleven rendered files in .identicon/ — a cache with a canonical location, not a source.</td><td class="n"><a href="#i6-3">6.3</a> · <a href="#i6-10">6.10</a></td></tr>
 <tr><td class="t">the key file</td><td class="ty">file</td><td class="d">The exception: the only file in .identicon/ that is a source of truth.</td><td class="n"><a href="#i1-4">1.4</a></td></tr>
@@ -1886,7 +1770,6 @@ grid — 5×5 of bool — From digest characters 0–14, drawn down the centre c
 <tr><td class="t">current</td><td class="ty">bool</td><td class="d">True when every artifact already holds the bytes it should.</td><td class="n"><a href="#i6-1">6.1</a></td></tr>
 <tr class="g"><td colspan="4">Renderings</td></tr>
 <tr><td class="t">rendering</td><td class="ty">bytes | str</td><td class="d">Bytes for one medium, derived from the key. Not part of conformance.</td><td class="n"><a href="#i4-2">4.2</a></td></tr>
-<tr><td class="t">style</td><td class="ty">str, one of six</td><td class="d">Which rendering a consumer asks for: icon, image, text, full, banner or line. SPEC.md ranks the renderings; these names are Console-Colophon&#x27;s, and left with it.</td><td class="n"><a href="#i7-1">7.1</a> · <a href="#i7-4">7.4</a></td></tr>
 <tr><td class="t">lattice</td><td class="ty">(table, int, str, int)</td><td class="d">The subcell grid a pattern is drawn on, with the numbers that produce it: the table, its sub-rows, the blank, and the padding above.</td><td class="n"><a href="#i5-5">5.5</a></td></tr>
 <tr class="g"><td colspan="4">The text mark</td></tr>
 <tr><td class="t">octant</td><td class="ty">str, 1 char</td><td class="d">One of 256 patterns over a 2×4 lattice; one glyph carries a 2×4 patch of the grid.</td><td class="n"><a href="#i5-2">5.2</a> · <a href="#i5-4">5.4</a></td></tr>
@@ -1895,12 +1778,8 @@ grid — 5×5 of bool — From digest characters 0–14, drawn down the centre c
 <tr><td class="t">arrangement</td><td class="ty">tuple of 3 int</td><td class="d">The order the three colours are laid out in, taken from the grid and never from the colour.</td><td class="n"><a href="#i5-11">5.11</a> · <a href="#i5-12">5.12</a></td></tr>
 <tr><td class="t">the palette</td><td class="ty">9 colours</td><td class="d">Nine colours, each anchored on the colour word in the name of the character that carries it. A colour is drawn as a square here; shape is a separate channel.</td><td class="n"><a href="#i5-9">5.9</a></td></tr>
 <tr class="g"><td colspan="4">Conformance</td></tr>
-<tr><td class="t">vector</td><td class="ty">dict of 4</td><td class="d">One pinned (key, md5, grid, foreground) in vectors.json.</td><td class="n"><a href="#i9-3">9.3</a> · <a href="#i9-2">9.2</a></td></tr>
-<tr><td class="t">port</td><td class="ty">an implementation</td><td class="d">Another implementation of the specification, in any language.</td><td class="n"><a href="#i9-4">9.4</a> · <a href="#i9-5">9.5</a></td></tr>
-<tr><td class="t">conforming</td><td class="ty">bool</td><td class="d">Reproduces the grid and the colour of every vector.</td><td class="n"><a href="#i9-6">9.6</a></td></tr>
-<tr><td class="t">vendoring</td><td class="ty">a practice</td><td class="d">Carrying your own copy of the derivation rather than depending on this one.</td><td class="n"><a href="#i9-5">9.5</a></td></tr></tbody></table></section>
+<tr><td class="t">vector</td><td class="ty">dict of 4</td><td class="d">One pinned (key, md5, grid, foreground) in vectors.json.</td><td class="n"><a href="#i9-3">9.3</a> · <a href="#i9-2">9.2</a></td></tr></tbody></table></section>
 <section id="index"><h2><span class="pn">·</span>Index</h2><p class="note">every numbered item, with where it is written</p><table><thead><tr><th>#</th><th>item</th><th>source</th></tr></thead><tbody><tr><td class="n"><a href="#i0-1">0.1</a></td><td class="s">main(argv)</td><td class="w">repository-identicon.py:1548</td></tr>
-<tr><td class="n"><a href="#i0-2">0.2</a></td><td class="s">_key_from_args → _resolve_from_args</td><td class="w">repository-identicon.py:1146</td></tr>
 <tr><td class="n"><a href="#i0-3">0.3</a></td><td class="s">● apply</td><td class="w">—</td></tr>
 <tr><td class="n"><a href="#i0-4">0.4</a></td><td class="s">● show</td><td class="w">—</td></tr>
 <tr><td class="n"><a href="#i0-5">0.5</a></td><td class="s">● render</td><td class="w">—</td></tr>
@@ -1937,12 +1816,7 @@ grid — 5×5 of bool — From digest characters 0–14, drawn down the centre c
 <tr><td class="n"><a href="#i2-12">2.12</a></td><td class="s">colour</td><td class="w">—</td></tr>
 <tr><td class="n"><a href="#i2-13">2.13</a></td><td class="s">grid_text(grid)</td><td class="w">repository-identicon.py:357</td></tr>
 <tr><td class="n"><a href="#i2-14">2.14</a></td><td class="s">hex_colour(rgb)</td><td class="w">repository-identicon.py:562</td></tr>
-<tr><td class="n"><a href="#i3-1">3.1</a></td><td class="s">short_hash(key, length=12)</td><td class="w">repository-identicon.py:566</td></tr>
-<tr><td class="n"><a href="#i3-2">3.2</a></td><td class="s">project_name(key)</td><td class="w">repository-identicon.py:575</td></tr>
-<tr><td class="n"><a href="#i3-3">3.3</a></td><td class="s">badge_label(key, limit=2)</td><td class="w">repository-identicon.py:580</td></tr>
-<tr><td class="n"><a href="#i3-4">3.4</a></td><td class="s">icon_name(key)</td><td class="w">repository-identicon.py:570</td></tr>
 <tr><td class="n"><a href="#i3-5">3.5</a></td><td class="s">canvas_edge(block, border)</td><td class="w">repository-identicon.py:605</td></tr>
-<tr><td class="n"><a href="#i3-6">3.6</a></td><td class="s">fit_block(edge, border=1)</td><td class="w">repository-identicon.py:616</td></tr>
 <tr><td class="n"><a href="#i3-7">3.7</a></td><td class="s">large_geometry(canvas)</td><td class="w">repository-identicon.py:78</td></tr>
 <tr><td class="n"><a href="#i3-8">3.8</a></td><td class="s">gone to Console-Colophon</td><td class="w">—</td></tr>
 <tr><td class="n"><a href="#i4-1">4.1</a></td><td class="s">where § Scope cuts</td><td class="w">—</td></tr>
@@ -1950,7 +1824,6 @@ grid — 5×5 of bool — From digest characters 0–14, drawn down the centre c
 <tr><td class="n"><a href="#i4-3">4.3</a></td><td class="s">render_rgba(key, block, border, chroma,</td><td class="w">repository-identicon.py:628</td></tr>
 <tr><td class="n"><a href="#i4-4">4.4</a></td><td class="s">encode_png(rgba, width, height)</td><td class="w">repository-identicon.py:675</td></tr>
 <tr><td class="n"><a href="#i4-5">4.5</a></td><td class="s">render_svg(key, block, border, chroma,</td><td class="w">repository-identicon.py:693</td></tr>
-<tr><td class="n"><a href="#i4-6">4.6</a></td><td class="s">render_ansi(key)</td><td class="w">repository-identicon.py:718</td></tr>
 <tr><td class="n"><a href="#i4-7">4.7</a></td><td class="s">text_module_path()</td><td class="w">repository-identicon.py:742</td></tr>
 <tr><td class="n"><a href="#i4-8">4.8</a></td><td class="s">_text_module()</td><td class="w">repository-identicon.py:746</td></tr>
 <tr><td class="n"><a href="#i5-1">5.1</a></td><td class="s">text(grid, rgb, lattice=SEXTANT_LATTICE)</td><td class="w">text-identicon.py:405</td></tr>
@@ -1966,7 +1839,6 @@ grid — 5×5 of bool — From digest characters 0–14, drawn down the centre c
 <tr><td class="n"><a href="#i5-11">5.11</a></td><td class="s">arrange(indices, grid)</td><td class="w">text-identicon.py:306</td></tr>
 <tr><td class="n"><a href="#i5-12">5.12</a></td><td class="s">grid_bits(grid)</td><td class="w">text-identicon.py:293</td></tr>
 <tr><td class="n"><a href="#i5-13">5.13</a></td><td class="s">_oklab(linear_rgb) · _linear(component)</td><td class="w">text-identicon.py:219</td></tr>
-<tr><td class="n"><a href="#i5-14">5.14</a></td><td class="s">tricolour_names(rgb, grid)</td><td class="w">text-identicon.py:370</td></tr>
 <tr><td class="n"><a href="#i5-15">5.15</a></td><td class="s">parse_grid(text) · parse_hex(value)</td><td class="w">text-identicon.py:115</td></tr>
 <tr><td class="n"><a href="#i5-16">5.16</a></td><td class="s">selftest() · _recover(lines, lattice)</td><td class="w">text-identicon.py:427</td></tr>
 <tr><td class="n"><a href="#i6-1">6.1</a></td><td class="s">install_into_repo(path, seed, block, check,</td><td class="w">repository-identicon.py:1010</td></tr>
@@ -1989,7 +1861,7 @@ grid — 5×5 of bool — From digest characters 0–14, drawn down the centre c
 <tr><td class="n"><a href="#i8-1">8.1</a></td><td class="s">SPEC.md § Scope</td><td class="w">—</td></tr>
 <tr><td class="n"><a href="#i8-2">8.2</a></td><td class="s">eight subcommands, removed</td><td class="w">—</td></tr>
 <tr><td class="n"><a href="#i8-3">8.3</a></td><td class="s">thirty symbols, removed</td><td class="w">—</td></tr>
-<tr><td class="n"><a href="#i8-4">8.4</a></td><td class="s">three that look like they should have gone</td><td class="w">—</td></tr>
+<tr><td class="n"><a href="#i8-4">8.4</a></td><td class="s">two that look like they should have gone</td><td class="w">—</td></tr>
 <tr><td class="n"><a href="#i8-5">8.5</a></td><td class="s">Console-Colophon</td><td class="w">—</td></tr>
 <tr><td class="n"><a href="#i8-6">8.6</a></td><td class="s">nothing open</td><td class="w">—</td></tr>
 <tr><td class="n"><a href="#i9-1">9.1</a></td><td class="s">vectors_path()</td><td class="w">repository-identicon.py:1291</td></tr>
