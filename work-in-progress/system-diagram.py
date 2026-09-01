@@ -109,10 +109,12 @@ MAP_CAPTION = [
 
 # Items whose id is not the name of the routine they stand for. None means the
 # item is a file, a value or a summary and has no single definition.
-ALIAS = {"t_text": "T:text", "t_encode": "T:_encode",
-         "t_octant": "T:octant", "t_lattice": "T:lattice_lines",
-         "OCTANTS": None, "PALETTE": None,
-         "LATTICES": None, "scope_line": None, "moved": None}
+ALIAS = {"t_encode": "T:_encode",
+         "t_octant": "T:octant", "t_sextant": "T:sextant",
+         "t_lattice": "T:lattice_lines", "t_names": "T:tricolour_names",
+         "OCTANTS": None, "PALETTE": None, "GLYPHS": None,
+         "LATTICES": None, "scope_line": None, "moved": None,
+         "v_matrix": None, "v_colour": None, "v_tricolour": None}
 
 
 # ======================================================================= API =

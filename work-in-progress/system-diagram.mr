@@ -15,9 +15,9 @@
 ┋┋ ━ DERIVATION
 ┊┊┊ ┄ ⸖ $fn=m2
 ┊┊┊ ┄ ⸖ $module=2
-┊┊┊ ┄ ⸆ the grid and the colour
+┊┊┊ ┄ ⸆ the matrix and the colour
 ┊┊┊ ┄ ⸖ $hands=4
-┊┊┊ ┄ ⸖ $carries=grid
+┊┊┊ ┄ ⸖ $carries=matrix
 ┊┊┊ ┄ ⸖ $hands=4
 ┊┊┊ ┄ ⸖ $carries=colour
 ┋┋ ━ RENDERING
@@ -25,7 +25,7 @@
 ┊┊┊ ┄ ⸖ $fn=m4
 ┊┊┊ ┄ ⸖ $module=4
 ┊┊┊ ┄ ⸖ $hands=5
-┊┊┊ ┄ ⸖ $carries=grid
+┊┊┊ ┄ ⸖ $carries=matrix
 ┊┊┊ ┄ ⸖ $hands=6
 ┊┊┊ ┄ ⸖ $carries=calls
 ┋┋ ━ NAMES & GEOMETRY
@@ -292,68 +292,91 @@
 ┊┊┊ ┄ ⸖ $page=2
 ┊┊┊ ┄ ⸆ what SPEC.md pins and vectors.json holds a port to
 ┋┋┋ ━ THE DIGEST
-┋┋┋┋ ━ → v_key
-┊┊┊┊┊ ┄ ⸖ $fn=r_key
+┋┋┋┋ ━ → v_seed
+┊┊┊┊┊ ┄ ⸖ $fn=r_seed
 ┊┊┊┊┊ ┄ ⸖ $offpage=in
-┊┊┊┊┊ ┄ ⸖ $target=v_key
-┊┊┊┊┊ ┄ ⸆ the key, hashed exactly as it reads
-┊┊┊┊┊ ┄ ⸖ $edge=_digest
+┊┊┊┊┊ ┄ ⸖ $target=v_seed
+┊┊┊┊┊ ┄ ⸆ the seed, hashed exactly as settings.json spells it
+┊┊┊┊┊ ┄ ⸖ $edge=hash_identicon_seed
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=value
-┋┋┋┋ ━ _digest( key)
-┊┊┊┊┊ ┄ ⸖ $number=2.1
-┊┊┊┊┊ ┄ ⸖ $fn=_digest
+┋┋┋┋ ━ hash_identicon_seed( identicon_seed)
+┊┊┊┊┊ ┄ ⸖ $number=2.1.1
+┊┊┊┊┊ ┄ ⸖ $fn=hash_identicon_seed
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:325
-┊┊┊┊┊ ┄ ⸆ Returns hex characters, not bytes: the grid and the hue index them directly.
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:330
+┊┊┊┊┊ ┄ ⸆ Splits the digest so no caller indexes an offset. Every component reads characters no other component reads.
 ┊┊┊┊┊ ┄ ⸖ $term=seed
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ 32 lowercase hex characters
-┊┊┊┊┊ ┄ ⸖ $edge=identicon_grid
+┋┋┋┋┋┋ ━ matrix
+┋┋┋┋┋┋ ━ arrangement
+┋┋┋┋┋┋ ━ shape
+┋┋┋┋┋┋ ━ colour
+┊┊┊┊┊ ┄ ⸖ $edge=identicon_matrix
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=value
-┊┊┊┊┊ ┄ ⸖ $edge=identicon_hue
+┊┊┊┊┊ ┄ ⸖ $edge=colour_map_angle
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=value
-┋┋┋┋ ━ identicon_grid( key)
-┊┊┊┊┊ ┄ ⸖ $number=2.2
-┊┊┊┊┊ ┄ ⸖ $fn=identicon_grid
+┊┊┊┊┊ ┄ ⸖ $edge=identicon_tricolour
+┊┊┊┊┊ ┄ ⸖ $sides=rl
+┊┊┊┊┊ ┄ ⸖ $carries=value
+┋┋┋ ━ THE MATRIX
+┋┋┋┋ ━ identicon_matrix( seed)
+┊┊┊┊┊ ┄ ⸖ $number=2.2.1
+┊┊┊┊┊ ┄ ⸖ $fn=identicon_matrix
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:335
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:353
 ┊┊┊┊┊ ┄ ⸆ Conforms to stewartlord/identicon.js, and is pinned in vectors.json.
-┊┊┊┊┊ ┄ ⸖ $term=grid
+┊┊┊┊┊ ┄ ⸖ $term=matrix
 ┊┊┊┊┊ ┄ ⸖ $term=vector
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ five rows of five bools
-┊┊┊┊┊ ┄ ⸖ $edge=v_grid
+┊┊┊┊┊ ┄ ⸖ $edge=v_matrix
 ┊┊┊┊┊ ┄ ⸖ $sides=rl
-┊┊┊┊┊ ┄ ⸖ $carries=grid
-┋┋┋┋ ━ identicon_hue( key)
-┊┊┊┊┊ ┄ ⸖ $number=2.3
-┊┊┊┊┊ ┄ ⸖ $fn=identicon_hue
+┊┊┊┊┊ ┄ ⸖ $carries=matrix
+┊┊┊┊┊ ┄ ⸖ $edge=matrix_text
+┊┊┊┊┊ ┄ ⸖ $sides=bt
+┊┊┊┊┊ ┄ ⸖ $carries=calls
+┋┋┋┋ ━ matrix_text( matrix)
+┊┊┊┊┊ ┄ ⸖ $number=2.2.2
+┊┊┊┊┊ ┄ ⸖ $fn=matrix_text
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:368
-┊┊┊┊┊ ┄ ⸆ Reads the last seven characters of the same digest the grid uses.
-┊┊┊┊┊ ┄ ⸖ $term=hue
-┊┊┊┊┊ ┄ ⸖ $term=grid
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:375
+┊┊┊┊┊ ┄ ⸆ The 01010 spelling vectors.json pins. Nothing in .identicon holds it; the stored matrix is booleans.
+┊┊┊┊┊ ┄ ⸖ $term=matrix
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ a fraction of a turn, 0 to 1
-┊┊┊┊┊ ┄ ⸖ $edge=warp_hue
+┋┋┋┋┋┋ ━ five lines of 01010
+┋┋┋ ━ COLOUR MAP 0, THE COLOUR
+┊┊┊┊ ┄ ⸆ Everything in this group is colour map 0's rule. A second map replaces all of it at once.
+┋┋┋┋ ━ colour_map_angle( seed)
+┊┊┊┊┊ ┄ ⸖ $number=2.3.1
+┊┊┊┊┊ ┄ ⸖ $fn=colour_map_angle
+┊┊┊┊┊ ┄ ⸖ $kind=fn
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:386
+┊┊┊┊┊ ┄ ⸆ 28 bits as degrees. Not a hue: the colour map is indexed at this value and the hue is this value warped.
+┊┊┊┊┊ ┄ ⸖ $term=colour map angle
+┊┊┊┊┊ ┄ ⸖ $term=hue
+┋┋┋┋┋ ━ returns
+┊┊┊┊┊┊ ┄ ⸖ $role=returns
+┋┋┋┋┋┋ ━ degrees, 0 to 360
+┊┊┊┊┊ ┄ ⸖ $edge=hue_angle
+┊┊┊┊┊ ┄ ⸖ $sides=bt
+┊┊┊┊┊ ┄ ⸖ $carries=colour
+┊┊┊┊┊ ┄ ⸖ $edge=colour_map_block
 ┊┊┊┊┊ ┄ ⸖ $sides=rl
 ┊┊┊┊┊ ┄ ⸖ $carries=colour
-┋┋┋ ━ THE ANGLE, AND WHAT SRGB WILL TAKE
-┋┋┋┋ ━ warp_hue( degrees, warp=HUE_WARP)
-┊┊┊┊┊ ┄ ⸖ $number=2.4
-┊┊┊┊┊ ┄ ⸖ $fn=warp_hue
+┋┋┋┋ ━ hue_angle( degrees, warp=HUE_WARP)
+┊┊┊┊┊ ┄ ⸖ $number=2.3.2
+┊┊┊┊┊ ┄ ⸖ $fn=hue_angle
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:450
-┊┊┊┊┊ ┄ ⸆ Advances the hue faster through 165°–265°, so fewer projects land there.
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:473
+┊┊┊┊┊ ┄ ⸆ Advances the hue faster through 165°-265°, so fewer projects land there.
 ┊┊┊┊┊ ┄ ⸖ $term=the warp
 ┊┊┊┊┊ ┄ ⸖ $term=hue
-┊┊┊┊┊ ┄ ⸖ $term=the triple
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ degrees, monotonic onto [0, 360)
@@ -361,11 +384,11 @@
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=colour
 ┋┋┋┋ ━ gamut_chroma( degrees, lightness, cap)
-┊┊┊┊┊ ┄ ⸖ $number=2.5
+┊┊┊┊┊ ┄ ⸖ $number=2.3.3
 ┊┊┊┊┊ ┄ ⸖ $fn=gamut_chroma
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:491
-┊┊┊┊┊ ┄ ⸆ Bisects with fixed bounds and 30 fixed steps, rounded to four decimals.
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:514
+┊┊┊┊┊ ┄ ⸆ Bisects with fixed bounds and 30 fixed steps. Binds at 1280 of 1440 hue steps, so the cap is not what most hues get.
 ┊┊┊┊┊ ┄ ⸖ $term=gamut chroma
 ┊┊┊┊┊ ┄ ⸖ $term=lightness / chroma
 ┋┋┋┋┋ ━ returns
@@ -379,10 +402,10 @@
 ┊┊┊┊┊ ┄ ⸖ $carries=colour
 ┋┋┋┋ ━ _oklch_to_linear( lightness, chroma,
 ┊┊┊┊┊ ┄ ⸖ $signature=degrees)
-┊┊┊┊┊ ┄ ⸖ $number=2.6
+┊┊┊┊┊ ┄ ⸖ $number=2.3.4
 ┊┊┊┊┊ ┄ ⸖ $fn=_oklch_to_linear
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:474
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:497
 ┊┊┊┊┊ ┄ ⸆ Returns unclamped channels, so the caller can test the range.
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
@@ -391,10 +414,10 @@
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
 ┋┋┋┋ ━ _encode( channel)
-┊┊┊┊┊ ┄ ⸖ $number=2.7
+┊┊┊┊┊ ┄ ⸖ $number=2.3.5
 ┊┊┊┊┊ ┄ ⸖ $fn=_encode
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:505
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:528
 ┊┊┊┊┊ ┄ ⸆ Rounds half up, not half to even.
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
@@ -402,14 +425,13 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=identicon_colour
 ┊┊┊┊┊ ┄ ⸖ $sides=rl
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
-┋┋┋ ━ THE COLOUR
-┋┋┋┋ ━ identicon_colour( key, chroma=0.26,
-┊┊┊┊┊ ┄ ⸖ $signature=lightness=0.60)
-┊┊┊┊┊ ┄ ⸖ $number=2.8
+┋┋┋┋ ━ identicon_colour( seed, chroma,
+┊┊┊┊┊ ┄ ⸖ $signature=lightness, colour_map)
+┊┊┊┊┊ ┄ ⸖ $number=2.3.6
 ┊┊┊┊┊ ┄ ⸖ $fn=identicon_colour
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:517
-┊┊┊┊┊ ┄ ⸆ Refuses a key stamped at a mapping version this build does not draw.
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:540
+┊┊┊┊┊ ┄ ⸆ Refuses a colourMap this build does not draw rather than drawing with the only map there is.
 ┊┊┊┊┊ ┄ ⸖ $term=seed
 ┊┊┊┊┊ ┄ ⸖ $term=colour map
 ┊┊┊┊┊ ┄ ⸖ $term=lightness / chroma
@@ -427,19 +449,19 @@
 ┊┊┊┊┊ ┄ ⸖ $sides=rl
 ┊┊┊┊┊ ┄ ⸖ $carries=colour
 ┋┋┋┋ ━ UnknownColourMap( ValueError)
-┊┊┊┊┊ ┄ ⸖ $number=2.9
+┊┊┊┊┊ ┄ ⸖ $number=2.3.7
 ┊┊┊┊┊ ┄ ⸖ $fn=UnknownColourMap
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸆ main() catches it and names the field to edit. Only a hand edit reaches it.
+┊┊┊┊┊ ┄ ⸆ main() catches it and names the field to edit. Only a hand edit or a missing colour map file reaches it.
 ┊┊┊┊┊ ┄ ⸖ $term=colour map
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ raised, not returned
-┋┋┋┋ ━ _colour_for( key, kwargs)
-┊┊┊┊┊ ┄ ⸖ $number=2.10
+┋┋┋┋ ━ _colour_for( seed, kwargs)
+┊┊┊┊┊ ┄ ⸖ $number=2.3.8
 ┊┊┊┊┊ ┄ ⸖ $fn=_colour_for
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:549
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:659
 ┊┊┊┊┊ ┄ ⸆ Reads chroma and lightness from render kwargs that may carry neither.
 ┊┊┊┊┊ ┄ ⸖ $term=lightness / chroma
 ┋┋┋┋┋ ━ returns
@@ -447,25 +469,65 @@
 ┋┋┋┋┋┋ ━ r
 ┋┋┋┋┋┋ ━ g
 ┋┋┋┋┋┋ ━ b
+┋┋┋ ━ COLOUR MAP 0, THE TRICOLOUR
+┋┋┋┋ ━ load_colour_map( colour_map)
+┊┊┊┊┊ ┄ ⸖ $number=2.4.1
+┊┊┊┊┊ ┄ ⸖ $fn=load_colour_map
+┊┊┊┊┊ ┄ ⸖ $kind=fn
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:590
+┊┊┊┊┊ ┄ ⸆ Reads colour-map-0.json once and keeps it. A map file this build lacks raises rather than falling back.
+┊┊┊┊┊ ┄ ⸖ $term=colour map
+┋┋┋┋┋ ━ returns
+┊┊┊┊┊┊ ┄ ⸖ $role=returns
+┋┋┋┋┋┋ ━ the blocks, and the three transforms
+┊┊┊┊┊ ┄ ⸖ $edge=colour_map_block
+┊┊┊┊┊ ┄ ⸖ $sides=bt
+┊┊┊┊┊ ┄ ⸖ $carries=calls
+┋┋┋┋ ━ colour_map_block( angle, colour_map)
+┊┊┊┊┊ ┄ ⸖ $number=2.4.2
+┊┊┊┊┊ ┄ ⸖ $fn=colour_map_block
+┊┊┊┊┊ ┄ ⸖ $kind=fn
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:609
+┊┊┊┊┊ ┄ ⸆ Indexed by the colour map angle, never by the hue. The blocks tile 0-360, so exactly one matches.
+┊┊┊┊┊ ┄ ⸖ $term=colour map
+┊┊┊┊┊ ┄ ⸖ $term=colour map angle
+┋┋┋┋┋ ━ returns
+┊┊┊┊┊┊ ┄ ⸖ $role=returns
+┋┋┋┋┋┋ ━ from, width, and three colour names
+┊┊┊┊┊ ┄ ⸖ $edge=identicon_tricolour
+┊┊┊┊┊ ┄ ⸖ $sides=bt
+┊┊┊┊┊ ┄ ⸖ $carries=value
+┋┋┋┋ ━ identicon_tricolour( seed, colour_map)
+┊┊┊┊┊ ┄ ⸖ $number=2.4.3
+┊┊┊┊┊ ┄ ⸖ $fn=identicon_tricolour
+┊┊┊┊┊ ┄ ⸖ $kind=fn
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:628
+┊┊┊┊┊ ┄ ⸆ Which three colours from the block, what order from character 15, which are circles from character 16. All nine colours circle.
+┊┊┊┊┊ ┄ ⸖ $term=the tricolour
+┊┊┊┊┊ ┄ ⸖ $term=colour map
+┊┊┊┊┊ ┄ ⸖ $term=the mark
+┋┋┋┋┋ ━ returns
+┊┊┊┊┊┊ ┄ ⸖ $role=returns
+┋┋┋┋┋┋ ━ three (colour, shape) pairs
+┊┊┊┊┊ ┄ ⸖ $edge=v_tricolour
+┊┊┊┊┊ ┄ ⸖ $sides=rl
+┊┊┊┊┊ ┄ ⸖ $carries=colour
 ┋┋┋ ━ WHAT COMES OUT
-┊┊┊┊ ┄ ⸆ Every renderer calls identicon_grid and identicon_colour for itself. Nothing caches these two.
-┋┋┋┋ ━ grid
-┊┊┊┊┊ ┄ ⸖ $number=2.11
-┊┊┊┊┊ ┄ ⸖ $fn=v_grid
-┊┊┊┊┊ ┄ ⸖ $kind=grid
-┊┊┊┊┊ ┄ ⸖ $term=grid
+┊┊┊┊ ┄ ⸆ Stored in settings.json the moment they are derived. Nothing downstream re-derives them, so nothing downstream can derive them differently.
+┋┋┋┋ ━ matrix
+┊┊┊┊┊ ┄ ⸖ $number=2.5.1
+┊┊┊┊┊ ┄ ⸖ $fn=v_matrix
+┊┊┊┊┊ ┄ ⸖ $kind=matrix
+┊┊┊┊┊ ┄ ⸖ $term=matrix
 ┊┊┊┊┊ ┄ ⸖ $term=the mark
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ 5×5 of bool
-┊┊┊┊┊ ┄ ⸖ $edge=grid_text
-┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=grid
-┊┊┊┊┊ ┄ ⸖ $edge=r_rend
+┊┊┊┊┊ ┄ ⸖ $edge=r_settings
 ┊┊┊┊┊ ┄ ⸖ $sides=ll
-┊┊┊┊┊ ┄ ⸖ $carries=grid
+┊┊┊┊┊ ┄ ⸖ $carries=matrix
 ┋┋┋┋ ━ colour
-┊┊┊┊┊ ┄ ⸖ $number=2.12
+┊┊┊┊┊ ┄ ⸖ $number=2.5.2
 ┊┊┊┊┊ ┄ ⸖ $fn=v_colour
 ┊┊┊┊┊ ┄ ⸖ $kind=col
 ┊┊┊┊┊ ┄ ⸖ $term=the mark
@@ -478,44 +540,34 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=hex_colour
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=colour
-┊┊┊┊┊ ┄ ⸖ $edge=r_rend
-┊┊┊┊┊ ┄ ⸖ $sides=ll
-┊┊┊┊┊ ┄ ⸖ $carries=colour
-┋┋┋┋ ━ grid_text( grid)
-┊┊┊┊┊ ┄ ⸖ $number=2.13
-┊┊┊┊┊ ┄ ⸖ $fn=grid_text
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:357
-┊┊┊┊┊ ┄ ⸆ The spelling vectors.json and the .grid asset both use.
-┊┊┊┊┊ ┄ ⸖ $term=grid
-┊┊┊┊┊ ┄ ⸖ $term=artifact
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ five lines of 01010
-┊┊┊┊┊ ┄ ⸖ $edge=r_art
-┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=calls
 ┋┋┋┋ ━ hex_colour( rgb)
-┊┊┊┊┊ ┄ ⸖ $number=2.14
+┊┊┊┊┊ ┄ ⸖ $number=2.5.3
 ┊┊┊┊┊ ┄ ⸖ $fn=hex_colour
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:562
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:672
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ #rrggbb
-┊┊┊┊┊ ┄ ⸖ $edge=r_art
-┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=calls
-┋┋┋┋ ━ → render_rgba
-┊┊┊┊┊ ┄ ⸖ $fn=r_rend
+┊┊┊┊┊ ┄ ⸖ $edge=r_settings
+┊┊┊┊┊ ┄ ⸖ $sides=ll
+┊┊┊┊┊ ┄ ⸖ $carries=colour
+┋┋┋┋ ━ tricolour
+┊┊┊┊┊ ┄ ⸖ $number=2.5.4
+┊┊┊┊┊ ┄ ⸖ $fn=v_tricolour
+┊┊┊┊┊ ┄ ⸖ $kind=col
+┊┊┊┊┊ ┄ ⸖ $term=the tricolour
+┊┊┊┊┊ ┄ ⸖ $term=the mark
+┋┋┋┋┋ ━ returns
+┊┊┊┊┊┊ ┄ ⸖ $role=returns
+┋┋┋┋┋┋ ━ (colour, shape) × 3
+┊┊┊┊┊ ┄ ⸖ $edge=r_settings
+┊┊┊┊┊ ┄ ⸖ $sides=ll
+┊┊┊┊┊ ┄ ⸖ $carries=colour
+┋┋┋┋ ━ → derived_settings
+┊┊┊┊┊ ┄ ⸖ $fn=r_settings
 ┊┊┊┊┊ ┄ ⸖ $offpage=out
-┊┊┊┊┊ ┄ ⸖ $target=render_rgba
-┊┊┊┊┊ ┄ ⸆ every renderer takes both
-┋┋┋┋ ━ → artifact_bytes
-┊┊┊┊┊ ┄ ⸖ $fn=r_art
-┊┊┊┊┊ ┄ ⸖ $offpage=out
-┊┊┊┊┊ ┄ ⸖ $target=artifact_bytes
-┊┊┊┊┊ ┄ ⸆ .colour and .grid
+┊┊┊┊┊ ┄ ⸖ $target=derived_settings
+┊┊┊┊┊ ┄ ⸆ written together, on the first run
 ┋┋ ━ Geometry
 ┊┊┊ ┄ ⸖ $page=3
 ┊┊┊ ┄ the canvas maths
@@ -583,17 +635,17 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=render_png
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
-┋┋┋┋ ━ → v_grid
-┊┊┊┊┊ ┄ ⸖ $fn=r_grid4
+┋┋┋┋ ━ → v_matrix
+┊┊┊┊┊ ┄ ⸖ $fn=r_matrix4
 ┊┊┊┊┊ ┄ ⸖ $offpage=in
-┊┊┊┊┊ ┄ ⸖ $target=v_grid
-┊┊┊┊┊ ┄ ⸆ the grid and the colour, from page 2
+┊┊┊┊┊ ┄ ⸖ $target=v_matrix
+┊┊┊┊┊ ┄ ⸆ the matrix and the colour, from page 2
 ┊┊┊┊┊ ┄ ⸖ $edge=render_rgba
 ┊┊┊┊┊ ┄ ⸖ $sides=rl
-┊┊┊┊┊ ┄ ⸖ $carries=grid
+┊┊┊┊┊ ┄ ⸖ $carries=matrix
 ┊┊┊┊┊ ┄ ⸖ $edge=render_svg
 ┊┊┊┊┊ ┄ ⸖ $sides=rl
-┊┊┊┊┊ ┄ ⸖ $carries=grid
+┊┊┊┊┊ ┄ ⸖ $carries=matrix
 ┋┋┋┋ ━ where § Scope cuts
 ┊┊┊┊┊ ┄ ⸖ $number=4.1
 ┊┊┊┊┊ ┄ ⸖ $fn=scope_line
@@ -627,7 +679,7 @@
 ┊┊┊┊┊ ┄ ⸖ $fn=render_rgba
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
 ┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:628
-┊┊┊┊┊ ┄ ⸆ `edge` pads the grid into a canvas the caller did not choose.
+┊┊┊┊┊ ┄ ⸆ `edge` pads the matrix into a canvas the caller did not choose.
 ┊┊┊┊┊ ┄ ⸖ $term=block
 ┊┊┊┊┊ ┄ ⸖ $term=border
 ┊┊┊┊┊ ┄ ⸖ $term=canvas
@@ -699,234 +751,164 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=render_png
 ┊┊┊┊┊ ┄ ⸖ $sides=lr
 ┊┊┊┊┊ ┄ ⸖ $carries=calls dashed
-┋┋ ━ The text mark — text-identicon.py
-┊┊┊ ┄ ⸆ for a client that renders neither an image nor ANSI colour; takes a grid and a colour and nothing else, so it vendors alone
+┋┋ ━ The text mark
 ┊┊┊ ┄ ⸖ $page=5
-┋┋┋ ━ THE WHOLE MARK
-┊┊┊┊ ┄ ⸆ Both lattices are written, because which one a host can draw is a fact about its fonts and not about the mark. `text` draws sextants unless told otherwise.
-┋┋┋┋ ━ → artifact_bytes
-┊┊┊┊┊ ┄ ⸖ $fn=r_art5
+┊┊┊ ┄ ⸆ for a medium that will take neither an image nor an escape sequence
+┋┋┋ ━ WHAT ARRIVES
+┋┋┋┋ ━ → derived_settings
+┊┊┊┊┊ ┄ ⸖ $fn=t_in
 ┊┊┊┊┊ ┄ ⸖ $offpage=in
-┊┊┊┊┊ ┄ ⸖ $target=artifact_bytes
-┊┊┊┊┊ ┄ ⸆ four artifacts come from this file
-┊┊┊┊┊ ┄ ⸖ $edge=t_text
-┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=grid
-┋┋┋┋ ━ text( grid, rgb, lattice=SEXTANT_LATTICE)
-┊┊┊┊┊ ┄ ⸖ $number=5.1
-┊┊┊┊┊ ┄ ⸖ $fn=t_text
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:405
-┊┊┊┊┊ ┄ ⸆ A lattice and the tricolour composed, the tricolour ending the lower line.
-┊┊┊┊┊ ┄ ⸖ $term=the triple
-┊┊┊┊┊ ┄ ⸖ $term=sextant
-┊┊┊┊┊ ┄ ⸖ $term=octant
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ two lines — what `.txt` holds
+┊┊┊┊┊ ┄ ⸖ $target=derived_settings
+┊┊┊┊┊ ┄ ⸆ the matrix, and the three (colour, shape) pairs
 ┊┊┊┊┊ ┄ ⸖ $edge=t_lattice
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=grid
+┊┊┊┊┊ ┄ ⸖ $carries=matrix
 ┊┊┊┊┊ ┄ ⸖ $edge=tricolour
 ┊┊┊┊┊ ┄ ⸖ $sides=rl
 ┊┊┊┊┊ ┄ ⸖ $carries=colour
-┊┊┊┊┊ ┄ ⸖ $term=lattice
-┋┋┋┋ ━ octant( grid) · sextant(grid)
-┊┊┊┊┊ ┄ ⸖ $number=5.2
-┊┊┊┊┊ ┄ ⸖ $fn=t_octant
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:158
-┊┊┊┊┊ ┄ ⸆ The two named lattices, one artifact each, neither a fallback for the other.
-┊┊┊┊┊ ┄ ⸖ $term=octant
-┊┊┊┊┊ ┄ ⸖ $term=sextant
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ .octant, two lines
-┋┋┋┋┋┋ ━ .sextant, two lines
-┊┊┊┊┊ ┄ ⸖ $edge=t_lattice
-┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=calls
-┋┋┋┋ ━ lattice_lines( grid, lattice)
-┊┊┊┊┊ ┄ ⸖ $number=5.3
+┊┊┊┊ ┄ ⸲ this module chose the three colours until 2026-09-01. It
+┊┊┊┊ ┄ ⸲ searched the palette for the mix nearest the drawn colour,
+┊┊┊┊ ┄ ⸲ measuring Oklab distance with lightness in it, so a green
+┊┊┊┊ ┄ ⸲ drawn at lightness 0.60 was nearer orange than green. The
+┊┊┊┊ ┄ ⸲ colour map on page 2 replaces the whole search.
+┋┋┋ ━ THE LATTICES
+┋┋┋┋ ━ lattice_lines( matrix, lattice)
+┊┊┊┊┊ ┄ ⸖ $number=5.1.1
 ┊┊┊┊┊ ┄ ⸖ $fn=t_lattice
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:127
-┊┊┊┊┊ ┄ ⸆ One routine for both: only the numbers differ, and they arrive on `lattice`.
-┊┊┊┊┊ ┄ ⸖ $term=grid
-┊┊┊┊┊ ┄ ⸖ $term=octant
-┊┊┊┊┊ ┄ ⸖ $term=sextant
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ two strings of three characters
-┊┊┊┊┊ ┄ ⸖ $edge=LATTICES
-┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=weak dashed
+┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:133
+┊┊┊┊┊ ┄ ⸆ One routine for both: the bit order, the cell width and the padding are the same rule, and only the numbers differ.
 ┊┊┊┊┊ ┄ ⸖ $term=lattice
-┋┋┋┋ ━ OCTANTS · SEXTANTS
-┊┊┊┊┊ ┄ ⸖ $number=5.4
-┊┊┊┊┊ ┄ ⸖ $fn=OCTANTS
-┊┊┊┊┊ ┄ ⸖ $kind=data
-┊┊┊┊┊ ┄ ⸆ octants   2×4, Unicode 16.0. 230 of 256 are named
-┊┊┊┊┊ ┄ ⸆           BLOCK OCTANT-n; 26 were encoded earlier
-┊┊┊┊┊ ┄ ⸆ sextants  2×3, Unicode 13.0. 60 of 64 are named
-┊┊┊┊┊ ┄ ⸆           BLOCK SEXTANT-n; 4 were encoded earlier
-┊┊┊┊┊ ┄ ⸆ Literal tables. Offset arithmetic with the wrong
-┊┊┊┊┊ ┄ ⸆ exclusions walks into pictograms.
-┊┊┊┊┊ ┄ ⸖ $term=octant
-┊┊┊┊┊ ┄ ⸖ $term=sextant
+┊┊┊┊┊ ┄ ⸖ $term=the mark
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ 256 and 64 characters, indexed by pattern
-┊┊┊┊┊ ┄ ⸖ $edge=LATTICES
+┋┋┋┋┋┋ ━ two lines, three cells each
+┊┊┊┊┊ ┄ ⸖ $edge=t_sextant
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=weak dashed
+┊┊┊┊┊ ┄ ⸖ $carries=calls
+┊┊┊┊┊ ┄ ⸖ $edge=t_octant
+┊┊┊┊┊ ┄ ⸖ $sides=bt
+┊┊┊┊┊ ┄ ⸖ $carries=calls
+┋┋┋┋ ━ sextant( matrix)
+┊┊┊┊┊ ┄ ⸖ $number=5.1.2
+┊┊┊┊┊ ┄ ⸖ $fn=t_sextant
+┊┊┊┊┊ ┄ ⸖ $kind=fn
+┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:172
+┊┊┊┊┊ ┄ ⸆ Unicode 13.0, so more hosts have the glyphs. renders.blockDrawing.sextant.
+┊┊┊┊┊ ┄ ⸖ $term=lattice
+┊┊┊┊┊ ┄ ⸖ $term=artifact
+┋┋┋┋┋ ━ returns
+┊┊┊┊┊┊ ┄ ⸖ $role=returns
+┋┋┋┋┋┋ ━ two lines of 2×3 cells
+┋┋┋┋ ━ octant( matrix)
+┊┊┊┊┊ ┄ ⸖ $number=5.1.3
+┊┊┊┊┊ ┄ ⸖ $fn=t_octant
+┊┊┊┊┊ ┄ ⸖ $kind=fn
+┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:164
+┊┊┊┊┊ ┄ ⸆ Unicode 16.0, squarer where the glyphs exist. renders.blockDrawing.octant.
+┊┊┊┊┊ ┄ ⸖ $term=lattice
+┊┊┊┊┊ ┄ ⸖ $term=artifact
+┋┋┋┋┋ ━ returns
+┊┊┊┊┊┊ ┄ ⸖ $role=returns
+┋┋┋┋┋┋ ━ two lines of 2×4 cells
 ┋┋┋┋ ━ OCTANT_LATTICE · SEXTANT_LATTICE
-┊┊┊┊┊ ┄ ⸖ $number=5.5
+┊┊┊┊┊ ┄ ⸖ $number=5.1.4
 ┊┊┊┊┊ ┄ ⸖ $fn=LATTICES
-┊┊┊┊┊ ┄ ⸖ $kind=data
-┊┊┊┊┊ ┄ ⸆ (table, sub-rows per character, the blank, pad above)
-┊┊┊┊┊ ┄ ⸆ octants  (OCTANTS, 4, two spaces, 3 sub-rows)
-┊┊┊┊┊ ┄ ⸆ sextants (SEXTANTS, 3, one space, 1 sub-row)
-┊┊┊┊┊ ┄ ⸆ The blank differs because the widths do; the padding
-┊┊┊┊┊ ┄ ⸆ goes above so the lower line is all grid.
-┊┊┊┊┊ ┄ ⸖ $term=octant
-┊┊┊┊┊ ┄ ⸖ $term=sextant
+┊┊┊┊┊ ┄ ⸖ $kind=const
+┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:117
+┊┊┊┊┊ ┄ ⸆ Table, sub-rows per character, what a blank emits, and the padding above. The blank differs because the widths do.
 ┊┊┊┊┊ ┄ ⸖ $term=lattice
-┋┋┋ ━ WHICH THREE COLOURS
-┋┋┋┋ ━ chosen_indices( rgb)
-┊┊┊┊┊ ┄ ⸆ Picks the nearest colour twice, plus the third that best corrects the mix.
-┊┊┊┊┊ ┄ ⸖ $number=5.6
-┊┊┊┊┊ ┄ ⸖ $fn=chosen_indices
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:261
-┊┊┊┊┊ ┄ ⸖ $term=the triple
-┊┊┊┊┊ ┄ ⸖ $term=the palette
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ three palette indices, ascending
-┊┊┊┊┊ ┄ ⸖ $edge=nearest_colour
+┋┋┋┋┋┋ ━ four values each
+┋┋┋┋ ━ OCTANTS · SEXTANTS
+┊┊┊┊┊ ┄ ⸖ $number=5.1.5
+┊┊┊┊┊ ┄ ⸖ $fn=OCTANTS
+┊┊┊┊┊ ┄ ⸖ $kind=const
+┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:81
+┊┊┊┊┊ ┄ ⸆ Every bit pattern to its character, verified against the Unicode database by the selftest rather than trusted.
+┊┊┊┊┊ ┄ ⸖ $term=lattice
+┋┋┋┋┋ ━ returns
+┊┊┊┊┊┊ ┄ ⸖ $role=returns
+┋┋┋┋┋┋ ━ 256 and 64 characters
+┊┊┊┊┊ ┄ ⸖ $edge=LATTICES
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=calls
-┋┋┋┋ ━ nearest_colour( rgb)
-┊┊┊┊┊ ┄ ⸆ Breaks ties towards the lower index.
-┊┊┊┊┊ ┄ ⸖ $number=5.7
-┊┊┊┊┊ ┄ ⸖ $fn=nearest_colour
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:257
-┊┊┊┊┊ ┄ ⸖ $term=the palette
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ one palette index
-┊┊┊┊┊ ┄ ⸖ $edge=_mix
-┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=weak dashed
-┋┋┋┋ ━ _mix( indices)
-┊┊┊┊┊ ┄ ⸖ $number=5.8
-┊┊┊┊┊ ┄ ⸖ $fn=_mix
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:236
-┊┊┊┊┊ ┄ ⸆ Averages in linear light, which is what optical mixing does.
-┊┊┊┊┊ ┄ ⸖ $term=the palette
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ one linear-light colour
-┊┊┊┊┊ ┄ ⸖ $edge=PALETTE
-┊┊┊┊┊ ┄ ⸖ $sides=rl
-┊┊┊┊┊ ┄ ⸖ $carries=calls
+┊┊┊┊┊ ┄ ⸖ $carries=value
+┋┋┋ ━ THE PALETTE
 ┋┋┋┋ ━ PALETTE
-┊┊┊┊┊ ┄ ⸆ Nine colours, each with the RGB the colour word in its character's name means.
-┊┊┊┊┊ ┄ ⸖ $number=5.9
+┊┊┊┊┊ ┄ ⸖ $number=5.2.1
 ┊┊┊┊┊ ┄ ⸖ $fn=PALETTE
-┊┊┊┊┊ ┄ ⸖ $kind=data
+┊┊┊┊┊ ┄ ⸖ $kind=const
+┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:205
+┊┊┊┊┊ ┄ ⸆ Nine colours, each as a square and a circle. Every colour circles, so the shape channel is three flat bits.
+┊┊┊┊┊ ┄ ⸖ $term=the palette
+┊┊┊┊┊ ┄ ⸖ $term=the tricolour
+┋┋┋┋┋ ━ returns
+┊┊┊┊┊┊ ┄ ⸖ $role=returns
+┋┋┋┋┋┋ ━ square, circle, name, rgb
+┊┊┊┊┊ ┄ ⸖ $edge=GLYPHS
+┊┊┊┊┊ ┄ ⸖ $sides=bt
+┊┊┊┊┊ ┄ ⸖ $carries=value
+┋┋┋┋ ━ GLYPHS
+┊┊┊┊┊ ┄ ⸖ $number=5.2.2
+┊┊┊┊┊ ┄ ⸖ $fn=GLYPHS
+┊┊┊┊┊ ┄ ⸖ $kind=const
+┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:221
+┊┊┊┊┊ ┄ ⸆ name to (square, circle). The one lookup rendering does.
 ┊┊┊┊┊ ┄ ⸖ $term=the palette
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ nine (character, name, codepoint, rgb) rows
-┊┊┊┊┊ ┄ ⸖ $edge=_oklab
+┋┋┋┋┋┋ ━ nine names
+┊┊┊┊┊ ┄ ⸖ $edge=tricolour
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=weak dashed
-┋┋┋ ━ IN WHAT ORDER
-┊┊┊┊ ┄ ⸆ Which colours is a function of the colour asked for; what order is a function of the grid. Two inputs, and they must stay two.
-┋┋┋┋ ━ tricolour( rgb, grid)
-┊┊┊┊┊ ┄ ⸆ Combines the chosen colours with the order the grid puts them in. `tricolour_indices` stops one step short, at the indices.
-┊┊┊┊┊ ┄ ⸖ $signature=tricolour_indices(rgb, grid)
-┊┊┊┊┊ ┄ ⸖ $number=5.10
+┊┊┊┊┊ ┄ ⸖ $carries=value
+┊┊┊┊┊ ┄ ⸖ $edge=t_names
+┊┊┊┊┊ ┄ ⸖ $sides=bt
+┊┊┊┊┊ ┄ ⸖ $carries=value
+┋┋┋ ━ THE TRICOLOUR
+┊┊┊┊ ┄ ⸆ Renders a tricolour; does not choose one. What arrives is the answer.
+┋┋┋┋ ━ tricolour( pairs)
+┊┊┊┊┊ ┄ ⸖ $number=5.3.1
 ┊┊┊┊┊ ┄ ⸖ $fn=tricolour
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:362
-┊┊┊┊┊ ┄ ⸖ $term=the triple
-┊┊┊┊┊ ┄ ⸖ $term=arrangement
+┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:253
+┊┊┊┊┊ ┄ ⸆ renders.tricolour. Three characters, one per pair.
+┊┊┊┊┊ ┄ ⸖ $term=the tricolour
+┊┊┊┊┊ ┄ ⸖ $term=artifact
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ three emoji — what `.tricolour` holds
-┊┊┊┊┊ ┄ ⸖ $edge=chosen_indices
-┊┊┊┊┊ ┄ ⸖ $sides=ll
-┊┊┊┊┊ ┄ ⸖ $carries=colour
-┊┊┊┊┊ ┄ ⸖ $edge=arrange
-┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=grid
-┋┋┋┋ ━ arrange( indices, grid)
-┊┊┊┊┊ ┄ ⸆ Selects the permutation with the fifteen grid bits, never with the colour.
-┊┊┊┊┊ ┄ ⸖ $number=5.11
-┊┊┊┊┊ ┄ ⸖ $fn=arrange
+┋┋┋┋┋┋ ━ three emoji
+┋┋┋┋ ━ tricolour_names( pairs)
+┊┊┊┊┊ ┄ ⸖ $number=5.3.2
+┊┊┊┊┊ ┄ ⸖ $fn=t_names
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:306
-┊┊┊┊┊ ┄ ⸖ $term=arrangement
-┊┊┊┊┊ ┄ ⸖ $term=the triple
+┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:261
+┊┊┊┊┊ ┄ ⸆ colour or colour-circle, in laid-out order. What vectors.json pins.
+┊┊┊┊┊ ┄ ⸖ $term=the tricolour
+┊┊┊┊┊ ┄ ⸖ $term=vector
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ the same indices, permuted
-┊┊┊┊┊ ┄ ⸖ $edge=grid_bits
-┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=grid
-┋┋┋┋ ━ grid_bits( grid)
-┊┊┊┊┊ ┄ ⸖ $number=5.12
-┊┊┊┊┊ ┄ ⸖ $fn=grid_bits
+┋┋┋┋┋┋ ━ three names
+┋┋┋ ━ READING ONE BACK
+┋┋┋┋ ━ parse_matrix( text)
+┊┊┊┊┊ ┄ ⸖ $number=5.4.1
+┊┊┊┊┊ ┄ ⸖ $fn=parse_matrix
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:293
-┊┊┊┊┊ ┄ ⸆ Reads the left three columns; the other two are their mirror.
-┊┊┊┊┊ ┄ ⸖ $term=grid
-┊┊┊┊┊ ┄ ⸖ $term=arrangement
+┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:121
+┊┊┊┊┊ ┄ ⸆ Takes 01010 or .#.#. rows, for the command line rather than for a derivation.
+┊┊┊┊┊ ┄ ⸖ $term=matrix
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ a 15-bit integer
-┋┋┋┋ ━ _oklab( linear_rgb) · _linear(component)
-┊┊┊┊┊ ┄ ⸖ $signature=_encode(value)
-┊┊┊┊┊ ┄ ⸖ $number=5.13
-┊┊┊┊┊ ┄ ⸖ $fn=_oklab
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:219
-┊┊┊┊┊ ┄ ⸆ Converts between sRGB, linear light and Oklab.
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ Oklab coordinates
-┋┋┋┋┋┋ ━ linear light
-┋┋┋┋┋┋ ━ sRGB
-┋┋┋ ━ PUBLIC SURFACE, NOT CALLED FROM HERE
-┋┋┋┋ ━ parse_grid( text) · parse_hex(value)
-┊┊┊┊┊ ┄ ⸖ $number=5.15
-┊┊┊┊┊ ┄ ⸖ $fn=parse_grid
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:115
-┊┊┊┊┊ ┄ ⸆ Used by this file's own command line.
-┊┊┊┊┊ ┄ ⸖ $term=grid
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ a grid
-┋┋┋┋┋┋ ━ an (r, g, b) triple
-┋┋┋┋ ━ selftest() · _recover(lines, lattice)
-┊┊┊┊┊ ┄ ⸖ $signature=_main(argv)
-┊┊┊┊┊ ┄ ⸖ $number=5.16
+┋┋┋┋┋┋ ━ five rows of five bools
+┋┋┋┋ ━ selftest()
+┊┊┊┊┊ ┄ ⸖ $number=5.4.2
 ┊┊┊┊┊ ┄ ⸖ $fn=selftest
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:427
-┊┊┊┊┊ ┄ ⸆ Re-derives both tables from unicodedata, and reads every rendered mark back to its grid.
-┊┊┊┊┊ ┄ ⸖ $term=octant
-┊┊┊┊┊ ┄ ⸖ $term=sextant
-┊┊┊┊┊ ┄ ⸖ $term=the palette
+┊┊┊┊┊ ┄ ⸖ $source=text-identicon.py:267
+┊┊┊┊┊ ┄ ⸆ Re-derives both lattice tables from the Unicode database where the host has it, so the literals are verified rather than trusted.
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ True, or an assertion fails
+┋┋┋┋┋┋ ━ True, or raises
 ┋┋ ━ Into the repository
 ┊┊┊ ┄ ⸖ $page=6
 ┊┊┊ ┄ ⸆ `apply` — what the project is for
@@ -1027,7 +1009,7 @@
 ┋┋┋┋┋┋ ━ {name: bytes}
 ┊┊┊┊┊ ┄ ⸖ $term=artifact
 ┊┊┊┊┊ ┄ ⸖ $term=block
-┊┊┊┊┊ ┄ ⸖ $term=the triple
+┊┊┊┊┊ ┄ ⸖ $term=the tricolour
 ┊┊┊┊┊ ┄ ⸖ $term=octant
 ┊┊┊┊┊ ┄ ⸖ $term=sextant
 ┊┊┊┊┊ ┄ ⸖ $edge=f_artifacts
@@ -1111,7 +1093,7 @@
 ┊┊┊┊┊ ┄ ⸆ repository-identicon-256.png   block 48, border 8
 ┊┊┊┊┊ ┄ ⸆ repository-identicon.svg       the same geometry
 ┊┊┊┊┊ ┄ ⸆ repository-identicon.colour    "#rrggbb\n"
-┊┊┊┊┊ ┄ ⸆ repository-identicon.grid      five lines of 01010
+┊┊┊┊┊ ┄ ⸆ repository-identicon.matrix      five lines of 01010
 ┊┊┊┊┊ ┄ ⸆ repository-identicon.tricolour three emoji, the colour
 ┊┊┊┊┊ ┄ ⸆ repository-identicon.sextant   the 2×3 lattice
 ┊┊┊┊┊ ┄ ⸆ repository-identicon.octant    the 2×4 lattice
@@ -1134,11 +1116,11 @@
 ┊┊┊┊┊ ┄ ⸖ $offpage=out
 ┊┊┊┊┊ ┄ ⸖ $target=render_png
 ┊┊┊┊┊ ┄ ⸆ render_png · render_svg
-┋┋┋┋ ━ → grid_text
+┋┋┋┋ ━ → matrix_text
 ┊┊┊┊┊ ┄ ⸖ $fn=r_col6
 ┊┊┊┊┊ ┄ ⸖ $offpage=out
-┊┊┊┊┊ ┄ ⸖ $target=grid_text
-┊┊┊┊┊ ┄ ⸆ grid_text · hex_colour · _colour_for
+┊┊┊┊┊ ┄ ⸖ $target=matrix_text
+┊┊┊┊┊ ┄ ⸆ matrix_text · hex_colour · _colour_for
 ┋┋┋┋ ━ → large_geometry
 ┊┊┊┊┊ ┄ ⸖ $fn=r_geo6
 ┊┊┊┊┊ ┄ ⸖ $offpage=out
@@ -1199,7 +1181,7 @@
 ┊┊┊┊┊ ┄ ⸖ $fn=instead
 ┊┊┊┊┊ ┄ ⸖ $kind=data
 ┊┊┊┊┊ ┄ ⸆ --style text    is byte-identical to .txt
-┊┊┊┊┊ ┄ ⸆ --style full    is .grid and .colour
+┊┊┊┊┊ ┄ ⸆ --style full    is .matrix and .colour
 ┊┊┊┊┊ ┄ ⸆ --style banner  is .txt with names from .key
 ┊┊┊┊┊ ┄ ⸆ --style line    colourless, is .tricolour
 ┊┊┊┊┊ ┄ ⸆ Everything emit wrote is a file, or a composition of
@@ -1326,7 +1308,7 @@
 ┊┊┊┊┊ ┄ ⸖ $number=9.3
 ┊┊┊┊┊ ┄ ⸖ $fn=f_vectors
 ┊┊┊┊┊ ┄ ⸖ $kind=ext
-┊┊┊┊┊ ┄ ⸆ key · md5 · grid · foreground
+┊┊┊┊┊ ┄ ⸆ key · md5 · matrix · foreground
 ┊┊┊┊┊ ┄ ⸖ $term=vector
 ┊┊┊┊┊ ┄ ⸖ $edge=r_parse9
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
@@ -1363,29 +1345,29 @@
 ┊┊┊┊┊ ┄ ⸖ $number=9.5
 ┊┊┊┊┊ ┄ ⸖ $fn=p_impl
 ┊┊┊┊┊ ┄ ⸖ $kind=ext
-┊┊┊┊┊ ┄ ⸆ prints {"grid": […], "colour": "#rrggbb"}
+┊┊┊┊┊ ┄ ⸆ prints {"matrix": […], "colour": "#rrggbb"}
 ┋┋┋ ━ COMPARING IT
 ┋┋┋┋ ━ check_output( text, vector)
 ┊┊┊┊┊ ┄ ⸖ $number=9.6
 ┊┊┊┊┊ ┄ ⸖ $fn=check_output
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
 ┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:1349
-┊┊┊┊┊ ┄ ⸆ Compares the grid and the colour only.
+┊┊┊┊┊ ┄ ⸆ Compares the matrix and the colour only.
 ┊┊┊┊┊ ┄ ⸖ $term=vector
 ┊┊┊┊┊ ┄ ⸖ $term=rendering
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ a list of problems, empty when it passes
-┊┊┊┊┊ ┄ ⸖ $edge=_normalise_grid
+┊┊┊┊┊ ┄ ⸖ $edge=_normalise_matrix
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
-┋┋┋┋ ━ _normalise_grid( value)
+┋┋┋┋ ━ _normalise_matrix( value)
 ┊┊┊┊┊ ┄ ⸖ $number=9.7
-┊┊┊┊┊ ┄ ⸖ $fn=_normalise_grid
+┊┊┊┊┊ ┄ ⸖ $fn=_normalise_matrix
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
 ┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:1333
 ┊┊┊┊┊ ┄ ⸆ Accepts a row as a string, a list of ints, or a list of booleans.
-┊┊┊┊┊ ┄ ⸖ $term=grid
+┊┊┊┊┊ ┄ ⸖ $term=matrix
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ five strings of five characters
@@ -1426,7 +1408,7 @@
 ┋┋┋ ━ colour map
 ┊┊┊┊ ┄ ⸖ $type=int
 ┊┊┊┊ ┄ ⸆ Which colour rule drew this repository, recorded in settings.json and never hashed. Currently 0. A new map repaints every mark and reshapes none.
-┊┊┊┊ ┄ ⸖ $defines=2.8
+┊┊┊┊ ┄ ⸖ $defines=2.3.6
 ┋┋┋ ━ seed source
 ┊┊┊┊ ┄ ⸖ $type=str, one of four
 ┊┊┊┊ ┄ ⸆ What a derivation draws from: auto, repo, path or uuid. A named source that cannot answer raises rather than falling back.
@@ -1437,34 +1419,34 @@
 ┊┊┊┊ ┄ ⸖ $defines=6.1
 ┋┋ ━ The mark
 ┋┋┋ ━ the mark
-┊┊┊┊ ┄ ⸖ $type=(grid, colour)
-┊┊┊┊ ┄ ⸆ The grid and the colour together — what a reader recognises.
-┊┊┊┊ ┄ ⸖ $defines=2.11
-┊┊┊┊ ┄ ⸖ $defines=2.12
-┋┋┋ ━ grid
+┊┊┊┊ ┄ ⸖ $type=(matrix, colour)
+┊┊┊┊ ┄ ⸆ The matrix and the colour together — what a reader recognises.
+┊┊┊┊ ┄ ⸖ $defines=2.5.1
+┊┊┊┊ ┄ ⸖ $defines=2.5.2
+┋┋┋ ━ matrix
 ┊┊┊┊ ┄ ⸖ $type=5×5 of bool
 ┊┊┊┊ ┄ ⸆ From digest characters 0–14, drawn down the centre column and mirrored outwards.
-┊┊┊┊ ┄ ⸖ $defines=2.2
+┊┊┊┊ ┄ ⸖ $defines=2.2.1
 ┋┋┋ ━ hue
 ┊┊┊┊ ┄ ⸖ $type=float, [0, 1)
 ┊┊┊┊ ┄ ⸆ A fraction of a turn, from the last seven digest characters.
-┊┊┊┊ ┄ ⸖ $defines=2.3
+┊┊┊┊ ┄ ⸖ $defines=2.3.1
 ┋┋┋ ━ the warp
 ┊┊┊┊ ┄ ⸖ $type=float° → float°
 ┊┊┊┊ ┄ ⸆ The raised-cosine reweighting that makes the hue advance faster through the blue-green arc.
-┊┊┊┊ ┄ ⸖ $defines=2.4
+┊┊┊┊ ┄ ⸖ $defines=2.3.2
 ┋┋┋ ━ lightness / chroma
 ┊┊┊┊ ┄ ⸖ $type=float, float
 ┊┊┊┊ ┄ ⸆ Oklab. Lightness is held at 0.60 for every hue; chroma is capped at 0.26, not flattened.
-┊┊┊┊ ┄ ⸖ $defines=2.8
+┊┊┊┊ ┄ ⸖ $defines=2.3.6
 ┋┋┋ ━ gamut chroma
 ┊┊┊┊ ┄ ⸖ $type=float
 ┊┊┊┊ ┄ ⸆ The most chroma sRGB will take at that hue and lightness.
-┊┊┊┊ ┄ ⸖ $defines=2.5
+┊┊┊┊ ┄ ⸖ $defines=2.3.3
 ┋┋ ━ Geometry
 ┋┋┋ ━ block
 ┊┊┊┊ ┄ ⸖ $type=int, px
-┊┊┊┊ ┄ ⸆ The pixel edge of one grid cell — the specified quantity.
+┊┊┊┊ ┄ ⸆ The pixel edge of one matrix cell — the specified quantity.
 ┊┊┊┊ ┄ ⸖ $defines=3.5
 ┋┋┋ ━ border
 ┊┊┊┊ ┄ ⸖ $type=int, px
@@ -1499,38 +1481,45 @@
 ┊┊┊┊ ┄ ⸆ Bytes for one medium, derived from the key. Not part of conformance.
 ┊┊┊┊ ┄ ⸖ $defines=4.2
 ┋┋┋ ━ lattice
-┊┊┊┊ ┄ ⸆ The subcell grid a pattern is drawn on, with the numbers that produce it: the table, its sub-rows, the blank, and the padding above.
+┊┊┊┊ ┄ ⸆ The subcell matrix a pattern is drawn on, with the numbers that produce it: the table, its sub-rows, the blank, and the padding above.
 ┊┊┊┊ ┄ ⸖ $type=(table, int, str, int)
-┊┊┊┊ ┄ ⸖ $defines=5.5
+┊┊┊┊ ┄ ⸖ $defines=5.1.4
 ┋┋ ━ The text mark
 ┋┋┋ ━ octant
 ┊┊┊┊ ┄ ⸖ $type=str, 1 char
-┊┊┊┊ ┄ ⸆ One of 256 patterns over a 2×4 lattice; one glyph carries a 2×4 patch of the grid.
-┊┊┊┊ ┄ ⸖ $defines=5.2
-┊┊┊┊ ┄ ⸖ $defines=5.4
+┊┊┊┊ ┄ ⸆ One of 256 patterns over a 2×4 lattice; one glyph carries a 2×4 patch of the matrix.
+┊┊┊┊ ┄ ⸖ $defines=5.1.2
+┊┊┊┊ ┄ ⸖ $defines=5.1.5
 ┋┋┋ ━ sextant
 ┊┊┊┊ ┄ ⸖ $type=str, 1 char
 ┊┊┊┊ ┄ ⸆ One of 64 patterns over a 2×3 lattice; four years older in Unicode, so more fonts have it, and what .txt is drawn on.
-┊┊┊┊ ┄ ⸖ $defines=5.2
-┊┊┊┊ ┄ ⸖ $defines=5.4
-┋┋┋ ━ the triple
-┊┊┊┊ ┄ ⸆ Three of the palette's nine colours standing for the mark's colour, where neither an image nor an escape sequence survives. One emoji each.
+┊┊┊┊ ┄ ⸖ $defines=5.1.2
+┊┊┊┊ ┄ ⸖ $defines=5.1.5
+┋┋┋ ━ colour map angle
+┊┊┊┊ ┄ ⸖ $type=float, degrees
+┊┊┊┊ ┄ ⸆ The 28 bits of the digest as degrees, before the warp. What the colour map is indexed at. Not a hue: the hue is this value warped.
+┊┊┊┊ ┄ ⸖ $defines=2.3.1
+┋┋┋ ━ shape
+┊┊┊┊ ┄ ⸖ $type=square or circle
+┊┊┊┊ ┄ ⸆ Which of the two glyphs a colour is drawn as, one bit per position from character 16 of the digest. Every colour has both.
+┊┊┊┊ ┄ ⸖ $defines=2.4.3
+┋┋┋ ━ the tricolour
+┊┊┊┊ ┄ ⸆ Three of the palette's nine colours, each drawn as a square or a circle, standing for the mark where neither an image nor an escape sequence survives.
 ┊┊┊┊ ┄ ⸖ $type=3 of 9 colours
-┊┊┊┊ ┄ ⸖ $defines=5.10
-┊┊┊┊ ┄ ⸖ $defines=5.6
+┊┊┊┊ ┄ ⸖ $defines=2.4.3
+┊┊┊┊ ┄ ⸖ $defines=5.3.1
 ┋┋┋ ━ arrangement
-┊┊┊┊ ┄ ⸆ The order the three colours are laid out in, taken from the grid and never from the colour.
+┊┊┊┊ ┄ ⸆ The order the three colours are laid out in, from character 15 of the digest.
 ┊┊┊┊ ┄ ⸖ $type=tuple of 3 int
-┊┊┊┊ ┄ ⸖ $defines=5.11
-┊┊┊┊ ┄ ⸖ $defines=5.12
+┊┊┊┊ ┄ ⸖ $defines=2.4.3
 ┋┋┋ ━ the palette
-┊┊┊┊ ┄ ⸆ Nine colours, each anchored on the colour word in the name of the character that carries it. A colour is drawn as a square here; shape is a separate channel.
+┊┊┊┊ ┄ ⸆ Nine colours, each anchored on the colour word in the name of the character that carries it. Every colour exists as a square and as a circle; which it is comes from character 16 of the digest.
 ┊┊┊┊ ┄ ⸖ $type=9 colours
-┊┊┊┊ ┄ ⸖ $defines=5.9
+┊┊┊┊ ┄ ⸖ $defines=5.2.1
 ┋┋ ━ Conformance
 ┋┋┋ ━ vector
 ┊┊┊┊ ┄ ⸖ $type=dict of 4
-┊┊┊┊ ┄ ⸆ One pinned (key, md5, grid, foreground) in vectors.json.
+┊┊┊┊ ┄ ⸆ One pinned (key, md5, matrix, foreground) in vectors.json.
 ┊┊┊┊ ┄ ⸖ $defines=9.3
 ┊┊┊┊ ┄ ⸖ $defines=9.2
 ┋ ━ Index

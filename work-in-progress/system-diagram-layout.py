@@ -28,8 +28,9 @@ GROUPS = {
     },
     2: {
         'THE DIGEST': 0,
-        'THE ANGLE, AND WHAT SRGB WILL TAKE': 1,
-        'THE COLOUR': 2,
+        'THE MATRIX': 0,
+        'COLOUR MAP 0, THE COLOUR': 1,
+        'COLOUR MAP 0, THE TRICOLOUR': 2,
         'WHAT COMES OUT': 3,
     },
     3: {
@@ -45,10 +46,11 @@ GROUPS = {
         'WHO ELSE RENDERS': 3,
     },
     5: {
-        'THE WHOLE MARK': 0,
-        'WHICH THREE COLOURS': 1,
-        'IN WHAT ORDER': 2,
-        'PUBLIC SURFACE, NOT CALLED FROM HERE': 3,
+        'WHAT ARRIVES': 0,
+        'THE LATTICES': 1,
+        'THE PALETTE': 2,
+        'THE TRICOLOUR': 2,
+        'READING ONE BACK': 3,
     },
     6: {
         'THE ONE ORCHESTRATOR': 0,
