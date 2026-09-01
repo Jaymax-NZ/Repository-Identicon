@@ -35,6 +35,7 @@ list.
 
 import argparse
 import collections
+import datetime
 import hashlib
 import json
 import math
@@ -928,18 +929,18 @@ def artifact_names():
 
     One list, walked by both the path builder and the byte builder, so a file
     that exists in one and not the other cannot happen.
+
+    **Only the images are files.** The colour, the matrix, the tricolour and
+    both lattices were files here and are fields in `settings.json` now: a
+    consumer parses one file rather than six, and a form this tool does not
+    write is built from `identicon.current` rather than waited for. An image
+    stays a file because nothing but a file can be pointed at from a README.
     """
     yield "png", f"{ARTIFACT_STEM}.png"
     yield "png4x", f"{ARTIFACT_STEM}@{ARTIFACT_SCALE}x.png"
     for canvas in LARGE_CANVASES:
         yield f"png{canvas}", f"{ARTIFACT_STEM}-{canvas}.png"
     yield "svg", f"{ARTIFACT_STEM}.svg"
-    yield "colour", f"{ARTIFACT_STEM}.colour"
-    yield "matrix", f"{ARTIFACT_STEM}.matrix"
-    yield "tricolour", f"{ARTIFACT_STEM}.tricolour"
-    yield "sextant", f"{ARTIFACT_STEM}.sextant"
-    yield "octant", f"{ARTIFACT_STEM}.octant"
-    yield "txt", f"{ARTIFACT_STEM}.txt"
 
 
 def artifact_paths(root):
@@ -958,13 +959,42 @@ def artifact_paths(root):
 # runs once in a repository's life rather than on every run.
 SETTINGS_NAME = "settings.json"
 
-# **The field names spell out what they hold.** Somebody opening this file has
-# not read SPEC.md, and `seed` alone does not say a seed for what. The code
-# uses Python's snake_case and the file uses JSON's camelCase; the two spell
-# one concept, so `identiconSeed` in the file is `identicon_seed` in the code.
-SEED_FIELD = "identiconSeed"
-HISTORY_FIELD = "identiconSeedHistory"
+# **`identicon` holds facts and `renders` holds spellings of them.** Everything
+# under `renders` is a function of `identicon.current`, so it carries no
+# history and a consumer that wants a form this tool does not write can build
+# it from the facts.
+#
+# The nesting is what lets the names be short. `identiconSeed` inside a file
+# called `.identicon/settings.json` spells the nesting out longhand; the path
+# `identicon.current.seed` says the same thing once. The code uses Python's
+# snake_case and the file uses JSON's camelCase, so `colourMap` in the file is
+# `colour_map` in the code.
+IDENTICON_FIELD = "identicon"
+RENDERS_FIELD = "renders"
+CURRENT_FIELD = "current"
+HISTORY_FIELD = "history"
+SEED_FIELD = "seed"
 COLOUR_MAP_FIELD = "colourMap"
+MATRIX_FIELD = "matrix"
+COLOUR_FIELD = "colour"
+TRICOLOUR_FIELD = "tricolour"
+BLOCK_DRAWING_FIELD = "blockDrawing"
+
+# **A history entry records when, and only what changed.** One array rather
+# than one per field, because the things that changed together changed
+# together, and three parallel arrays cannot say so.
+CHANGED_AT_FIELD = "at"
+
+
+def _changed_at():
+    """The timestamp a history entry is stamped with, to the second, in UTC.
+
+    A function so a test can replace it: `settings.json` is committed and
+    compared byte for byte, and a clock in it would make two runs of the same
+    change disagree.
+    """
+    return datetime.datetime.now(
+        datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def settings_path(repository_root):
@@ -986,6 +1016,29 @@ def read_settings(repository_root):
     return loaded if isinstance(loaded, dict) else {}
 
 
+def _section(mapping, name):
+    """One nested mapping, or an empty one where it is missing or malformed.
+
+    Every read of the settings file goes through this, so a hand-edited file
+    that has lost a section reads as unset rather than raising.
+    """
+    section = mapping.get(name)
+    return section if isinstance(section, dict) else {}
+
+
+def current_identicon(settings):
+    """The `identicon.current` mapping: the facts this repository is drawn
+    from."""
+    return _section(_section(settings, IDENTICON_FIELD), CURRENT_FIELD)
+
+
+def identicon_history(settings):
+    """The `identicon.history` list, most recent first, or an empty list."""
+    history = _section(settings, IDENTICON_FIELD).get(HISTORY_FIELD)
+    return [entry for entry in history if isinstance(entry, dict)] \
+        if isinstance(history, list) else []
+
+
 def identicon_seed(settings):
     """The seed a settings mapping holds, or None where none is set.
 
@@ -1000,7 +1053,7 @@ def identicon_seed(settings):
     settings it has just emptied in memory. Reading the file there would
     return the seed being retired.
     """
-    seed = settings.get(SEED_FIELD)
+    seed = current_identicon(settings).get(SEED_FIELD)
     if not isinstance(seed, str) or not seed.strip():
         return None
     return normalise_seed(seed)
@@ -1011,8 +1064,14 @@ def read_colour_map(repository_root):
 
     A repository with no settings file, or none recorded, takes this build's.
     """
-    colour_map = read_settings(repository_root).get(COLOUR_MAP_FIELD)
+    colour_map = current_identicon(
+        read_settings(repository_root)).get(COLOUR_MAP_FIELD)
     return colour_map if isinstance(colour_map, int) else COLOUR_MAP_LATEST
+
+
+# A row of the matrix, as `indent` leaves it: one boolean per line. Collapsed
+# to one line each, because forty lines to say 5x5 is not a file anybody reads.
+_BOOLEAN_ROW = re.compile(r"\[\s*((?:(?:true|false)(?:,\s*)?)+)\s*\]")
 
 
 def settings_bytes(settings):
@@ -1020,9 +1079,15 @@ def settings_bytes(settings):
 
     Sorted keys, two-space indent and a trailing newline, so two runs that
     agree about the settings write the same bytes.
+
+    **Not `ensure_ascii`.** `renders` exists to be read: escaped as `\\ud83d`
+    the tricolour says nothing to the person who opened the file to look at it.
+    The file is UTF-8 and JSON says so.
     """
-    return (json.dumps(settings, indent=2, sort_keys=True)
-            + "\n").encode("utf-8")
+    text = json.dumps(settings, indent=2, sort_keys=True, ensure_ascii=False)
+    text = _BOOLEAN_ROW.sub(
+        lambda hit: "[" + " ".join(hit.group(1).split()) + "]", text)
+    return (text + "\n").encode("utf-8")
 
 
 def prior_path(target):
@@ -1071,14 +1136,15 @@ def clear_identicon_seed(repository_root, check=False):
     left alone, because `apply --check` writes nothing.
     """
     settings = read_settings(repository_root)
-    history = settings.get(HISTORY_FIELD)
-    history = [entry for entry in history if isinstance(entry, str)] \
-        if isinstance(history, list) else []
-    current = settings.get(SEED_FIELD)
-    settings[HISTORY_FIELD] = ([current] + history
-                               if isinstance(current, str) and current.strip()
-                               else history)
-    settings[SEED_FIELD] = ""
+    history = identicon_history(settings)
+    current = current_identicon(settings)
+    retired = current.get(SEED_FIELD)
+    if isinstance(retired, str) and retired.strip():
+        history = [{CHANGED_AT_FIELD: _changed_at(),
+                    SEED_FIELD: retired}] + history
+    current = dict(current, **{SEED_FIELD: ""})
+    settings[IDENTICON_FIELD] = {CURRENT_FIELD: current,
+                                 HISTORY_FIELD: history}
     if not check:
         write_settings(repository_root, settings)
     return settings
@@ -1097,8 +1163,7 @@ def artifact_bytes(seed, block=ARTIFACT_BLOCK, **render_kwargs):
     is building a line of its own -- a prompt, a tab title, a status field --
     takes the part it has room for and does not have to split anything.
 
-    Both lattices are written because which one renders is a fact about the
-    host's fonts, not about the mark, and this file cannot know it.
+    Every text form of the mark is in `settings.json`; see `derived_settings`.
     """
     wanted = {
         "png": render_png(seed, block, **render_kwargs),
@@ -1110,17 +1175,63 @@ def artifact_bytes(seed, block=ARTIFACT_BLOCK, **render_kwargs):
         large_block, large_border = large_geometry(canvas)
         wanted[f"png{canvas}"] = render_png(seed, large_block,
                                             border=large_border, **render_kwargs)
+    return wanted
+
+
+# The ASCII block drawing: two characters per cell, because a monospace cell is
+# about twice as tall as it is wide and a 5x5 of single characters draws the
+# mark at twice its proper height.
+#
+# `[]` over `##` or `@@`, chosen by looking at all three in a terminal: `[]` is
+# taller and squarer and reads as a block, where the other two read as
+# horizontal rules.
+#
+# **A blank cell is two spaces, so `echo "$ascii"` must be quoted.** Unquoted,
+# word splitting collapses the runs and drops the leading pad. The booleans in
+# `identicon.current.matrix` are there for a consumer that would rather not
+# think about it.
+ASCII_ON = "[]"
+ASCII_OFF = "  "
+
+
+def ascii_matrix(matrix):
+    """The matrix as five lines of `[]` and spaces."""
+    return ["".join(ASCII_ON if cell else ASCII_OFF for cell in row)
+            for row in matrix]
+
+
+def derived_settings(seed, colour_map, **render_kwargs):
+    """`identicon.current` and `renders` for one seed.
+
+    **Everything derived is stored the moment it is derived.** A consumer reads
+    the mark out of this file; nothing downstream re-derives it, and nothing
+    can re-derive it differently.
+
+    `identicon.current` holds the facts -- the matrix as booleans, the colour,
+    the three (colour, shape) pairs. `renders` holds spellings of them: the
+    emoji, and the matrix on each lattice. A glyph is a rendering of a colour
+    and a shape, so storing only the glyph would make the pair it came from
+    unrecoverable.
+    """
     colour = _colour_for(seed, render_kwargs)
     matrix = identicon_matrix(seed)
     text = _text_module()
-    wanted["colour"] = (hex_colour(colour) + "\n").encode("utf-8")
-    wanted["matrix"] = (matrix_text(matrix) + "\n").encode("utf-8")
-    wanted["tricolour"] = (text.tricolour(colour, matrix) + "\n").encode("utf-8")
-    for name, lines in (("sextant", text.sextant(matrix)),
-                        ("octant", text.octant(matrix))):
-        wanted[name] = ("\n".join(lines) + "\n").encode("utf-8")
-    wanted["txt"] = (text.text(matrix, colour) + "\n").encode("utf-8")
-    return wanted
+    return (
+        {
+            SEED_FIELD: seed,
+            COLOUR_MAP_FIELD: colour_map,
+            MATRIX_FIELD: [list(row) for row in matrix],
+            COLOUR_FIELD: hex_colour(colour),
+        },
+        {
+            TRICOLOUR_FIELD: text.tricolour(colour, matrix),
+            BLOCK_DRAWING_FIELD: {
+                "ascii": ascii_matrix(matrix),
+                "sextant": list(text.sextant(matrix)),
+                "octant": list(text.octant(matrix)),
+            },
+        },
+    )
 
 
 # The artifacts are inert until something points at them, and the one thing
@@ -1220,9 +1331,9 @@ def install_into_repo(path=None, seed=None, block=ARTIFACT_BLOCK, check=False,
     changes nothing about the mark.
 
     `reseed` names a source from `SEED_SOURCES` and is the one way to change
-    an identity. It pushes the current seed onto `identiconSeedHistory`,
-    blanks the seed field, and lets this run derive and write a new one from
-    the source named.
+    an identity. It pushes the current seed onto `identicon.history` with the
+    time it was retired, blanks the seed field, and lets this run derive and
+    write a new one from the source named.
 
     `seed` supplies a literal seed outright and is likewise a reseed.
 
@@ -1244,12 +1355,18 @@ def install_into_repo(path=None, seed=None, block=ARTIFACT_BLOCK, check=False,
     # that says one thing while the file says another, for as long as the run
     # lasts. Under `--check` nothing is written, so the cleared settings are
     # handed straight back -- a dry run has no file to re-read.
-    if seed or reseed:
+    #
+    # **`--seed` with the seed a repository already has is not a reseed.**
+    # Retiring a seed to make room for the same seed would put an entry in the
+    # history saying nothing changed, on every run.
+    settings = read_settings(root)
+    replacing = (reseed is not None
+                 or (seed is not None
+                     and normalise_seed(seed) != identicon_seed(settings)))
+    if replacing:
         settings = clear_identicon_seed(root, check)
         if not check:
             settings = read_settings(root)
-    else:
-        settings = read_settings(root)
 
     if seed:
         resolved_seed, source = normalise_seed(seed), "explicit"
@@ -1262,7 +1379,7 @@ def install_into_repo(path=None, seed=None, block=ARTIFACT_BLOCK, check=False,
             resolved_seed = derive_identicon_seed(root, derive_from)
             source = f"derived from {derive_from}"
 
-    colour_map = settings.get(COLOUR_MAP_FIELD)
+    colour_map = current_identicon(settings).get(COLOUR_MAP_FIELD)
     if not isinstance(colour_map, int):
         colour_map = COLOUR_MAP_LATEST
     if colour_map != COLOUR_MAP_LATEST:
@@ -1271,31 +1388,36 @@ def install_into_repo(path=None, seed=None, block=ARTIFACT_BLOCK, check=False,
             f"{colour_map!r}; this build draws colour map "
             f"{COLOUR_MAP_LATEST}")
 
-    settings[SEED_FIELD] = resolved_seed
-    settings.setdefault(HISTORY_FIELD, [])
-    settings[COLOUR_MAP_FIELD] = colour_map
+    history = identicon_history(settings)
+    current, renders = derived_settings(resolved_seed, colour_map,
+                                        **render_kwargs)
+    settings[IDENTICON_FIELD] = {CURRENT_FIELD: current,
+                                 HISTORY_FIELD: history}
+    settings[RENDERS_FIELD] = renders
 
     paths = artifact_paths(root)
     wanted = artifact_bytes(resolved_seed, block, **render_kwargs)
 
     changes = {}
     for name, target in paths.items():
-        current = target.read_bytes() if target.is_file() else None
-        if current == wanted[name]:
+        on_disk = target.read_bytes() if target.is_file() else None
+        if on_disk == wanted[name]:
             changes[name] = "unchanged"
         else:
-            changes[name] = "created" if current is None else "updated"
+            changes[name] = "created" if on_disk is None else "updated"
             if not check:
                 target.parent.mkdir(parents=True, exist_ok=True)
-                keep_prior(target, current)
+                keep_prior(target, on_disk)
                 target.write_bytes(wanted[name])
 
     # **The settings file is written last, and only when the artifacts it
     # describes are already there**, so a half-written directory never claims
     # to be seeded.
     #
-    # It is an input and not an artifact: it is not in `artifact_names`, and a
-    # run that changes nothing else leaves it byte-for-byte alone.
+    # It is not in `artifact_names`, and a run that changes nothing else leaves
+    # it byte-for-byte alone. It is both an input and an output now: a hand may
+    # set `identicon.current.seed` and `colourMap`, and `apply` writes
+    # everything else under `identicon.current` and all of `renders`.
     #
     # A reseed writes it twice: `clear_identicon_seed` empties the field and
     # this puts the new seed in. Two writes of a file this size cost nothing,
@@ -1319,14 +1441,14 @@ def install_into_repo(path=None, seed=None, block=ARTIFACT_BLOCK, check=False,
             changes["readme"] = state
             paths["readme"] = readme_file
 
-    colour = _colour_for(resolved_seed, render_kwargs)
     return {
-        "identiconSeed": resolved_seed,
-        "identiconSeedHistory": settings[HISTORY_FIELD],
+        "seed": resolved_seed,
+        "history": history,
         "colourMap": colour_map,
         "source": source,
         "root": str(root),
-        "colour": hex_colour(colour),
+        "colour": current[COLOUR_FIELD],
+        "tricolour": renders[TRICOLOUR_FIELD],
         "files": {name: str(target) for name, target in paths.items()},
         "changes": changes,
         "current": all(state == "unchanged" for state in changes.values()),
@@ -1412,16 +1534,19 @@ def cmd_apply(args):
         return 0 if result["current"] or not args.check else 1
 
     verb = "would be" if args.check else ""
-    print(f"seed       {result['identiconSeed']}  ({result['source']})")
+    print(f"seed       {result['seed']}  ({result['source']})")
     print(f"colourMap  {result['colourMap']}")
-    print(f"colour     {result['colour']}")
+    print(f"colour     {result['colour']}  {result['tricolour']}")
     for name, state in sorted(result["changes"].items()):
         mark = " " if state == "unchanged" else "*"
         print(f" {mark} {result['files'][name]}  {verb} {state}".rstrip())
-    if result["identiconSeedHistory"]:
+    if result["history"]:
         print()
-        print("Previously seeded as: "
-              + ", ".join(result["identiconSeedHistory"]))
+        print("Previously seeded as:")
+        for entry in result["history"]:
+            was = entry.get(SEED_FIELD)
+            if was:
+                print(f"  {entry.get(CHANGED_AT_FIELD, '')}  {was}")
     return 0 if result["current"] or not args.check else 1
 
 
@@ -1692,7 +1817,7 @@ def build_parser():
     apply_cmd.add_argument("--reseed", nargs="?", const="auto",
                            choices=SEED_SOURCES, metavar="SOURCE",
                            help="retire the current seed to "
-                                "identiconSeedHistory and derive a new one "
+                                "identicon.history and derive a new one "
                                 f"from: {', '.join(SEED_SOURCES)} "
                                 "(default: auto)")
     apply_cmd.add_argument("--no-readme", action="store_true",

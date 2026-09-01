@@ -21,8 +21,7 @@ repository's identity is read from, not an artifact derived from one, and
 `artifact_bytes` does not produce it.
 
 **Why the bytes and not their hashes.** A digest that disagrees says only that
-something disagrees. `.txt`, `.matrix`, `.svg` and the rest are text, and a
-failing test prints the diff.
+something disagrees. `.svg` is text, and a failing test prints the diff.
 
 **Regenerating.** The command is:
 
@@ -80,7 +79,7 @@ FIXTURE_COLOUR_MAP = 0
 
 # **Four seeds, each covering something the others do not.**
 #
-# The set is small on purpose. Every seed multiplies eleven files, and a
+# The set is small on purpose. Every seed multiplies five files, and a
 # fixture nobody can say the purpose of is a fixture nobody dares change.
 #
 # The colours named below are what these seeds produce under colour map 0. A
@@ -128,13 +127,14 @@ FIXTURE_SEEDS = (
 # alone.
 
 
-# Eleven files per seed: the artifact set exactly. `settings.json` is the
-# input the seed is read from and is not derived from it, so it is not here.
+# Five files per seed: the artifact set exactly, which is the images and
+# nothing else. Everything that was a text artifact is a field in
+# `settings.json` now, and `settings.json` is not compared here -- it holds the
+# seed a run is given rather than bytes derived from one.
 #
-# Artifacts compared as text, so a failure prints a diff. Everything else is
+# The SVG is compared as text, so a failure prints a diff. The rasters are
 # compared as bytes and reported by length.
-TEXT_SUFFIXES = (".matrix", ".colour", ".octant", ".sextant",
-                 ".tricolour", ".txt", ".svg")
+TEXT_SUFFIXES = (".svg",)
 
 
 def expected_bytes(seed):

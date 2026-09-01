@@ -29,42 +29,53 @@ writes these:
 .identicon/repository-identicon-128.png        for a consumer that fixes the size
 .identicon/repository-identicon-256.png        likewise
 .identicon/repository-identicon.svg            vector, same geometry
-.identicon/repository-identicon.colour         "#rrggbb\n", nothing else
-.identicon/repository-identicon.matrix         five lines of "01010"
-.identicon/repository-identicon.tricolour      three emoji, the colour
-.identicon/repository-identicon.sextant        the pattern on the 2×3 lattice
-.identicon/repository-identicon.octant         the pattern on the 2×4 lattice
-.identicon/repository-identicon.txt            .sextant and .tricolour, composed
 ```
 
-Beside them sits the one file that is an input rather than an artifact:
+Only the images are files — a file is what a README can point at. Everything
+else lives beside them in one place:
 
 ```json
 // .identicon/settings.json
 {
-  "identiconSeed": "owner/repo",
-  "identiconSeedHistory": [],
-  "colourMap": 0
+  "identicon": {
+    "current": {
+      "seed": "owner/repo",
+      "colourMap": 0,
+      "matrix": [[true, true, false, true, true], …],
+      "colour": "#a53ef9"
+    },
+    "history": []
+  },
+  "renders": {
+    "tricolour": "🟦🟪🟪",
+    "blockDrawing": {
+      "ascii":   ["[][]  [][]", …],
+      "sextant": ["🬚🬇🬓", "🬒🬁🬐"],
+      "octant":  ["▂𜺠𜺣", "𜵂𜴃𜴺"]
+    }
+  }
 }
 ```
 
-`identiconSeed` is the string that gets hashed, exactly as it reads. It is
-written when it is not set and never rewritten, so the mark survives a rename,
-a move between forges and a clone. Edit it by hand to choose your own.
+`identicon.current.seed` is the string that gets hashed, exactly as it reads. It
+is written when it is not set and never rewritten, so the mark survives a
+rename, a move between forges and a clone. Edit it by hand to choose your own,
+and `apply` fills in everything under it.
 
-`.colour` and `.matrix` are the mark as text — enough to draw it with no PNG
-decoder and no SVG parser.
+`identicon` holds the facts and `renders` holds spellings of them. The matrix
+and the colour are enough to draw the mark with no PNG decoder and no SVG
+parser. `renders` is it already drawn, for a medium that will take neither an
+image nor an escape sequence — a shell prompt, a tab title, a status field.
 
-`.tricolour`, `.sextant` and `.octant` are it already drawn, for a medium that
-will take neither an image nor an escape sequence. `.txt` is the whole mark:
-`cat` it. The three parts are there for a caller with room for only one — a
-shell prompt, a tab title, a status field — so that nothing has to split a file
-to use half of it.
+Every lattice is stored because which one a host can draw depends on its fonts.
+Sextants are Unicode 13.0 and octants 16.0, so sextants are the safer default;
+octants are squarer where the glyphs exist; `ascii` needs no Unicode at all.
+`ascii` is `[]` on two spaces, two characters a cell so the mark comes out
+square — quote it, or the shell eats the blanks:
 
-Both lattices are written because which one a host can draw depends on its
-fonts. Sextants are Unicode 13.0 and octants 16.0, so the sextant set is the
-safer default and is what `.txt` uses; octants are squarer where the glyphs
-exist.
+```bash
+jq -r '.renders.blockDrawing.ascii[]' .identicon/settings.json
+```
 
 One file each. The mark holds its brightness right around the colour wheel, so
 the same image sits on a white page and on a near-black one and the project
@@ -93,7 +104,8 @@ moved, resized with an `<img>` tag or pointed at the PNG is recognised and left
 exactly as you left it — and a repository with no README is never given one.
 
 Commit the lot. To read the colour anywhere else,
-`$(cat .identicon/repository-identicon.colour)` is the whole integration.
+`$(jq -r .identicon.current.colour .identicon/settings.json)` is the whole
+integration.
 
 **The seed is written once and hashed verbatim after that.** It is the one
 thing the pattern depends on. Re-running refreshes the artifacts from it, so a

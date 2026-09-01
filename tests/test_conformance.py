@@ -47,6 +47,21 @@ def pinned_colour_maps():
     return {v["colourMap"] for v in vectors}
 
 
+def hand_written(**current):
+    """A settings mapping as somebody would type it: the `identicon.current`
+    fields they set, and nothing else.
+
+    The fields `apply` derives are absent on purpose -- a hand-written file has
+    no matrix, no colour and no renders, and every read has to cope with that.
+    """
+    return {identicon.IDENTICON_FIELD: {identicon.CURRENT_FIELD: dict(current)}}
+
+
+def retired(result):
+    """The seeds in a result's history, most recent first."""
+    return [entry[identicon.SEED_FIELD] for entry in result["history"]]
+
+
 # A colour map this build does not draw, for the tests that need one.
 FOREIGN_COLOUR_MAP = 999
 
@@ -207,7 +222,8 @@ class TestTheOneNormaliser(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             settings = pathlib.Path(tmp) / identicon.IDENTICON_DIR / "settings.json"
             settings.parent.mkdir(parents=True)
-            settings.write_text(json.dumps({"identiconSeed": "  Hand/Typed/ "}))
+            settings.write_text(json.dumps(
+                hand_written(seed="  Hand/Typed/ ")))
             self.assertEqual("Hand/Typed",
                              identicon.identicon_seed(identicon.read_settings(tmp)))
 
@@ -454,10 +470,9 @@ class TestTheColourRule(unittest.TestCase):
     def test_there_is_one_of_each(self):
         """One file per artifact -- what one brightness across the wheel buys."""
         wanted = identicon.artifact_bytes(self.SEED)
-        for name in ("png", "png4x", "png128", "png256", "svg", "colour",
-                     "matrix", "tricolour", "sextant", "octant", "txt"):
+        for name in ("png", "png4x", "png128", "png256", "svg"):
             self.assertIn(name, wanted)
-        self.assertEqual(11, len(wanted))
+        self.assertEqual(5, len(wanted))
 
 
 class TestTheArtifactSet(unittest.TestCase):
@@ -551,52 +566,74 @@ class TestInstallingIntoARepository(unittest.TestCase):
                         "git@github.com:someone/a-project.git"],
                        check=True, timeout=30)
 
+    def stored(self):
+        """The `identicon.current` mapping as it was written to disk."""
+        return identicon.current_identicon(
+            json.loads(identicon.settings_path(self.tmp).read_text()))
+
+    def renders(self):
+        """The `renders` mapping as it was written to disk."""
+        return json.loads(identicon.settings_path(self.tmp).read_text()
+                          )[identicon.RENDERS_FIELD]
+
     def test_it_writes_every_artifact(self):
         result = identicon.install_into_repo(self.tmp)
-        self.assertEqual("someone/a-project", result["identiconSeed"])
+        self.assertEqual("someone/a-project", result["seed"])
         self.assertEqual("derived from auto", result["source"])
-        for name in ("png", "png4x", "svg", "colour", "matrix", "tricolour",
-                     "sextant", "octant", "txt"):
+        for name in ("png", "png4x", "svg"):
             with self.subTest(artifact=name):
                 path = pathlib.Path(result["files"][name])
                 self.assertTrue(path.is_file(), path)
                 self.assertEqual("created", result["changes"][name])
 
-    def test_the_txt_artifact_is_its_own_parts(self):
-        """`.txt` composes `.sextant` and `.tricolour`, and a consumer that
-        takes one part must get the same characters as one that takes the
-        whole. Three files that can drift is what having them separately
-        costs, so the composition is checked rather than described."""
-        result = identicon.install_into_repo(self.tmp)
-        read = lambda name: pathlib.Path(
-            result["files"][name]).read_text(encoding="utf-8")
-        sextant = read("sextant").rstrip("\n").split("\n")
-        whole = read("txt").rstrip("\n").split("\n")
-        self.assertEqual(sextant[0], whole[0])
-        self.assertEqual(f"{sextant[1]} {read('tricolour').rstrip(chr(10))}",
-                         whole[1])
+    def test_only_images_are_files(self):
+        """The colour, the matrix, the tricolour and both lattices were files
+        and are fields now. An image stays a file because only a file can be
+        pointed at from a README."""
+        identicon.install_into_repo(self.tmp)
+        written = {path.name for path
+                   in (pathlib.Path(self.tmp) / identicon.IDENTICON_DIR).iterdir()}
+        self.assertEqual({"repository-identicon.png",
+                          "repository-identicon@4x.png",
+                          "repository-identicon-128.png",
+                          "repository-identicon-256.png",
+                          "repository-identicon.svg",
+                          "settings.json"}, written)
 
-    def test_both_lattices_are_written_and_differ(self):
-        """The point of writing both: a host that has one set of glyphs and
+    def test_both_lattices_are_stored_and_differ(self):
+        """The point of storing both: a host that has one set of glyphs and
         not the other still gets a mark."""
-        result = identicon.install_into_repo(self.tmp)
-        bodies = {}
-        for name in ("sextant", "octant"):
-            body = pathlib.Path(
-                result["files"][name]).read_text(encoding="utf-8")
-            self.assertEqual(2, len(body.rstrip("\n").split("\n")), name)
-            bodies[name] = body
-        self.assertNotEqual(bodies["sextant"], bodies["octant"])
+        identicon.install_into_repo(self.tmp)
+        drawing = self.renders()[identicon.BLOCK_DRAWING_FIELD]
+        for name in ("sextant", "octant", "ascii"):
+            with self.subTest(lattice=name):
+                self.assertEqual(2 if name != "ascii" else 5,
+                                 len(drawing[name]))
+        self.assertNotEqual(drawing["sextant"], drawing["octant"])
 
-    def test_the_text_artifact_is_the_text_rendering(self):
-        """text-identicon.py is named for this file. Nothing wrote it until
-        somebody asked why it was missing."""
+    def test_the_renders_are_the_facts_spelled_out(self):
+        """`renders` is derived from `identicon.current` and nothing else, so
+        a consumer can rebuild any of it and get the same characters."""
         result = identicon.install_into_repo(self.tmp)
-        body = pathlib.Path(result["files"]["txt"]).read_text(encoding="utf-8")
-        expected = text_identicon.text(
-            identicon.identicon_matrix(result["identiconSeed"]),
-            identicon.identicon_colour(result["identiconSeed"]))
-        self.assertEqual(expected + "\n", body)
+        matrix = identicon.identicon_matrix(result["seed"])
+        colour = identicon.identicon_colour(result["seed"])
+        renders = self.renders()
+        self.assertEqual(text_identicon.tricolour(colour, matrix),
+                         renders[identicon.TRICOLOUR_FIELD])
+        self.assertEqual(
+            list(text_identicon.sextant(matrix)),
+            renders[identicon.BLOCK_DRAWING_FIELD]["sextant"])
+
+    def test_the_ascii_drawing_is_two_characters_a_cell(self):
+        """A monospace cell is about twice as tall as it is wide, so a single
+        character a cell draws the mark at twice its height."""
+        result = identicon.install_into_repo(self.tmp)
+        rows = self.renders()[identicon.BLOCK_DRAWING_FIELD]["ascii"]
+        matrix = identicon.identicon_matrix(result["seed"])
+        self.assertEqual(5, len(rows))
+        for row, cells in zip(rows, matrix):
+            self.assertEqual(10, len(row))
+            self.assertEqual("".join("[]" if c else "  " for c in cells), row)
 
     def test_a_hand_written_mark_in_any_variant_is_left_alone(self):
         """The mark somebody already placed is theirs. Any of the variants
@@ -613,12 +650,13 @@ class TestInstallingIntoARepository(unittest.TestCase):
                 identicon.install_into_repo(self.tmp)
                 self.assertEqual(body, readme.read_text())
 
-    def test_the_colour_file_is_the_whole_parser(self):
-        """A consumer runs `cat`, and that is the entire integration."""
+    def test_the_stored_colour_is_what_was_reported(self):
+        """One value, in the file and in the result, so a consumer reading
+        either gets the same colour."""
         result = identicon.install_into_repo(self.tmp)
-        body = pathlib.Path(result["files"]["colour"]).read_text()
-        self.assertEqual(body, result["colour"] + "\n")
-        self.assertRegex(body, r"^#[0-9a-f]{6}\n$")
+        stored = self.stored()[identicon.COLOUR_FIELD]
+        self.assertEqual(result["colour"], stored)
+        self.assertRegex(stored, r"^#[0-9a-f]{6}$")
 
     def test_running_it_twice_on_an_unchanged_key_changes_nothing(self):
         """Idempotent for a *fixed* key, which is the only sense in which it is
@@ -632,17 +670,18 @@ class TestInstallingIntoARepository(unittest.TestCase):
 
     def test_check_reports_drift_without_writing(self):
         first = identicon.install_into_repo(self.tmp)
-        target = pathlib.Path(first["files"]["colour"])
-        target.write_text("not a colour\n")
+        target = pathlib.Path(first["files"]["svg"])
+        damaged = "<svg>not the mark</svg>"
+        target.write_text(damaged)
 
         checked = identicon.install_into_repo(self.tmp, check=True)
         self.assertFalse(checked["current"])
-        self.assertEqual("updated", checked["changes"]["colour"])
-        self.assertEqual("not a colour\n", target.read_text(),
+        self.assertEqual("updated", checked["changes"]["svg"])
+        self.assertEqual(damaged, target.read_text(),
                          "--check must not write")
 
         identicon.install_into_repo(self.tmp)
-        self.assertEqual(first["colour"] + "\n", target.read_text())
+        self.assertNotEqual(damaged, target.read_text())
 
     def _rename_remote(self, to="git@github.com:someone/renamed.git"):
         subprocess.run(["git", "-C", self.tmp, "remote", "set-url", "origin",
@@ -657,20 +696,20 @@ class TestInstallingIntoARepository(unittest.TestCase):
                                             readme=False)
         self.assertNotEqual(before["colour"], after["colour"])
 
-        # The settings file is an input, not an artifact, so it is not among
-        # the files a run keeps a prior copy of.
-        for name in ("png", "svg", "colour"):
+        # The settings file is not an artifact, so it is not among the files a
+        # run keeps a prior copy of.
+        for name in ("png", "svg"):
             with self.subTest(artifact=name):
                 kept = identicon.prior_path(after["files"][name])
                 self.assertTrue(kept.is_file(), kept)
-        colour = identicon.prior_path(after["files"]["colour"])
-        self.assertEqual(before["colour"], colour.read_text().strip())
+        svg = identicon.prior_path(after["files"]["svg"])
+        self.assertIn(before["colour"], svg.read_text())
         self.assertFalse(identicon.prior_path(after["files"]["settings"]).exists())
-        self.assertEqual(before["identiconSeed"], "someone/a-project")
+        self.assertEqual(before["seed"], "someone/a-project")
 
     def test_nothing_is_kept_when_nothing_is_replaced(self):
         result = identicon.install_into_repo(self.tmp, readme=False)
-        for name in ("png", "svg", "colour", "settings"):
+        for name in ("png", "svg", "settings"):
             with self.subTest(artifact=name):
                 self.assertFalse(
                     identicon.prior_path(result["files"][name]).exists())
@@ -681,14 +720,14 @@ class TestInstallingIntoARepository(unittest.TestCase):
         result = identicon.install_into_repo(self.tmp, reseed="repo",
                                              readme=False, check=True)
         self.assertFalse(
-            identicon.prior_path(result["files"]["colour"]).exists())
+            identicon.prior_path(result["files"]["svg"]).exists())
 
     def test_the_seed_is_written_on_the_first_run(self):
         """The seed by itself, because the seed by itself is what gets
         hashed."""
         result = identicon.install_into_repo(self.tmp)
         self.assertEqual("derived from auto", result["source"])
-        self.assertEqual(result["identiconSeed"],
+        self.assertEqual(result["seed"],
                          identicon.identicon_seed(identicon.read_settings(self.tmp)))
         self.assertEqual(identicon.COLOUR_MAP_LATEST, result["colourMap"])
 
@@ -697,7 +736,7 @@ class TestInstallingIntoARepository(unittest.TestCase):
         before = identicon.install_into_repo(self.tmp)
         self._rename_remote()
         after = identicon.install_into_repo(self.tmp)
-        self.assertEqual(before["identiconSeed"], after["identiconSeed"])
+        self.assertEqual(before["seed"], after["seed"])
         self.assertEqual(before["colour"], after["colour"])
         self.assertEqual("settings", after["source"])
         self.assertTrue(after["current"])
@@ -708,7 +747,7 @@ class TestInstallingIntoARepository(unittest.TestCase):
         before = identicon.install_into_repo(self.tmp)
         self._rename_remote()
         after = identicon.install_into_repo(self.tmp, block=3)
-        self.assertEqual(before["identiconSeed"], after["identiconSeed"])
+        self.assertEqual(before["seed"], after["seed"])
         self.assertEqual("unchanged", after["changes"]["settings"])
         self.assertEqual("updated", after["changes"]["png"])
 
@@ -716,22 +755,20 @@ class TestInstallingIntoARepository(unittest.TestCase):
         before = identicon.install_into_repo(self.tmp)
         self._rename_remote()
         after = identicon.install_into_repo(self.tmp, reseed="repo")
-        self.assertEqual("someone/renamed", after["identiconSeed"])
+        self.assertEqual("someone/renamed", after["seed"])
         self.assertNotEqual(before["colour"], after["colour"])
         self.assertEqual("someone/renamed",
                          identicon.identicon_seed(identicon.read_settings(self.tmp)))
-        self.assertEqual([before["identiconSeed"]],
-                         after["identiconSeedHistory"])
+        self.assertEqual([before["seed"]], retired(after))
 
     def test_a_literal_seed_is_recorded_like_any_other(self):
         """`--seed` supplies one outright, and is a reseed: the seed it
         replaces goes to the history like every other."""
         before = identicon.install_into_repo(self.tmp)
         after = identicon.install_into_repo(self.tmp, seed="chosen/by-hand")
-        self.assertEqual("chosen/by-hand", after["identiconSeed"])
+        self.assertEqual("chosen/by-hand", after["seed"])
         self.assertEqual("explicit", after["source"])
-        self.assertEqual([before["identiconSeed"]],
-                         after["identiconSeedHistory"])
+        self.assertEqual([before["seed"]], retired(after))
         self.assertEqual("chosen/by-hand",
                          identicon.identicon_seed(identicon.read_settings(self.tmp)))
 
@@ -833,7 +870,7 @@ class TestInstallingIntoARepository(unittest.TestCase):
 
     def test_the_command_line_exits_1_on_drift_under_check(self):
         identicon.install_into_repo(self.tmp)
-        pathlib.Path(identicon.artifact_paths(self.tmp)["colour"]).write_text("x")
+        pathlib.Path(identicon.artifact_paths(self.tmp)["svg"]).write_text("x")
         completed = subprocess.run(
             ["python3", str(ROOT / "repository-identicon.py"), "apply",
              "--check", "--json", self.tmp],
@@ -866,13 +903,15 @@ class TestTheSettingsFile(unittest.TestCase):
                         f"https://github.com/{seed}.git"], check=True, timeout=30)
 
     def settings(self):
-        return json.loads(identicon.settings_path(self.tmp).read_text())
+        """The `identicon.current` mapping as it was written to disk."""
+        return identicon.current_identicon(
+            json.loads(identicon.settings_path(self.tmp).read_text()))
 
     def test_the_seed_is_written_on_the_first_run(self):
         result = identicon.install_into_repo(self.tmp, readme=False)
-        self.assertEqual(self.SEED, result["identiconSeed"])
+        self.assertEqual(self.SEED, result["seed"])
         self.assertEqual("derived from auto", result["source"])
-        self.assertEqual(self.SEED, self.settings()["identiconSeed"])
+        self.assertEqual(self.SEED, self.settings()["seed"])
         self.assertEqual(identicon.COLOUR_MAP_LATEST,
                          self.settings()["colourMap"])
 
@@ -895,7 +934,7 @@ class TestTheSettingsFile(unittest.TestCase):
         first = identicon.install_into_repo(self.tmp, readme=False)
         self.set_remote("someone/renamed")
         after = identicon.install_into_repo(self.tmp, readme=False)
-        self.assertEqual(first["identiconSeed"], after["identiconSeed"])
+        self.assertEqual(first["seed"], after["seed"])
         self.assertEqual(first["colour"], after["colour"])
         self.assertTrue(after["current"])
 
@@ -906,7 +945,7 @@ class TestTheSettingsFile(unittest.TestCase):
         self.set_remote("someone/renamed")
         after = identicon.install_into_repo(self.tmp, readme=False)
         self.assertNotIn("seed_drift", after)
-        self.assertNotIn("identiconSeedWouldDeriveAs", after)
+        self.assertNotIn("seedWouldDeriveAs", after)
 
     def test_doctor_reports_what_would_derive_when_asked(self):
         identicon.install_into_repo(self.tmp, readme=False)
@@ -921,9 +960,9 @@ class TestTheSettingsFile(unittest.TestCase):
     def test_a_hand_written_seed_outranks_the_remote(self):
         path = identicon.settings_path(self.tmp)
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps({"identiconSeed": "chosen/by-hand"}))
+        path.write_text(json.dumps(hand_written(seed="chosen/by-hand")))
         result = identicon.install_into_repo(self.tmp, readme=False)
-        self.assertEqual("chosen/by-hand", result["identiconSeed"])
+        self.assertEqual("chosen/by-hand", result["seed"])
         self.assertEqual("settings", result["source"])
 
     def test_an_unreadable_settings_file_is_repaired_rather_than_raised(self):
@@ -931,14 +970,14 @@ class TestTheSettingsFile(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("{ this is not json")
         result = identicon.install_into_repo(self.tmp, readme=False)
-        self.assertEqual(self.SEED, result["identiconSeed"])
-        self.assertEqual(self.SEED, self.settings()["identiconSeed"])
+        self.assertEqual(self.SEED, result["seed"])
+        self.assertEqual(self.SEED, self.settings()["seed"])
 
     def test_a_colour_map_this_build_lacks_stops_the_run(self):
         path = identicon.settings_path(self.tmp)
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps({"identiconSeed": self.SEED,
-                                    "colourMap": FOREIGN_COLOUR_MAP}))
+        path.write_text(json.dumps(hand_written(
+            seed=self.SEED, colourMap=FOREIGN_COLOUR_MAP)))
         with self.assertRaises(identicon.UnknownColourMap):
             identicon.install_into_repo(self.tmp, readme=False)
 
@@ -949,8 +988,20 @@ class TestTheSettingsFile(unittest.TestCase):
         self.set_remote("someone/renamed")
         after = identicon.install_into_repo(self.tmp, reseed="repo",
                                             readme=False)
-        self.assertEqual("someone/renamed", after["identiconSeed"])
-        self.assertEqual([self.SEED], after["identiconSeedHistory"])
+        self.assertEqual("someone/renamed", after["seed"])
+        self.assertEqual([self.SEED], retired(after))
+
+    def test_a_history_entry_records_when_it_was_retired(self):
+        """One array, and each entry says what changed and when. Three
+        parallel arrays could not say that two things changed together."""
+        identicon.install_into_repo(self.tmp, readme=False)
+        self.set_remote("someone/renamed")
+        after = identicon.install_into_repo(self.tmp, reseed="repo",
+                                            readme=False)
+        entry, = after["history"]
+        self.assertEqual(self.SEED, entry[identicon.SEED_FIELD])
+        self.assertRegex(entry[identicon.CHANGED_AT_FIELD],
+                         r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$")
 
     def test_the_history_is_most_recent_first(self):
         identicon.install_into_repo(self.tmp, readme=False)
@@ -959,8 +1010,7 @@ class TestTheSettingsFile(unittest.TestCase):
         self.set_remote("someone/third")
         after = identicon.install_into_repo(self.tmp, reseed="repo",
                                             readme=False)
-        self.assertEqual(["someone/second", self.SEED],
-                         after["identiconSeedHistory"])
+        self.assertEqual(["someone/second", self.SEED], retired(after))
 
     def test_blanking_the_seed_by_hand_is_the_same_as_reseeding(self):
         """Rule 4 is one rule applied to an emptied field, not a second way of
@@ -969,26 +1019,27 @@ class TestTheSettingsFile(unittest.TestCase):
         identicon.install_into_repo(self.tmp, readme=False)
         path = identicon.settings_path(self.tmp)
         settings = json.loads(path.read_text())
-        settings["identiconSeed"] = ""
+        settings[identicon.IDENTICON_FIELD][
+            identicon.CURRENT_FIELD][identicon.SEED_FIELD] = ""
         path.write_text(json.dumps(settings))
         self.set_remote("someone/renamed")
         after = identicon.install_into_repo(self.tmp, readme=False)
-        self.assertEqual("someone/renamed", after["identiconSeed"])
+        self.assertEqual("someone/renamed", after["seed"])
 
     def test_reseed_uuid_derives_from_nothing(self):
         identicon.install_into_repo(self.tmp, readme=False)
         after = identicon.install_into_repo(self.tmp, reseed="uuid",
                                             readme=False)
-        self.assertRegex(after["identiconSeed"],
+        self.assertRegex(after["seed"],
                          r"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-"
                          r"[89ab][0-9a-f]{3}-[0-9a-f]{12}$")
-        self.assertEqual([self.SEED], after["identiconSeedHistory"])
+        self.assertEqual([self.SEED], retired(after))
 
     def test_reseed_path_uses_the_directory(self):
         identicon.install_into_repo(self.tmp, readme=False)
         after = identicon.install_into_repo(self.tmp, reseed="path",
                                             readme=False)
-        self.assertEqual(identicon.extract_repository_path(self.tmp), after["identiconSeed"])
+        self.assertEqual(identicon.extract_repository_path(self.tmp), after["seed"])
 
     def test_a_named_source_that_cannot_answer_raises(self):
         """`--reseed repo` with no remote is a question with no answer.
@@ -1027,7 +1078,7 @@ class TestTheSettingsFile(unittest.TestCase):
         """One resolver, so the read-only commands cannot report a mark the
         artifacts do not have."""
         applied = identicon.install_into_repo(self.tmp, readme=False)
-        self.assertEqual(applied["identiconSeed"],
+        self.assertEqual(applied["seed"],
                          identicon.identicon_seed(identicon.read_settings(self.tmp)))
 
 
@@ -1180,12 +1231,17 @@ class TestScope(unittest.TestCase):
         self.assertEqual(0, completed.returncode, completed.stderr)
         self.assertIn("{apply,show,render,validate,doctor}", completed.stdout)
 
-    def test_the_renderings_still_reach_a_file(self):
+    def test_the_renderings_still_reach_a_consumer(self):
         """Losing the escape sequences must not lose the renderings. SPEC.md
-        mandates them, so every one still has to arrive as bytes on disk."""
-        wanted = identicon.artifact_bytes("someone/a-project")
-        for name in ("png", "svg", "tricolour", "sextant", "octant", "txt"):
-            self.assertIn(name, wanted)
+        mandates them, so every one still has to arrive -- as fields under
+        `renders` now rather than as files, but arrive."""
+        current, renders = identicon.derived_settings(
+            "someone/a-project", identicon.COLOUR_MAP_LATEST)
+        self.assertIn(identicon.TRICOLOUR_FIELD, renders)
+        for name in ("sextant", "octant", "ascii"):
+            self.assertIn(name, renders[identicon.BLOCK_DRAWING_FIELD])
+        for field in (identicon.MATRIX_FIELD, identicon.COLOUR_FIELD):
+            self.assertIn(field, current)
 
 
 if __name__ == "__main__":
