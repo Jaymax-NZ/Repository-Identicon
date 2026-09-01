@@ -69,11 +69,11 @@ class TestTheVectorsThemselves(unittest.TestCase):
 
     def test_each_carries_everything_needed_to_check_an_implementation(self):
         for vector in vectors:
-            for field in ("seed", "colourMap", "md5", "grid", "foreground"):
+            for field in ("seed", "colourMap", "md5", "matrix", "foreground"):
                 self.assertIn(field, vector)
-            self.assertEqual(5, len(vector["grid"]),
-                             f"{vector['seed']}: the grid is not five rows")
-            for row in vector["grid"]:
+            self.assertEqual(5, len(vector["matrix"]),
+                             f"{vector['seed']}: the matrix is not five rows")
+            for row in vector["matrix"]:
                 self.assertRegex(row, r"^[01]{5}$")
 
     def test_no_two_vectors_share_a_seed(self):
@@ -82,16 +82,16 @@ class TestTheVectorsThemselves(unittest.TestCase):
 
     def test_the_colour_map_is_outside_what_gets_hashed(self):
         """The whole point of taking it out of the digest: a repository's
-        shape is fixed by its seed, and no colour map can move it. The grid
+        shape is fixed by its seed, and no colour map can move it. The matrix
         never sees the number, so there is nothing to pass and nothing to
         change."""
         for vector in vectors:
             with self.subTest(seed=vector["seed"]):
                 self.assertEqual(
-                    vector["grid"],
-                    identicon.grid_text(
-                        identicon.identicon_grid(vector["seed"])).split("\n"),
-                    f"{vector['seed']}: the grid moved")
+                    vector["matrix"],
+                    identicon.matrix_text(
+                        identicon.identicon_matrix(vector["seed"])).split("\n"),
+                    f"{vector['seed']}: the matrix moved")
 
     def test_the_case_of_a_seed_is_part_of_it(self):
         """Two spellings of one project name, pinned as separate vectors. A
@@ -118,12 +118,12 @@ class TestTheImplementationConforms(unittest.TestCase):
                 self.assertEqual(vector["md5"],
                                  identicon._digest(vector["seed"]))
 
-    def test_the_grid_matches(self):
+    def test_the_matrix_matches(self):
         for vector in vectors:
             with self.subTest(seed=vector["seed"]):
                 rows = ["".join("1" if cell else "0" for cell in row)
-                        for row in identicon.identicon_grid(vector["seed"])]
-                self.assertEqual(vector["grid"], rows)
+                        for row in identicon.identicon_matrix(vector["seed"])]
+                self.assertEqual(vector["matrix"], rows)
 
     def test_the_colour_matches(self):
         """Including the rounding rule. Half up, not half to even -- the one
@@ -216,24 +216,24 @@ class TestTheTextRendering(unittest.TestCase):
     def test_it_renders_two_lines_for_every_vector(self):
         for vector in vectors:
             with self.subTest(seed=vector["seed"]):
-                grid = identicon.identicon_grid(vector["seed"])
+                matrix = identicon.identicon_matrix(vector["seed"])
                 colour = identicon.identicon_colour(vector["seed"])
-                lines = text_identicon.text(grid, colour).split("\n")
+                lines = text_identicon.text(matrix, colour).split("\n")
                 self.assertEqual(2, len(lines))
 
-    def test_both_lattices_hold_the_whole_grid(self):
+    def test_both_lattices_hold_the_whole_matrix(self):
         """Neither lattice is a reduced version of the other. That is what
         makes the choice between them the host's and not the mark's, so it is
         checked on the pinned seeds rather than asserted in prose."""
         for vector in vectors:
-            grid = identicon.identicon_grid(vector["seed"])
+            matrix = identicon.identicon_matrix(vector["seed"])
             for name, draw in (("sextant", text_identicon.sextant),
                                ("octant", text_identicon.octant)):
                 with self.subTest(seed=vector["seed"], lattice=name):
-                    lines = draw(grid)
+                    lines = draw(matrix)
                     self.assertEqual(2, len(lines))
                     self.assertEqual(
-                        grid,
+                        matrix,
                         text_identicon._recover(lines, getattr(
                             text_identicon, f"{name.upper()}_LATTICE")))
 
@@ -283,7 +283,7 @@ class TestTheVectorsCanBeRegenerated(unittest.TestCase):
         for pinned, made in zip(vectors, produced):
             with self.subTest(seed=pinned["seed"]):
                 self.assertEqual(pinned["md5"], made["md5"])
-                self.assertEqual(pinned["grid"], made["grid"])
+                self.assertEqual(pinned["matrix"], made["matrix"])
                 self.assertNotIn("foreground", made)
                 self.assertEqual(
                     pinned["foreground"],
@@ -305,9 +305,9 @@ class TestTheBlocksAndTheCanvas(unittest.TestCase):
     SEED = "someone/a-project"
 
     def area(self, rgba, block, border):
-        """The GRID x GRID block region, with the border cropped off."""
+        """The MATRIX_SIZE x MATRIX_SIZE block region, with the border cropped off."""
         edge = identicon.canvas_edge(block, border)
-        side = block * identicon.GRID
+        side = block * identicon.MATRIX_SIZE
         rows = []
         for y in range(border, border + side):
             start = (y * edge + border) * 4
@@ -340,7 +340,7 @@ class TestTheBlocksAndTheCanvas(unittest.TestCase):
                                              border=border2)
                 self.assertEqual(
                     self.magnify(self.area(one, block, identicon.BORDER),
-                                 block * identicon.GRID, scale),
+                                 block * identicon.MATRIX_SIZE, scale),
                     self.area(many, block * scale, border2))
 
     def test_the_border_doubles_rather_than_quadrupling(self):
@@ -442,19 +442,19 @@ class TestTheColourRule(unittest.TestCase):
                 with self.assertRaises(identicon.UnknownColourMap):
                     identicon.identicon_colour(self.SEED, colour_map=colour_map)
 
-    def test_the_colour_map_cannot_reach_the_grid(self):
-        """`identicon_grid` takes a seed and nothing else. There is no
+    def test_the_colour_map_cannot_reach_the_matrix(self):
+        """`identicon_matrix` takes a seed and nothing else. There is no
         parameter to pass a colour map through, which is the mechanical
         guarantee that a new map repaints and never reshapes."""
         import inspect
-        parameters = inspect.signature(identicon.identicon_grid).parameters
+        parameters = inspect.signature(identicon.identicon_matrix).parameters
         self.assertEqual(["seed"], list(parameters))
 
     def test_there_is_one_of_each(self):
         """One file per artifact -- what one brightness across the wheel buys."""
         wanted = identicon.artifact_bytes(self.SEED)
         for name in ("png", "png4x", "png128", "png256", "svg", "colour",
-                     "grid", "tricolour", "sextant", "octant", "txt"):
+                     "matrix", "tricolour", "sextant", "octant", "txt"):
             self.assertIn(name, wanted)
         self.assertEqual(11, len(wanted))
 
@@ -554,7 +554,7 @@ class TestInstallingIntoARepository(unittest.TestCase):
         result = identicon.install_into_repo(self.tmp)
         self.assertEqual("someone/a-project", result["identiconSeed"])
         self.assertEqual("derived from auto", result["source"])
-        for name in ("png", "png4x", "svg", "colour", "grid", "tricolour",
+        for name in ("png", "png4x", "svg", "colour", "matrix", "tricolour",
                      "sextant", "octant", "txt"):
             with self.subTest(artifact=name):
                 path = pathlib.Path(result["files"][name])
@@ -593,7 +593,7 @@ class TestInstallingIntoARepository(unittest.TestCase):
         result = identicon.install_into_repo(self.tmp)
         body = pathlib.Path(result["files"]["txt"]).read_text(encoding="utf-8")
         expected = text_identicon.text(
-            identicon.identicon_grid(result["identiconSeed"]),
+            identicon.identicon_matrix(result["identiconSeed"]),
             identicon.identicon_colour(result["identiconSeed"]))
         self.assertEqual(expected + "\n", body)
 
@@ -1046,7 +1046,7 @@ class TestTheValidatorOfferedToPorts(unittest.TestCase):
         'v = json.load(open({vectors!r}))\n'
         'k = sys.argv[-1]\n'
         'hit = [x for x in v["vectors"] if x["seed"] == k][0]\n'
-        'print(json.dumps({{"grid": hit["grid"], "colour": hit["foreground"]}}))\n')
+        'print(json.dumps({{"matrix": hit["matrix"], "colour": hit["foreground"]}}))\n')
 
     def port(self, body):
         path = pathlib.Path(tempfile.mkdtemp()) / "port.py"
@@ -1070,11 +1070,11 @@ class TestTheValidatorOfferedToPorts(unittest.TestCase):
         self.assertEqual(len(vectors), len(failed))
         self.assertIn("#010203", failed[0]["problems"][0])
 
-    def test_a_wrong_grid_fails(self):
-        body = self.CONFORMING_PORT.replace('hit["grid"]', '["00000"] * 5')
+    def test_a_wrong_matrix_fails(self):
+        body = self.CONFORMING_PORT.replace('hit["matrix"]', '["00000"] * 5')
         failed = [r for r in self.run_validate(self.port(body)) if r["problems"]]
         self.assertTrue(failed)
-        self.assertIn("grid", failed[0]["problems"][0])
+        self.assertIn("matrix", failed[0]["problems"][0])
 
     def test_output_that_is_not_json_is_reported_rather_than_raised(self):
         results = self.run_validate(self.port('print("not json")\n'))
@@ -1085,13 +1085,13 @@ class TestTheValidatorOfferedToPorts(unittest.TestCase):
         results = self.run_validate(self.port('import sys\nsys.exit(3)\n'))
         self.assertIn("exited 3", results[0]["problems"][0])
 
-    def test_the_grid_may_be_numbers_or_booleans_rather_than_strings(self):
+    def test_the_matrix_may_be_numbers_or_booleans_rather_than_strings(self):
         """Failing a correct port over JSON shape is worse than no validator."""
-        for shape in ("[[int(c) for c in r] for r in hit[\"grid\"]]",
-                      "[[c == \"1\" for c in r] for r in hit[\"grid\"]]",
-                      "[[c for c in r] for r in hit[\"grid\"]]"):
+        for shape in ("[[int(c) for c in r] for r in hit[\"matrix\"]]",
+                      "[[c == \"1\" for c in r] for r in hit[\"matrix\"]]",
+                      "[[c for c in r] for r in hit[\"matrix\"]]"):
             with self.subTest(shape=shape):
-                body = self.CONFORMING_PORT.replace('hit["grid"]', shape)
+                body = self.CONFORMING_PORT.replace('hit["matrix"]', shape)
                 results = self.run_validate(self.port(body))
                 self.assertEqual([], results[0]["problems"])
 

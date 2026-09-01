@@ -24,7 +24,7 @@ identicon.js
     Vendored at:     reference/vendor/identicon.js
     Modified:        no
 
-**Normative for this specification's grid and colour.** Every constant in
+**Normative for this specification's matrix and colour.** Every constant in
 `SPEC.md` that is not about the key -- the centre-out hex-character walk, the
 seven-character hue draw, saturation 0.7 and lightness 0.5 -- is taken from
 this file rather than chosen. See "Where these constants come from" in

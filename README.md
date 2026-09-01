@@ -30,7 +30,7 @@ writes these:
 .identicon/repository-identicon-256.png        likewise
 .identicon/repository-identicon.svg            vector, same geometry
 .identicon/repository-identicon.colour         "#rrggbb\n", nothing else
-.identicon/repository-identicon.grid           five lines of "01010"
+.identicon/repository-identicon.matrix         five lines of "01010"
 .identicon/repository-identicon.tricolour      three emoji, the colour
 .identicon/repository-identicon.sextant        the pattern on the 2×3 lattice
 .identicon/repository-identicon.octant         the pattern on the 2×4 lattice
@@ -52,7 +52,7 @@ Beside them sits the one file that is an input rather than an artifact:
 written when it is not set and never rewritten, so the mark survives a rename,
 a move between forges and a clone. Edit it by hand to choose your own.
 
-`.colour` and `.grid` are the mark as text — enough to draw it with no PNG
+`.colour` and `.matrix` are the mark as text — enough to draw it with no PNG
 decoder and no SVG parser.
 
 `.tricolour`, `.sextant` and `.octant` are it already drawn, for a medium that
@@ -198,7 +198,7 @@ regenerates them and compares, where `node` is available, and skips where it is
 not — checking an implementation must never require the reference.
 
 The harness reads the library's **SVG** output rather than its PNG, because the
-grid then comes back exactly: one `<rect>` per foreground cell, with no pixel
+matrix then comes back exactly: one `<rect>` per foreground cell, with no pixel
 decoding and no resampling to argue about.
 
 ## Implementations vendor this; they do not depend on it

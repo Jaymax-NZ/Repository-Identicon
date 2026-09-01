@@ -2,7 +2,7 @@
 """Reference implementation of the repository identicon specification.
 
 A seed -- `owner/repo`, or a path where there is no remote -- becomes a 5x5
-grid and one colour, and then the eleven files a repository commits. The seed
+matrix and one colour, and then the eleven files a repository commits. The seed
 is read from `.identicon/settings.json`, which is the only place a
 repository's identity is written down; it is derived and written once, and
 read on every run after that. Run `python3 repository-identicon.py apply`
@@ -48,12 +48,12 @@ import zlib
 
 # ---- Identicon derivation ----
 #
-# GitHub-style: a 5x5 grid, left three columns drawn from the digest and
+# GitHub-style: a 5x5 matrix, left three columns drawn from the digest and
 # mirrored onto the right two, so every identicon is vertically symmetric.
 # The rule below is ours and is pinned by the test suite; it is not claimed to
 # reproduce GitHub's output byte for byte.
 
-GRID = 5
+MATRIX_SIZE = 5
 
 # The block sizes `--block` accepts. The canvas follows from the block, never
 # the other way round; see `canvas_edge`.
@@ -86,9 +86,9 @@ LARGE_CANVASES = (128, 256)
 def large_geometry(canvas):
     """The (block, border) for a canvas somebody else fixed. Exact or nothing."""
     block, border = 3 * canvas // 16, canvas // 32
-    if GRID * block + 2 * border != canvas:
+    if MATRIX_SIZE * block + 2 * border != canvas:
         raise ValueError(f"{canvas} is not a multiple of 32 and has no exact "
-                         f"block and border on a {GRID}x{GRID} grid")
+                         f"block and border on a {MATRIX_SIZE}x{MATRIX_SIZE} matrix")
     return block, border
 
 
@@ -282,7 +282,7 @@ def derive_identicon_seed(repository_root, derive_from="auto"):
 # ---- The colour map ----
 
 # **The colour map never reaches the digest.** The seed alone is hashed, so
-# the grid and the hue a repository draws are fixed by its seed for good. A
+# the matrix and the hue a repository draws are fixed by its seed for good. A
 # better colour map -- a wider gamut, a palette gaining a colour Unicode did
 # not have -- changes what colour a mark is drawn in and can never change its
 # shape. Shipping a new map is a deliberate, separate piece of work.
@@ -310,11 +310,11 @@ VERSION = "0.0.build"
 def _digest(seed):
     """MD5 of the seed as lowercase hex. Nothing is prepended or appended.
 
-    The only hash in this repository. The grid reads its first 15 characters
+    The only hash in this repository. The matrix reads its first 15 characters
     and the hue reads its last 7, so pattern and colour cannot come apart.
 
     Hex rather than bytes because the reference consumes the digest as *hex
-    characters* -- one nibble per grid cell, and the last seven characters as
+    characters* -- one nibble per matrix cell, and the last seven characters as
     the hue.
 
     **The seed is hashed exactly as `settings.json` spells it.** No case fold,
@@ -327,8 +327,8 @@ def _digest(seed):
     return hashlib.md5(seed.encode("utf-8")).hexdigest()
 
 
-def identicon_grid(seed):
-    """Return the 5x5 grid as a list of rows of bools.
+def identicon_matrix(seed):
+    """Return the 5x5 matrix as a list of rows of bools.
 
     Conforms to stewartlord/identicon.js, whose own comment reads:
 
@@ -340,31 +340,31 @@ def identicon_grid(seed):
     foreground. Pinned in vectors.json.
     """
     digest = _digest(seed)
-    grid = [[False] * GRID for _ in range(GRID)]
+    matrix = [[False] * MATRIX_SIZE for _ in range(MATRIX_SIZE)]
     for index in range(15):
         painted = int(digest[index], 16) % 2 == 0
-        column, row = divmod(index, GRID)
-        grid[row][2 - column] = painted
-        grid[row][2 + column] = painted
-    return grid
+        column, row = divmod(index, MATRIX_SIZE)
+        matrix[row][2 - column] = painted
+        matrix[row][2 + column] = painted
+    return matrix
 
 
-def grid_text(grid):
-    """The grid as five lines of `01010`, the spelling `vectors.json` uses.
+def matrix_text(matrix):
+    """The matrix as five lines of `01010`, the spelling `vectors.json` uses.
 
     Rows of characters rather than JSON, to match the `.colour` artifact beside
     it: both are a bare value a reader can take in at a glance and a shell can
     handle without a parser.
     """
     return "\n".join("".join("1" if cell else "0" for cell in row)
-                     for row in grid)
+                     for row in matrix)
 
 
 def identicon_hue(seed):
     """Hue as a fraction of a turn, from the last seven hex characters.
 
     28 bits over 0xfffffff, per the reference. Read from the same digest as
-    the grid, so one seed gives one pattern and one hue together.
+    the matrix, so one seed gives one pattern and one hue together.
     """
     return int(_digest(seed)[-7:], 16) / 0xFFFFFFF
 
@@ -516,7 +516,7 @@ def identicon_colour(seed, chroma=MARK_CHROMA, lightness=MARK_LIGHTNESS,
     The angle from the digest, warped, then Oklab at one lightness with the
     chroma capped.
 
-    **The shape does not depend on this.** `identicon_grid` reads the same
+    **The shape does not depend on this.** `identicon_matrix` reads the same
     digest and never sees `colour_map`, so replacing a colour map repaints
     every mark and moves none of them.
 
@@ -567,14 +567,14 @@ def hex_colour(rgb):
 
 
 def canvas_edge(block, border):
-    """The square canvas a block and a border imply: GRID blocks plus a border.
+    """The square canvas a block and a border imply: MATRIX_SIZE blocks plus a border.
 
     The block is the specified thing and the canvas is derived, never the other
     way round. Deriving the block from a canvas needs a heuristic, a heuristic
     does not scale linearly, and a mark that lands on a different block at a
     different scale is two drawings rather than one.
     """
-    return GRID * block + 2 * border
+    return MATRIX_SIZE * block + 2 * border
 
 
 def render_rgba(seed, block, border=BORDER, chroma=MARK_CHROMA,
@@ -585,7 +585,7 @@ def render_rgba(seed, block, border=BORDER, chroma=MARK_CHROMA,
     that has to fill a canvas somebody else fixed uses `large_geometry`, which
     returns a block and a border that land on that canvas exactly.
     """
-    grid = identicon_grid(seed)
+    matrix = identicon_matrix(seed)
     red, green, blue = identicon_colour(seed, chroma, lightness)
     edge, margin = canvas_edge(block, border), border
 
@@ -598,12 +598,12 @@ def render_rgba(seed, block, border=BORDER, chroma=MARK_CHROMA,
     rows = []
     for y in range(edge):
         row = bytearray()
-        grid_y = (y - margin) // block if block else -1
-        inside_y = margin <= y < margin + block * GRID
+        matrix_y = (y - margin) // block if block else -1
+        inside_y = margin <= y < margin + block * MATRIX_SIZE
         for x in range(edge):
-            grid_x = (x - margin) // block if block else -1
-            inside_x = margin <= x < margin + block * GRID
-            if inside_x and inside_y and grid[grid_y][grid_x]:
+            matrix_x = (x - margin) // block if block else -1
+            inside_x = margin <= x < margin + block * MATRIX_SIZE
+            if inside_x and inside_y and matrix[matrix_y][matrix_x]:
                 row += fore
             else:
                 row += back
@@ -812,7 +812,7 @@ def render_png(seed, block, **kwargs):
 
 def render_svg(seed, block=ARTIFACT_BLOCK, border=BORDER, chroma=MARK_CHROMA,
                lightness=MARK_LIGHTNESS, background=None):
-    grid = identicon_grid(seed)
+    matrix = identicon_matrix(seed)
     colour = hex_colour(identicon_colour(seed, chroma, lightness))
     size = canvas_edge(block, border)
 
@@ -823,9 +823,9 @@ def render_svg(seed, block=ARTIFACT_BLOCK, border=BORDER, chroma=MARK_CHROMA,
     if background is not None:
         parts.append(f'<rect width="{size}" height="{size}" '
                      f'fill="{hex_colour(background)}"/>')
-    for row in range(GRID):
-        for column in range(GRID):
-            if grid[row][column]:
+    for row in range(MATRIX_SIZE):
+        for column in range(MATRIX_SIZE):
+            if matrix[row][column]:
                 x = border + column * block
                 y = border + row * block
                 parts.append(
@@ -835,7 +835,7 @@ def render_svg(seed, block=ARTIFACT_BLOCK, border=BORDER, chroma=MARK_CHROMA,
     return "\n".join(parts) + "\n"
 
 
-# The text rendering lives in text-identicon.py, which takes a grid and a colour
+# The text rendering lives in text-identicon.py, which takes a matrix and a colour
 # and nothing else. Loaded by path because the file name carries a hyphen.
 #
 # **These two files are a pair and must be deployed together**: the sextant
@@ -909,7 +909,7 @@ def artifact_names():
         yield f"png{canvas}", f"{ARTIFACT_STEM}-{canvas}.png"
     yield "svg", f"{ARTIFACT_STEM}.svg"
     yield "colour", f"{ARTIFACT_STEM}.colour"
-    yield "grid", f"{ARTIFACT_STEM}.grid"
+    yield "matrix", f"{ARTIFACT_STEM}.matrix"
     yield "tricolour", f"{ARTIFACT_STEM}.tricolour"
     yield "sextant", f"{ARTIFACT_STEM}.sextant"
     yield "octant", f"{ARTIFACT_STEM}.octant"
@@ -1085,15 +1085,15 @@ def artifact_bytes(seed, block=ARTIFACT_BLOCK, **render_kwargs):
         wanted[f"png{canvas}"] = render_png(seed, large_block,
                                             border=large_border, **render_kwargs)
     colour = _colour_for(seed, render_kwargs)
-    grid = identicon_grid(seed)
+    matrix = identicon_matrix(seed)
     text = _text_module()
     wanted["colour"] = (hex_colour(colour) + "\n").encode("utf-8")
-    wanted["grid"] = (grid_text(grid) + "\n").encode("utf-8")
-    wanted["tricolour"] = (text.tricolour(colour, grid) + "\n").encode("utf-8")
-    for name, lines in (("sextant", text.sextant(grid)),
-                        ("octant", text.octant(grid))):
+    wanted["matrix"] = (matrix_text(matrix) + "\n").encode("utf-8")
+    wanted["tricolour"] = (text.tricolour(colour, matrix) + "\n").encode("utf-8")
+    for name, lines in (("sextant", text.sextant(matrix)),
+                        ("octant", text.octant(matrix))):
         wanted[name] = ("\n".join(lines) + "\n").encode("utf-8")
-    wanted["txt"] = (text.text(grid, colour) + "\n").encode("utf-8")
+    wanted["txt"] = (text.text(matrix, colour) + "\n").encode("utf-8")
     return wanted
 
 
@@ -1446,7 +1446,7 @@ def load_vectors(path=None):
     # One colour map, so one number, and every vector must name it. A new map
     # that does not bring its vectors fails here rather than in the wild.
     #
-    # The grid and the digest in each vector do not depend on the colour map
+    # The matrix and the digest in each vector do not depend on the colour map
     # at all -- only `foreground` does -- but a vector is checked whole, so
     # the file states which map its colours were drawn under.
     covered = sorted({vector.get(COLOUR_MAP_FIELD, COLOUR_MAP_LATEST)
@@ -1464,7 +1464,7 @@ def _cell(value):
 
     A string cell is read by value, not by truthiness. `"0"` is a true Python
     string, so a port emitting `[["0", "1", ...], ...]` -- a perfectly
-    reasonable shape -- would otherwise be told its grid was solid, which is
+    reasonable shape -- would otherwise be told its matrix was solid, which is
     a wrong answer dressed up as a real one.
     """
     if isinstance(value, str):
@@ -1475,7 +1475,7 @@ def _cell(value):
     return "1" if value else "0"
 
 
-def _normalise_grid(value):
+def _normalise_matrix(value):
     """Accept the shapes a port might reasonably emit, reject the rest.
 
     A validator that fails a correct implementation over JSON shape is worse
@@ -1501,16 +1501,16 @@ def check_output(text, vector):
         return ["output is not a JSON object"]
 
     problems = []
-    if "grid" not in got:
-        problems.append("no 'grid' in output")
+    if "matrix" not in got:
+        problems.append("no 'matrix' in output")
     else:
         try:
-            rows = _normalise_grid(got["grid"])
+            rows = _normalise_matrix(got["matrix"])
         except TypeError:
-            problems.append("'grid' is not five rows of five cells")
+            problems.append("'matrix' is not five rows of five cells")
             rows = None
-        if rows is not None and rows != vector["grid"]:
-            problems.append(f"grid {rows} != {vector['grid']}")
+        if rows is not None and rows != vector["matrix"]:
+            problems.append(f"matrix {rows} != {vector['matrix']}")
 
     colour = got.get("colour", got.get("color"))
     if colour is None:
@@ -1527,7 +1527,7 @@ def validate_command(argv, vectors, timeout=30):
 
     The seed is the whole of what a port is handed, because the seed is the
     whole of what is hashed. A port needs no notion of a colour map to
-    reproduce a grid, and needs only this build's map to reproduce a colour.
+    reproduce a matrix, and needs only this build's map to reproduce a colour.
     """
     results = []
     for vector in vectors:
@@ -1555,7 +1555,7 @@ def cmd_validate(args):
         print("give the command that runs your implementation, for example:\n"
               "  repository-identicon validate -- ./my-identicon --json\n"
               "It is run once per vector with the seed as its last argument,\n"
-              "and must print {\"grid\": [...], \"colour\": \"#rrggbb\"} on stdout.",
+              "and must print {\"matrix\": [...], \"colour\": \"#rrggbb\"} on stdout.",
               file=sys.stderr)
         return 2
 
@@ -1692,7 +1692,7 @@ def build_parser():
         help="check another implementation against the pinned vectors",
         description="Runs your implementation once per vector with the seed "
                     "as its last argument. It must print "
-                    '{"grid": [...], "colour": "#rrggbb"} on stdout.')
+                    '{"matrix": [...], "colour": "#rrggbb"} on stdout.')
     add_common(validate, path=False)
     validate.add_argument("--vectors", help=f"default: {VECTORS_NAME} beside this script")
     validate.add_argument("--json", action="store_true")

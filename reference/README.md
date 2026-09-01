@@ -15,7 +15,7 @@ as `drhus/awesome-identicons` did during the week this was written.
 ## The reference
 
 [stewartlord/identicon.js](https://github.com/stewartlord/identicon.js),
-JavaScript, BSD-2-Clause. Normative for the grid *and* the colour.
+JavaScript, BSD-2-Clause. Normative for the matrix *and* the colour.
 
 Chosen because it can be **executed here** — node is installed — so every
 vector in `../vectors.json` is output the library actually produced,
@@ -29,16 +29,16 @@ answered.
 string, a single character, a non-GitHub host, and two path-shaped keys.
 `tests/test_conformance.py` asserts every one of them on every run.
 
-**Independently corroborated on the grid.**
+**Independently corroborated on the matrix.**
 [dgraham/identicon](https://github.com/dgraham/identicon) — MIT, Rust, "a port
 of GitHub's identicon algorithm" — was transcribed from `src/lib.rs` and
-`src/nibbler.rs` and produces an identical grid for all ten keys. Two authors,
-two languages, one pattern: the grid rule is a property of the convention
+`src/nibbler.rs` and produces an identical matrix for all ten keys. Two authors,
+two languages, one pattern: the matrix rule is a property of the convention
 rather than of either implementation.
 
 Its **colour rule differs** — hue from 12 bits, with saturation and lightness
 derived from two further digest bytes rather than fixed. **Not taken.** Mixing
-one project's grid with another's colour would produce a specification neither
+one project's matrix with another's colour would produce a specification neither
 implements, and checking it would require a Rust toolchain this machine does
 not have and does not need.
 

@@ -2,7 +2,7 @@
 
 **What this file owns, and what `vectors.json` owns.**
 
-`vectors.json` pins the *mapping*: seed to MD5 digest, digest to grid, digest
+`vectors.json` pins the *mapping*: seed to MD5 digest, digest to matrix, digest
 to foreground colour. It is the contract another implementation has to meet,
 and it stops at the three values a reimplementation can compute without
 agreeing to produce any particular file.
@@ -12,7 +12,7 @@ into `.identicon/` for a given seed. A port is not asked to reproduce these.
 The reference implementation is, on every machine that runs it.
 
 The two do not overlap. No seed here appears in `vectors.json`, and a test
-enforces that: a grid that changed would break the vectors, and a file layout
+enforces that: a matrix that changed would break the vectors, and a file layout
 that changed breaks only these fixtures. Reading a failure is then unambiguous.
 The mapping moved, or the writer did.
 
@@ -21,7 +21,7 @@ repository's identity is read from, not an artifact derived from one, and
 `artifact_bytes` does not produce it.
 
 **Why the bytes and not their hashes.** A digest that disagrees says only that
-something disagrees. `.txt`, `.grid`, `.svg` and the rest are text, and a
+something disagrees. `.txt`, `.matrix`, `.svg` and the rest are text, and a
 failing test prints the diff.
 
 **Regenerating.** The command is:
@@ -35,9 +35,9 @@ seed in `FIXTURE_SEEDS` is deliberately changed or replaced. Those are the two
 edits that change what the correct bytes are. Make the edit, run the command,
 and review the diff.
 
-A new colour map repaints these fixtures and never reshapes them: the grid
+A new colour map repaints these fixtures and never reshapes them: the matrix
 comes off the seed alone, so a regeneration after a map change must show
-colour bytes moving and grid bytes standing still. That is the property to
+colour bytes moving and matrix bytes standing still. That is the property to
 read the diff for.
 
 Running it is not legitimate as a way to make a failing test pass. A failure
@@ -84,7 +84,7 @@ FIXTURE_COLOUR_MAP = 0
 # fixture nobody can say the purpose of is a fixture nobody dares change.
 #
 # The colours named below are what these seeds produce under colour map 0. A
-# new map moves them and leaves every grid alone, and the property each seed
+# new map moves them and leaves every matrix alone, and the property each seed
 # was chosen for is asserted in
 # `test_the_seeds_cover_both_branches_of_the_chroma_rule` rather than left to
 # these comments -- so a change that costs the set its coverage fails rather
@@ -133,7 +133,7 @@ FIXTURE_SEEDS = (
 #
 # Artifacts compared as text, so a failure prints a diff. Everything else is
 # compared as bytes and reported by length.
-TEXT_SUFFIXES = (".grid", ".colour", ".octant", ".sextant",
+TEXT_SUFFIXES = (".matrix", ".colour", ".octant", ".sextant",
                  ".tricolour", ".txt", ".svg")
 
 

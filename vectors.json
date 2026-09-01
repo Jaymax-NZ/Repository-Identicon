@@ -4,7 +4,7 @@
       "seed": "justin-maxwell/claude-state-panel",
       "colourMap": 0,
       "md5": "933c893c2ce1f17c68026b0f4fdf584d",
-      "grid": [
+      "matrix": [
         "10001",
         "00000",
         "01010",
@@ -17,7 +17,7 @@
       "seed": "justin-maxwell/glyph-hunter",
       "colourMap": 0,
       "md5": "ac8346e5a4f1684bf3c3fe117f08d36a",
-      "grid": [
+      "matrix": [
         "01110",
         "01110",
         "10101",
@@ -30,7 +30,7 @@
       "seed": "justin-maxwell/sentry-mcp",
       "colourMap": 0,
       "md5": "b3d68a1f823c56e9cf257bbe5a68e67e",
-      "grid": [
+      "matrix": [
         "01010",
         "10001",
         "00000",
@@ -43,7 +43,7 @@
       "seed": "justin-maxwell/markright",
       "colourMap": 0,
       "md5": "e398de2fcc0fe5bd8a7b4a8df5d4684f",
-      "grid": [
+      "matrix": [
         "11111",
         "01010",
         "10001",
@@ -56,7 +56,7 @@
       "seed": "Jaymax-NZ/Repository-Identicon",
       "colourMap": 0,
       "md5": "12cf4ba42d9f2a93e66ecf7d39bcaead",
-      "grid": [
+      "matrix": [
         "00000",
         "01110",
         "11111",
@@ -69,7 +69,7 @@
       "seed": "jaymax-nz/repository-identicon",
       "colourMap": 0,
       "md5": "cf0d2d3db57c73e9651dbac0be2787ba",
-      "grid": [
+      "matrix": [
         "00100",
         "10001",
         "00100",
@@ -82,7 +82,7 @@
       "seed": "torvalds/linux",
       "colourMap": 0,
       "md5": "73257b80b6bdd24de474272741267953",
-      "grid": [
+      "matrix": [
         "00000",
         "01010",
         "01110",
@@ -95,7 +95,7 @@
       "seed": "Code/Projects/MarkRight",
       "colourMap": 0,
       "md5": "8f324116d08826afef39fb29e4ee047c",
-      "grid": [
+      "matrix": [
         "10101",
         "10001",
         "11011",
@@ -108,7 +108,7 @@
       "seed": "/opt/checkouts/Thing",
       "colourMap": 0,
       "md5": "166185c80e8b9dc314462032e0c8433f",
-      "grid": [
+      "matrix": [
         "10001",
         "01110",
         "01110",
@@ -121,7 +121,7 @@
       "seed": "a",
       "colourMap": 0,
       "md5": "0cc175b9c0f1b6a831c399e269772661",
-      "grid": [
+      "matrix": [
         "00100",
         "00100",
         "00100",
