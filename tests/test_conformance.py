@@ -1224,6 +1224,76 @@ class TestTheTwoFilesAreAPair(unittest.TestCase):
         self.assertIn("text-identicon.py", str(raised.exception))
 
 
+class TestTheColourMapAgainstTheWheel(unittest.TestCase):
+    """The wheel is the colour map drawn. `work-in-progress/wheel80.svg` is
+    the picture the blocks were placed on, so what ships has to agree with it
+    -- a check against the artifact a person actually looked at, rather than
+    against the code's own arithmetic restated.
+    """
+
+    WHEEL = ROOT / "work-in-progress" / "wheel80.svg"
+    # The ring is drawn as 1440 thin rects at one x, each rotated into place.
+    SEGMENT = re.compile(r'<rect x="359\.132"[^>]*fill="(#[0-9a-f]{6})"'
+                         r'[^>]*rotate\(([0-9.]+)')
+
+    def setUp(self):
+        if not self.WHEEL.is_file():
+            self.skipTest("the wheel is not in this checkout")
+        self.ring = self.SEGMENT.findall(
+            self.WHEEL.read_text(encoding="utf-8"))
+
+    def test_the_ring_is_the_colour_this_build_draws(self):
+        """**The page angle is the colour map angle**, and the warp only
+        decides which hue sits under each tile. Reading the ring as a hue
+        instead disagrees on 1433 of 1440 segments, so this is not a weak
+        check."""
+        self.assertEqual(1440, len(self.ring))
+        for fill, angle in self.ring:
+            with self.subTest(angle=angle):
+                degrees = identicon.hue_angle(float(angle) % 360.0)
+                chroma = identicon.gamut_chroma(degrees)
+                self.assertEqual(fill, identicon.hex_colour(tuple(
+                    identicon._encode(channel) for channel in
+                    identicon._oklch_to_linear(identicon.MARK_LIGHTNESS,
+                                               chroma, degrees))))
+
+    def test_exactly_one_block_covers_every_angle_on_the_ring(self):
+        for _fill, angle in self.ring:
+            with self.subTest(angle=angle):
+                self.assertIsNotNone(
+                    identicon.colour_map_block(float(angle)))
+
+    def test_the_blocks_tile_the_circle_on_whole_degrees(self):
+        blocks = identicon.load_colour_map()["blocks"]
+        edge = 0
+        for block in sorted(blocks, key=lambda b: b["from"]):
+            self.assertEqual(edge, block["from"], block)
+            self.assertEqual(int(block["width"]), block["width"], block)
+            edge = block["from"] + block["width"]
+        self.assertEqual(360, edge)
+
+    def test_the_map_carries_the_transforms_that_made_the_ring(self):
+        """The blocks were placed over the ring these three produce, so a
+        block only means what it means against them. One file, one number."""
+        loaded = identicon.load_colour_map()
+        self.assertEqual(identicon.COLOUR_MAP_LATEST, loaded["colourMap"])
+        self.assertEqual(identicon.MARK_LIGHTNESS, loaded["lightness"])
+        self.assertEqual(identicon.MARK_CHROMA, loaded["chromaCap"])
+        centre, half, peak = identicon.HUE_WARP
+        self.assertEqual({"centre": centre, "halfWidth": half, "peak": peak},
+                         loaded["hueWarp"])
+
+    def test_a_seed_gets_the_block_its_angle_falls_in(self):
+        """The end-to-end step: seed to angle to block to tricolour."""
+        for vector in vectors:
+            with self.subTest(seed=vector["seed"]):
+                angle = identicon.colour_map_angle(vector["seed"])
+                block = identicon.colour_map_block(angle)
+                names = [name.removesuffix("-circle")
+                         for name in vector["tricolour"]]
+                self.assertEqual(sorted(block["colours"]), sorted(names))
+
+
 class TestScope(unittest.TestCase):
     """SPEC.md § Scope: a pure function from key to bytes, name or string is in;
     a side effect is out. Both halves are checked, because a rule only stated in
