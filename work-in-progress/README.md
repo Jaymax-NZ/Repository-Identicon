@@ -97,21 +97,20 @@ declare.
 
 ### Coverage, as it stands
 
-**The 8/4/1 pricing overcounts, and this is a real fault rather than a rounding.**
-It assumes eight shape combinations per block, which holds only when all three
-colours are circleable. Black and white never are, so a triple containing one
-has four and a triple containing both has two. A three-distinct block with a
-black in it is worth twelve marks and is drawn as wide as one worth forty-eight.
+**The 8/4/1 pricing is exact.** It assumes eight shape combinations per block,
+and every block has eight: all nine colours exist as a square and as a circle,
+so there is no position that cannot take one.
 
-| | assuming 8 | actually |
-|---|---|---|
-| marks reachable | 2,168 | **1,604** |
-| effective distinct | 2,166 | **1,307** |
-| 50% chance any pair collides at | 55 projects | **43 projects** |
+| | |
+|---|---|
+| marks reachable | 2,168 |
+| effective distinct | 2,166 |
+| 50% chance any pair collides at | 55 projects |
 
-Twenty-five of the sixty-three blocks carry an achromatic. The fix is to price a
-block by `arrangements × 2^circleable` rather than by class alone — which would
-make several current widths wrong, so it is a re-layout, not an edit.
+This section used to record an overcount, on the grounds that black and white
+never circle and a block containing one was worth twelve marks while drawn as
+wide as one worth forty-eight. That exclusion was overruled after testing, and
+with all nine circling the fault does not exist. Nothing needs re-laying out.
 
 ### Numbers are positional
 
@@ -137,16 +136,18 @@ opponent pairs, and it is biology rather than geometry.
 
 **Hashing an output of the mapping adds nothing to it.** The order of the
 three colours, and which of them are circles, were taken from a hash of
-`#rrggbb` — so that the shipped `.colour` file would be sufficient on its own,
-which is a real
+`#rrggbb` — so that the colour alone would be sufficient, which is a real
 property and was argued for on real grounds. But the colour is what the mapping
 produces, so a channel derived from it cannot separate two projects the mapping
 has already put in the same place: over four thousand projects it yielded fewer
 distinct marks than there were distinct colours. The measurement that was
 supposed to catch this swept the gamut one sample per colour, which makes every
 mark look distinct by construction. **Measure over the population you have, not
-over the space it lives in.** Both now come from the grid, which is fifteen bits
-of the key's digest and already in hand wherever a mark is drawn.
+over the space it lives in.**
+
+They moved to the matrix next, which is disjoint from the hue but *identical to
+the pattern* — better, and still not independent. Each now reads its own
+character of the digest, characters 15 and 16, which needs no argument at all.
 
 **Two domains must not be compared.** The palette is anchored on Unicode
 *names*, so `yellow` is nominally `#ffff00` — a colour no font paints and the

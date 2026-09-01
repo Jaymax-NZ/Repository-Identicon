@@ -1,8 +1,33 @@
 # Page 2, Derivation — the change set
 
-Accumulated, not executed. Same process as `identity-change-set.md`: rulings
-land here as numbered rules, facts are checked against the source before
-anything is written, and the whole set is built at once.
+**Built, 2026-09-01.** Every rule below is in the code, in six commits from
+`The 5x5 is a matrix` to `Hold the shipped colour to the wheel it was drawn
+from`. What follows is the record of what was decided and why, not a plan.
+
+Four stages, each ending green, so a failure was always bisectable to one
+intent:
+
+| stage | what it did | what proved it |
+|---|---|---|
+| A | renames only | all 44 fixture artifacts byte-identical, and git recorded the fixture files as renames rather than modifications |
+| B | `settings.json` restructured, six artifacts became fields | the five surviving fixtures per seed untouched; only deletions under `tests/fixtures/` |
+| C | the colour map ships, the tricolour is three slices | 63 blocks keep their colours and numbers across the rotation; 1440 of 1440 ring segments still match |
+| D | the wheel validator | 5 tests, 2890 subtests, against the picture rather than the arithmetic |
+
+Ending state: 122 tests, 3470 subtests, and the diagram regenerates with no
+warnings across all ten pages.
+
+Two open questions were settled in the build rather than by a ruling, and
+either could be reversed cheaply. `vectors.json` keeps the `01010` spelling of
+the matrix rather than booleans, because a fixture file is read by a port
+author and `01010` diffs a row at a time. The history timestamp is
+`_changed_at()`, a function, so a test can replace it -- `settings.json` is
+committed and a clock in it would make two runs of one change disagree.
+
+Original preamble: accumulated, not executed. Same process as
+`identity-change-set.md`: rulings land here as numbered rules, facts are
+checked against the source before anything is written, and the whole set is
+built at once.
 
 Facts below were read from `repository-identicon.py` and `text-identicon.py`
 on 2026-09-01.

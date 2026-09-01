@@ -1,0 +1,44 @@
+{
+  "identicon": {
+    "current": {
+      "colour": "#008fa9",
+      "colourMap": 0,
+      "matrix": [
+        [false, false, false, false, false],
+        [false, true, true, true, false],
+        [true, true, true, true, true],
+        [true, true, false, true, true],
+        [false, false, true, false, false]
+      ],
+      "seed": "Jaymax-NZ/Repository-Identicon",
+      "tricolour": {
+        "colours": [
+          { "colour": "brown", "shape": "square" },
+          { "colour": "green", "shape": "circle" },
+          { "colour": "blue", "shape": "circle" }
+        ]
+      }
+    },
+    "history": []
+  },
+  "renders": {
+    "blockDrawing": {
+      "ascii": [
+        "          ",
+        "  [][][]  ",
+        "[][][][][]",
+        "[][]  [][]",
+        "    []    "
+      ],
+      "octant": [
+        "      ",
+        "𜴵𜵠🯦"
+      ],
+      "sextant": [
+        "🬞🬭 ",
+        "🬎🬙🬄"
+      ]
+    },
+    "tricolour": "🟫🟢🔵"
+  }
+}
