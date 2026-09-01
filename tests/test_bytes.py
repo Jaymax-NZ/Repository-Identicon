@@ -203,7 +203,7 @@ class TestTheFixtureSet(unittest.TestCase):
         """
         chromas = []
         for _slug, seed, _reason in FIXTURE_SEEDS:
-            degrees = identicon.warp_hue(identicon.identicon_hue(seed) * 360.0)
+            degrees = identicon.hue_angle(identicon.colour_map_angle(seed))
             chromas.append(identicon.gamut_chroma(degrees))
         cap = identicon.MARK_CHROMA
         self.assertTrue(any(value >= cap for value in chromas),

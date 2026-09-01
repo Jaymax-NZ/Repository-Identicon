@@ -34,6 +34,7 @@ list.
 """
 
 import argparse
+import collections
 import hashlib
 import json
 import math
@@ -307,15 +308,33 @@ COLOUR_MAP_LATEST = 0
 VERSION = "0.0.build"
 
 
-def _digest(seed):
-    """MD5 of the seed as lowercase hex. Nothing is prepended or appended.
+# Every component reads its own characters, and no two components read the
+# same ones. The slice names are the component names, so a caller asks for
+# what it draws rather than for an offset into a string.
+#
+#   0-14   matrix        one nibble per cell, even is painted
+#   15     arrangement   which order the three colours are laid out in
+#   16     shape         circle or square, one bit per position
+#   17-24  unread        eight characters, thirty-two bits, spent on nothing
+#   25-31  colour        28 bits over 0xfffffff, as an angle
+#
+# The unread run is recorded because it is the budget any further component
+# comes out of, and because a reader counting characters will otherwise
+# wonder what is missing.
+DigestSlices = collections.namedtuple(
+    "DigestSlices", "digest matrix arrangement shape colour")
 
-    The only hash in this repository. The matrix reads its first 15 characters
-    and the hue reads its last 7, so pattern and colour cannot come apart.
+
+def hash_identicon_seed(identicon_seed):
+    """MD5 of the seed as lowercase hex, split into the slices each component
+    reads.
+
+    The only hash in this repository. Every component reads a slice disjoint
+    from every other, so no two of them can move together.
 
     Hex rather than bytes because the reference consumes the digest as *hex
     characters* -- one nibble per matrix cell, and the last seven characters as
-    the hue.
+    the colour angle.
 
     **The seed is hashed exactly as `settings.json` spells it.** No case fold,
     no trimming, no prefix: a port reproduces a mark by hashing the string the
@@ -324,7 +343,9 @@ def _digest(seed):
     matters where forging a match gains something, and nothing is gained by
     finding two repository names that draw alike.
     """
-    return hashlib.md5(seed.encode("utf-8")).hexdigest()
+    digest = hashlib.md5(identicon_seed.encode("utf-8")).hexdigest()
+    return DigestSlices(digest, digest[:15], digest[15], digest[16],
+                        digest[25:])
 
 
 def identicon_matrix(seed):
@@ -339,7 +360,7 @@ def identicon_matrix(seed):
     and mirror it to 3, and 10-14 fill column 0 and mirror it to 4. Even is
     foreground. Pinned in vectors.json.
     """
-    digest = _digest(seed)
+    digest = hash_identicon_seed(seed).matrix
     matrix = [[False] * MATRIX_SIZE for _ in range(MATRIX_SIZE)]
     for index in range(15):
         painted = int(digest[index], 16) % 2 == 0
@@ -360,13 +381,18 @@ def matrix_text(matrix):
                      for row in matrix)
 
 
-def identicon_hue(seed):
-    """Hue as a fraction of a turn, from the last seven hex characters.
+def colour_map_angle(seed):
+    """The angle the colour map is indexed at, in degrees, before the warp.
 
-    28 bits over 0xfffffff, per the reference. Read from the same digest as
-    the matrix, so one seed gives one pattern and one hue together.
+    28 bits over 0xfffffff as a fraction of a turn, then degrees, per the
+    reference.
+
+    **This is not a hue.** `hue_angle` warps it, and the warped value is the
+    hue the colour is built at; the two are different numbers and reading the
+    colour map at the wrong one shifts every triple around the blue-greens.
+    The colour map is indexed at this value.
     """
-    return int(_digest(seed)[-7:], 16) / 0xFFFFFFF
+    return int(hash_identicon_seed(seed).colour, 16) / 0xFFFFFFF * 360.0
 
 
 def _quantise(value):
@@ -412,7 +438,7 @@ MARK_CHROMA = 0.26
 # colour, and it cannot be fixed by placement -- see
 # `work-in-progress/README.md`.
 #
-# So that arc is given less of the draw than its width suggests. The hue advances
+# So that arc is given less of the circle than its width suggests. The hue advances
 # faster through it, and the projects saved land where the vocabulary can tell
 # them apart.
 #
@@ -432,7 +458,7 @@ def _warp_bump(turned, half):
     """The integral of the raised-cosine bump, from its start to `turned`.
 
     Flat at zero before the bump begins and flat at `half` after it ends, which
-    is what makes `warp_hue` monotonic with continuous ends.
+    is what makes `hue_angle` monotonic with continuous ends.
     """
     if turned <= -half:
         return 0.0
@@ -442,7 +468,7 @@ def _warp_bump(turned, half):
             + (half / (2 * math.pi)) * math.sin(math.pi * turned / half))
 
 
-def warp_hue(degrees, warp=HUE_WARP):
+def hue_angle(degrees, warp=HUE_WARP):
     """A uniform draw in degrees, to the hue it names. Monotonic, onto [0, 360).
 
     `None` for `warp` is the uniform draw, which the three withdrawn drafts
@@ -530,7 +556,7 @@ def identicon_colour(seed, chroma=MARK_CHROMA, lightness=MARK_LIGHTNESS,
             f"colour map {colour_map!r} is not implemented by this build, "
             f"which draws colour map {COLOUR_MAP_LATEST}")
 
-    degrees = warp_hue(identicon_hue(seed) * 360.0)
+    degrees = hue_angle(colour_map_angle(seed))
     return tuple(_encode(channel) for channel in
                  _oklch_to_linear(lightness, gamut_chroma(degrees, lightness,
                                                           chroma), degrees))

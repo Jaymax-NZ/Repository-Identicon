@@ -316,10 +316,14 @@ exists.
 
 ### Colour map 0, the only rule
 
-Two steps: warp the drawn value into a hue, then build the colour at that hue.
+Two steps: warp the colour map angle into a hue, then build the colour at that
+hue.
 
-**Step one — the warp.** The value from the digest is a position in the draw,
-not an angle directly.
+**Step one — the warp.** The value from the digest is the **colour map
+angle**: the angle at which the colour map is indexed, before any of this map's
+rules touch it. It is not a hue. The warped value is the hue, the two are
+different numbers, and indexing the colour map at the hue shifts every triple
+around the blue-greens.
 
 ```
 centre, half, peak = 215, 50, 4          degrees of Oklab hue
@@ -335,7 +339,7 @@ hue      = 360 * (draw + (peak - 1) * bump(draw - centre)) / total
 `draw` is the value from the digest, in degrees, reduced to `[0, 360)`.
 
 The function is monotonic and onto `[0, 360)`, so **every hue is still
-reachable**. What changes is how much of the draw each one gets: the hue
+reachable**. What changes is each one's share of the circle: the hue
 advances up to four times faster around 215 degrees, so that arc takes roughly a
 quarter of the projects its width would otherwise give it. Measured over the
 whole draw, the hundred degrees from 165 to 265 fall from 27.8% of projects to
@@ -344,11 +348,11 @@ whole draw, the hundred degrees from 165 to 265 fall from 27.8% of projects to
 **Why that arc.** The emoji fallback's palette has no colour between green and
 blue, so every mixture of the two reads at essentially one hue and whole bands
 there cannot be named at all. That is a property of the palette and cannot be
-fixed by choosing better triples. Spending less of the draw there puts the
+fixed by choosing better triples. Giving that arc less of the circle puts the
 projects saved where the fallback can tell them apart, at no cost to the other
 renderings, which could always draw the colour exactly.
 
-**Why a raised cosine.** Its derivative is zero at both ends, so the draw has no
+**Why a raised cosine.** Its derivative is zero at both ends, so the mapping has no
 corner and no project sits on a discontinuity, and its integral is elementary —
 which is why the rule above is six lines rather than a spline nobody can
 reimplement from prose.
@@ -453,10 +457,11 @@ So under versions 0 and 1 roughly a fifth of all projects land in the 100–130
 band that occupies about six degrees of perceptual space, while the teal to blue
 stretch runs at about half its share. Version 2 removes both.
 
-**Version 0.3 makes the draw deliberately uneven again, which is not a reversal
-of that.** Version 2's defect was that equal draw bought unequal *colour*; the
-spacing was an accident of HSL and nobody chose it. Version 0.3 keeps the even
-perceptual spacing and then spends the draw unevenly on purpose, for a stated
+**Version 0.3 makes the shares deliberately uneven again, which is not a
+reversal of that.** Version 2's defect was that an equal share bought unequal
+*colour*; the spacing was an accident of HSL and nobody chose it. Version 0.3
+keeps the even perceptual spacing and then divides the circle unevenly on
+purpose, for a stated
 reason, in a stated place. An accident corrected and a choice made are different
 things even when the measured histogram looks similar.
 

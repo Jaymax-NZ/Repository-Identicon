@@ -116,7 +116,8 @@ class TestTheImplementationConforms(unittest.TestCase):
         for vector in vectors:
             with self.subTest(seed=vector["seed"]):
                 self.assertEqual(vector["md5"],
-                                 identicon._digest(vector["seed"]))
+                                 identicon.hash_identicon_seed(
+                                     vector["seed"]).digest)
 
     def test_the_matrix_matches(self):
         for vector in vectors:
