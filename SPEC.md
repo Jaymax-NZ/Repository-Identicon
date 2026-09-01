@@ -314,6 +314,38 @@ The current release state is in `VERSION` in the reference implementation.
 While it reads `0.0.*`, the colour map is a draft and only the current rule
 exists.
 
+### A colour map is one file, and the file is the version
+
+`colour-map-<n>.json` holds everything map `n` decides. An implementation
+learns which maps it has by seeing which of these files are present.
+
+```json
+{
+  "colourMap": 0,
+  "hueWarp": { "centre": 215.0, "halfWidth": 50.0, "peak": 4.0 },
+  "lightness": 0.6,
+  "chromaCap": 0.26,
+  "blocks": [ { "n": 63, "from": 0, "width": 2,
+                "colours": ["orange", "purple", "brown"] }, … ]
+}
+```
+
+**The transforms and the blocks are one version because they were solved
+together.** `hueWarp`, `lightness` and `chromaCap` turn the gamut circle into
+this ring of colours; the blocks were then placed over that ring, so a block
+only means what it means against those three numbers. Numbering the blocks
+alone would let a transform move without the number moving — which is exactly
+what happened when the wheel and the mapping version were two numbers for one
+thing.
+
+Block boundaries are whole degrees, and the blocks tile 0–360 with no gap and
+no overlap. **A block that straddles 0 appears as two entries sharing its
+`n`**, so a consumer never has to special-case a wrapping row.
+
+There is no emoji in the file. A glyph is a rendering of a colour *and a
+shape*, and the shape comes from the digest, so a stored glyph would be wrong
+for most seeds.
+
 ### Colour map 0, the only rule
 
 Two steps: warp the colour map angle into a hue, then build the colour at that
@@ -938,12 +970,10 @@ palette of nine named colours — a lossy paraphrase that costs three
 double-width columns and carries semantic weight a coloured pattern does not.
 
 **A palette entry is a colour, not a square.** Each is drawn as one emoji, and
-the character an implementation emits today is the `LARGE … SQUARE` for that
-colour. But which shape carries a colour is a separate question from which
-colours are chosen, and square and circle are peers within it — see the shape
-bullet under *Colour vision*. So this section says *colour* wherever a choice
-among the nine is being made, and *square* only where the shape itself is the
-subject.
+every colour exists as a `LARGE … SQUARE` and as a circle. Which shape carries
+a colour is a separate question from which colours are chosen, and the two are
+separate channels. So this section says *colour* wherever a choice among the
+nine is being made, and *square* only where the shape itself is the subject.
 
 It is nonetheless *the* colour channel here rather than a third-tier fallback,
 because both lattices are monochrome and nothing else can carry it. Palette of
@@ -959,32 +989,52 @@ $ python3 text-identicon.py --octant '#2692d9' '01010,01010,10001,10101,01010'
 𜶆𜶂🯦 🟦🟩🟦
 ```
 
-**Which three colours appear is a function of the colour; what order they
-appear in is a function of the matrix.** Both are needed, and a caller rendering
-an identicon holds both, so `text-identicon.py` still takes a colour and a matrix
-and nothing else — no seed and no digest of its own.
+**Three questions, three answers, three slices of the digest.** Which three
+colours, what order they are laid out in, and which of them are circles. Each
+reads its own characters, so no two can move together.
 
-The order is the low digit of the matrix's fifteen bits, read as a number: columns
-0–2 of each row, top to bottom, left to right, since columns 3 and 4 are the
-mirror and carry nothing. Index the distinct permutations of the multiset, in
-sorted order, modulo how many there are — one, three or six.
+**Which three: look up the colour map angle in the colour map.** The blocks in
+`colour-map-<n>.json` tile 0–360 with no gap and no overlap, so exactly one
+matches `from <= angle < from + width`; its `colours` are the three, in the
+order the file gives them. An implementation MUST index with the **colour map
+angle** and never with the hue: the warp makes them different numbers, and
+looking up with the hue shifts every triple around the blue-greens.
 
-**This used to be a pure function of the colour**, so that a consumer holding
-only `#rrggbb` could compute the whole mark. That property was real and it was
-defended, but it made the order a function of an *output* of the mapping, which
-cannot carry information the mapping has not already spent: two projects landing
-on the same quantised colour got the same order, necessarily. Over four thousand
-projects it produced fewer distinct marks than there were distinct colours. The
-matrix is fifteen bits of the seed's digest, drawn from a slice disjoint from the
-hue's, so the order now separates projects that share a colour.
+A block's `width` is the class price — 8° where the three colours are distinct,
+4° for a pair, 1° for three of a kind — so a block affords identity in
+proportion to the arrangements it can carry.
 
-**Which three of the nine stand for a colour is not yet normative.** The shipped
-chooser searches the palette for the mix nearest the target, which produces
-combinations that are numerically close and perceptually wrong. A replacement is
-settled but not adopted: `work-in-progress/in-use.tsv` is a hand-placed table
-of fifty arcs tiling 0–360, each naming its three colours, with
-`work-in-progress/` carrying how it was arrived at. It will land here, with
-vectors, once it ships.
+**What order: character 15 of the digest.** Take the distinct permutations of
+the block's three colours, sorted, and index them modulo how many there are —
+one, three or six.
+
+**Which are circles: character 16 of the digest**, one bit per position, low
+bit first. Three bits, eight combinations, on every block: every palette colour
+has a circle, so there is no position that cannot take one.
+
+Characters 17–24 are read by nothing. They are the budget any further component
+comes out of.
+
+**Both order and shape used to be drawn from the matrix's fifteen bits**, which
+is disjoint from the hue but *identical to the pattern* — so neither carried
+anything the pattern did not already carry. Before that they were hashed from
+the drawn `#rrggbb`, which was worse: an output of the mapping cannot carry
+information the mapping has not already spent, and over four thousand projects
+that produced fewer distinct marks than there were distinct colours. Separate
+slices are independent by construction and need no such argument.
+
+**A consumer holding only `#rrggbb` can no longer compute the mark.** That
+property was real and it was defended for a long time. It is given up here: the
+colour map is indexed by the angle, and the angle is recoverable from a
+quantised colour only approximately — about one project in fifty lands in the
+wrong block. An implementation writes the tricolour into `settings.json`
+instead, and consumers read it.
+
+**The chooser this replaces measured Oklab distance against the nominal
+primaries**, lightness included. Marks are drawn at lightness 0.60 and pure
+green sits at 0.87, so `#009a4f` — a green — was nearer to orange than to
+green, and based on orange. Colour map 0 replaces it outright; 96% of seeds get
+a different triple, and the vectors pin the new ones.
 
 #### Colour vision, stated plainly
 

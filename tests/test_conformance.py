@@ -84,7 +84,8 @@ class TestTheVectorsThemselves(unittest.TestCase):
 
     def test_each_carries_everything_needed_to_check_an_implementation(self):
         for vector in vectors:
-            for field in ("seed", "colourMap", "md5", "matrix", "foreground"):
+            for field in ("seed", "colourMap", "md5", "matrix", "foreground",
+                          "tricolour"):
                 self.assertIn(field, vector)
             self.assertEqual(5, len(vector["matrix"]),
                              f"{vector['seed']}: the matrix is not five rows")
@@ -140,6 +141,26 @@ class TestTheImplementationConforms(unittest.TestCase):
                 rows = ["".join("1" if cell else "0" for cell in row)
                         for row in identicon.identicon_matrix(vector["seed"])]
                 self.assertEqual(vector["matrix"], rows)
+
+    def test_the_tricolour_matches(self):
+        """Which three colours, in what order, and which are circles. Three
+        reads of three disjoint slices, and the colour map decides the first."""
+        for vector in vectors:
+            with self.subTest(seed=vector["seed"]):
+                pairs = identicon.identicon_tricolour(vector["seed"],
+                                                      vector["colourMap"])
+                self.assertEqual(tuple(vector["tricolour"]),
+                                 text_identicon.tricolour_names(pairs))
+
+    def test_the_shape_channel_reaches_every_colour(self):
+        """Black and white circle like everything else. They were excluded
+        once and the exclusion was overruled after testing, so the pinned set
+        is what keeps it overruled."""
+        circled = {name.removesuffix("-circle")
+                   for vector in vectors for name in vector["tricolour"]
+                   if name.endswith("-circle")}
+        self.assertIn("white", circled)
+        self.assertIn("brown", circled)
 
     def test_the_colour_matches(self):
         """Including the rounding rule. Half up, not half to even -- the one
@@ -234,9 +255,14 @@ class TestTheTextRendering(unittest.TestCase):
         for vector in vectors:
             with self.subTest(seed=vector["seed"]):
                 matrix = identicon.identicon_matrix(vector["seed"])
-                colour = identicon.identicon_colour(vector["seed"])
-                lines = text_identicon.text(matrix, colour).split("\n")
-                self.assertEqual(2, len(lines))
+                self.assertEqual(2, len(text_identicon.sextant(matrix)))
+
+    def test_the_tricolour_is_three_glyphs_for_every_vector(self):
+        for vector in vectors:
+            with self.subTest(seed=vector["seed"]):
+                pairs = identicon.identicon_tricolour(vector["seed"])
+                self.assertEqual(3, len(pairs))
+                self.assertEqual(3, len(text_identicon.tricolour(pairs)))
 
     def test_both_lattices_hold_the_whole_matrix(self):
         """Neither lattice is a reduced version of the other. That is what
@@ -616,9 +642,11 @@ class TestInstallingIntoARepository(unittest.TestCase):
         a consumer can rebuild any of it and get the same characters."""
         result = identicon.install_into_repo(self.tmp)
         matrix = identicon.identicon_matrix(result["seed"])
-        colour = identicon.identicon_colour(result["seed"])
         renders = self.renders()
-        self.assertEqual(text_identicon.tricolour(colour, matrix),
+        pairs = [(entry[identicon.COLOUR_FIELD], entry[identicon.SHAPE_FIELD])
+                 for entry in self.stored()[identicon.TRICOLOUR_FIELD][
+                     identicon.COLOURS_FIELD]]
+        self.assertEqual(text_identicon.tricolour(pairs),
                          renders[identicon.TRICOLOUR_FIELD])
         self.assertEqual(
             list(text_identicon.sextant(matrix)),

@@ -11,7 +11,12 @@
         "01110",
         "01110"
       ],
-      "foreground": "#e60080"
+      "foreground": "#e60080",
+      "tricolour": [
+        "brown",
+        "orange-circle",
+        "purple-circle"
+      ]
     },
     {
       "seed": "justin-maxwell/glyph-hunter",
@@ -24,7 +29,12 @@
         "11011",
         "11111"
       ],
-      "foreground": "#de00a3"
+      "foreground": "#de00a3",
+      "tricolour": [
+        "red-circle",
+        "purple-circle",
+        "brown-circle"
+      ]
     },
     {
       "seed": "justin-maxwell/sentry-mcp",
@@ -37,7 +47,12 @@
         "11111",
         "11111"
       ],
-      "foreground": "#007eef"
+      "foreground": "#007eef",
+      "tricolour": [
+        "black",
+        "blue",
+        "blue-circle"
+      ]
     },
     {
       "seed": "justin-maxwell/markright",
@@ -50,7 +65,12 @@
         "01110",
         "01010"
       ],
-      "foreground": "#9a7d00"
+      "foreground": "#9a7d00",
+      "tricolour": [
+        "black",
+        "orange",
+        "green"
+      ]
     },
     {
       "seed": "Jaymax-NZ/Repository-Identicon",
@@ -63,7 +83,12 @@
         "11011",
         "00100"
       ],
-      "foreground": "#008fa9"
+      "foreground": "#008fa9",
+      "tricolour": [
+        "brown",
+        "green-circle",
+        "blue-circle"
+      ]
     },
     {
       "seed": "jaymax-nz/repository-identicon",
@@ -76,7 +101,12 @@
         "00000",
         "10101"
       ],
-      "foreground": "#ce1bc6"
+      "foreground": "#ce1bc6",
+      "tricolour": [
+        "brown",
+        "brown-circle",
+        "purple-circle"
+      ]
     },
     {
       "seed": "torvalds/linux",
@@ -89,7 +119,12 @@
         "10001",
         "11011"
       ],
-      "foreground": "#ed0045"
+      "foreground": "#ed0045",
+      "tricolour": [
+        "brown",
+        "white-circle",
+        "red-circle"
+      ]
     },
     {
       "seed": "Code/Projects/MarkRight",
@@ -102,7 +137,12 @@
         "10101",
         "11111"
       ],
-      "foreground": "#a87500"
+      "foreground": "#a87500",
+      "tricolour": [
+        "orange",
+        "yellow-circle",
+        "yellow-circle"
+      ]
     },
     {
       "seed": "/opt/checkouts/Thing",
@@ -115,7 +155,12 @@
         "01010",
         "11111"
       ],
-      "foreground": "#eb0058"
+      "foreground": "#eb0058",
+      "tricolour": [
+        "red-circle",
+        "white",
+        "black"
+      ]
     },
     {
       "seed": "a",
@@ -128,7 +173,12 @@
         "11011",
         "11011"
       ],
-      "foreground": "#009297"
+      "foreground": "#009297",
+      "tricolour": [
+        "brown-circle",
+        "blue-circle",
+        "green"
+      ]
     }
   ]
 }

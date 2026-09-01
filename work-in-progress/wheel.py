@@ -21,6 +21,7 @@ names the colour.
 """
 
 import importlib.util
+import json
 import math
 import pathlib
 import sys
@@ -1244,7 +1245,53 @@ def render():
 
 IN_USE = HERE / "in-use.tsv"
 
+# The shipped colour map. `in-use.tsv` beside it is the working copy this is
+# generated from; this is the file a port downloads.
+COLOUR_MAP = HERE.parent / "colour-map-0.json"
+
 EMOJI = {name: emoji for emoji, name, _cp, _rgb in text.PALETTE}
+
+
+def colour_map(number=0):
+    """Write the shipped colour map: the blocks and the transforms that made
+    them.
+
+    **One file, one number.** The blocks say which three colours a colour map
+    angle gets. The transforms say what colour is drawn at that angle -- and
+    the blocks were placed over the ring those transforms produce, so a block
+    only means what it means against them. Numbering the blocks alone would
+    let the transforms move without the number moving.
+
+    `width` rather than an end angle, because the width is the class price --
+    8 degrees for three distinct colours, 4 for two, 1 for one -- so it states
+    how much identity the block affords instead of a coordinate the reader has
+    to subtract.
+
+    No emoji column. A glyph is a rendering of a colour and a shape, and the
+    shape comes from the digest, so a stored glyph would be wrong half the
+    time.
+    """
+    arcs, blocks = reference()
+    rows = []
+    for line in IN_USE.read_text(encoding="utf-8").splitlines():
+        if line.startswith("#") or not line.strip():
+            continue
+        f = line.split("\t")
+        rows.append({"n": int(f[2]),
+                     "from": int(float(f[0])),
+                     "width": int(float(f[1]) - float(f[0])),
+                     "colours": list(f[3:6])})
+    centre, half, peak = WARP
+    document = {
+        "colourMap": number,
+        "hueWarp": {"centre": centre, "halfWidth": half, "peak": peak},
+        "lightness": identicon.MARK_LIGHTNESS,
+        "chromaCap": identicon.MARK_CHROMA,
+        "blocks": rows,
+    }
+    COLOUR_MAP.write_text(
+        json.dumps(document, indent=2) + "\n", encoding="utf-8")
+    return arcs, blocks
 
 
 def reference():
@@ -1347,8 +1394,10 @@ def main(argv):
         WARP = (centre, half, peak)
 
     if "--reference" in argv:
-        arcs, blocks = reference()
+        arcs, blocks = colour_map()
         print(f"{IN_USE} {arcs} arcs from {blocks} blocks, tiling 0-360")
+        print(f"{COLOUR_MAP} {arcs} entries for {blocks} blocks, "
+              "and the three transforms")
         return 0
 
     if "--out" in argv:

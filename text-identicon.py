@@ -197,53 +197,28 @@ def sextant(matrix):
 # from, clusters badly in the greens.
 # ---------------------------------------------------------------------------
 
+# **Every colour exists as a square and as a circle**, which is what lets the
+# shape be a channel of its own. Black and white were excluded once, on the
+# grounds that their circles are named MEDIUM where every square is LARGE; that
+# was overruled after testing, so all nine circle and the shape channel is a
+# flat three bits rather than a count of which positions happen to qualify.
 PALETTE = (
-    ("\U0001F7E5", "red",    0x1F7E5, (0xFF, 0x00, 0x00)),
-    ("\U0001F7E7", "orange", 0x1F7E7, (0xFF, 0xA5, 0x00)),
-    ("\U0001F7E8", "yellow", 0x1F7E8, (0xFF, 0xFF, 0x00)),
-    ("\U0001F7E9", "green",  0x1F7E9, (0x00, 0xFF, 0x00)),
-    ("\U0001F7E6", "blue",   0x1F7E6, (0x00, 0x00, 0xFF)),
-    ("\U0001F7EA", "purple", 0x1F7EA, (0x80, 0x00, 0x80)),
-    ("\U0001F7EB", "brown",  0x1F7EB, (0xA5, 0x2A, 0x2A)),
-    ("⬛",     "black",  0x02B1B, (0x00, 0x00, 0x00)),
-    ("⬜",     "white",  0x02B1C, (0xFF, 0xFF, 0xFF)),
+    ("\U0001F7E5", "\U0001F534", "red",    (0xFF, 0x00, 0x00)),
+    ("\U0001F7E7", "\U0001F7E0", "orange", (0xFF, 0xA5, 0x00)),
+    ("\U0001F7E8", "\U0001F7E1", "yellow", (0xFF, 0xFF, 0x00)),
+    ("\U0001F7E9", "\U0001F7E2", "green",  (0x00, 0xFF, 0x00)),
+    ("\U0001F7E6", "\U0001F535", "blue",   (0x00, 0x00, 0xFF)),
+    ("\U0001F7EA", "\U0001F7E3", "purple", (0x80, 0x00, 0x80)),
+    ("\U0001F7EB", "\U0001F7E4", "brown",  (0xA5, 0x2A, 0x2A)),
+    ("⬛",     "⚫",     "black",  (0x00, 0x00, 0x00)),
+    ("⬜",     "⚪",     "white",  (0xFF, 0xFF, 0xFF)),
 )
 
+SQUARE = "square"
+CIRCLE = "circle"
 
-def _linear(component):
-    """One sRGB component, 0-255, to linear light."""
-    c = component / 255.0
-    return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
-
-
-def _encode(value):
-    """Linear light back to one sRGB component, 0-255."""
-    v = min(1.0, max(0.0, value))
-    v = 12.92 * v if v <= 0.0031308 else 1.055 * v ** (1 / 2.4) - 0.055
-    return int(v * 255 + 0.5)
-
-
-def _oklab(linear_rgb):
-    """Linear-light sRGB to Oklab. Bjorn Ottosson's matrices, unmodified."""
-    r, g, b = linear_rgb
-    long_ = 0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b
-    med   = 0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b
-    short = 0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b
-    long_, med, short = (math.copysign(abs(v) ** (1 / 3), v)
-                         for v in (long_, med, short))
-    return (0.2104542553 * long_ + 0.7936177850 * med - 0.0040720468 * short,
-            1.9779984951 * long_ - 2.4285922050 * med + 0.4505937099 * short,
-            0.0259040371 * long_ + 0.7827717662 * med - 0.8086757660 * short)
-
-
-_PALETTE_LINEAR = tuple(tuple(_linear(v) for v in rgb) for _, _, _, rgb in PALETTE)
-_PALETTE_LAB = tuple(_oklab(lin) for lin in _PALETTE_LINEAR)
-
-
-def _mix(indices):
-    """Linear-light mean of the given palette entries."""
-    return tuple(sum(_PALETTE_LINEAR[i][k] for i in indices) / len(indices)
-                 for k in range(3))
+# name -> (square, circle), for the one lookup the renderer does.
+GLYPHS = {name: (square, circle) for square, circle, name, _rgb in PALETTE}
 
 
 def parse_hex(value):
@@ -254,173 +229,40 @@ def parse_hex(value):
     return tuple(int(text[i:i + 2], 16) for i in (0, 2, 4))
 
 
-def nearest_colour(rgb):
-    """Index into PALETTE of the single palette colour closest to `rgb`.
-
-    Ties break towards the lower index, so the choice is fixed rather than
-    left to whatever `min` happens to do.
-    """
-    target = _oklab(tuple(_linear(v) for v in rgb))
-    return min(range(len(PALETTE)),
-               key=lambda i: (math.dist(_PALETTE_LAB[i], target), i))
-
-
-def chosen_indices(rgb):
-    """The three PALETTE indices for `rgb`, ascending.
-
-    The nearest single colour twice, plus whichever third colour brings the
-    linear-light mean closest to the target. When the target *is* a palette
-    colour the third is the base again, so canonical colours land on three of
-    a kind without that being written down anywhere.
-
-    The nearest colour is used twice deliberately. Choosing freely from all 165
-    mixtures -- every multiset of three drawn from nine colours, C(11,3) --
-    minimises error but reads badly, because the eye reads the majority rather
-    than averaging: yellow-green `#d5d926` is closest to RED YELLOW GREEN, a
-    muddle, where constraining it to YELLOW YELLOW BLACK costs 0.02 mean dE
-    across the hue circle and is obviously yellow.
-    """
-    target = _oklab(tuple(_linear(v) for v in rgb))
-    base = nearest_colour(rgb)
-    best, best_odd = None, None
-    for odd in range(len(PALETTE)):
-        distance = math.dist(_oklab(_mix((base, base, odd))), target)
-        if best is None or distance < best:
-            best, best_odd = distance, odd
-    return tuple(sorted((base, base, best_odd)))
-
-
-# ---------------------------------------------------------------------------
-# Arrangement
-#
-# Which colours is a function of the colour asked for; what order is a function
-# of the matrix. Two inputs, and they must stay two.
-# ---------------------------------------------------------------------------
-
-def matrix_bits(matrix):
-    """The fifteen bits of the digest the matrix carries, as one number.
-
-    Columns 3 and 4 are the mirror of 1 and 0 and hold nothing, so only the
-    left three of each row are read, row by row, left to right.
-    """
-    value = 0
-    for row in matrix:
-        for cell in row[:3]:
-            value = value * 2 + (1 if cell else 0)
-    return value
-
-
-def arrange(indices, matrix):
-    """Order the chosen colours, deterministically, from the matrix.
-
-    `chosen_indices` picks *which* colours; this picks the order they are laid
-    out in, and the two carry different information.
-
-    **Why order at all.** Which colours to use is a question about fidelity, and
-    fidelity is what limits spread: neighbouring colours must choose the same
-    ones, or the choice would not be tracking the colour. Measured over the
-    whole 1074-colour gamut that leaves about 17 distinguishable triples, and
-    the arithmetic is unforgiving -- eight projects collide 85% of the time.
-    Choosing colours more cleverly cannot help. Selecting freely from all 165
-    combinations rather than constraining to a majority *improves* mean error
-    to 0.0393 from 0.0597 and yet leaves spread slightly worse, at 16.5
-    effective against 17.5, because both are answering the same question about
-    the same one-dimensional gamut.
-
-    Order answers a different question, and costs nothing to the first. The same
-    three colours in a different arrangement are still the same colours, mixing
-    to the same result, named the same way: no arrangement renders the
-    colour worse than another. So it is free to carry identity, and it roughly
-    triples the spread -- 67 distinct arrangements, 49.8 effective.
-
-    **Take the order from the matrix, never from the colour.** Hashing an output
-    of the mapping cannot add anything the mapping has not already said: over
-    four thousand projects it produced fewer distinct marks than there were
-    distinct colours. The matrix is fifteen bits of the seed's digest, drawn from
-    a slice disjoint from the one the hue comes from, and `text()` is already
-    holding it.
-
-    What is given up is that a consumer holding only `.colour` can compute the
-    mark -- already only mostly true, since recovering the wheel position from a
-    quantised colour puts about one project in forty in the wrong arc. Adjacent
-    colours have unrelated matrices, so they get unrelated arrangements; the
-    mapping is still not monotonic in hue, and a triple does not say where on
-    the wheel a colour sits.
-    """
-    options = sorted(set(itertools.permutations(indices)))
-    return options[matrix_bits(matrix) % len(options)]
-
-
 def hex_colour(rgb):
     """`#rrggbb`. Public surface -- the vendoring consumers and
     `work-in-progress/` call it."""
     return "#{:02x}{:02x}{:02x}".format(*rgb)
 
 
-def tricolour_indices(rgb, matrix):
-    """The three PALETTE indices for `rgb`, in the order they are laid out.
-
-    Takes the matrix as well as the colour, because the order comes from the
-    matrix -- see `arrange`.
-    """
-    return arrange(chosen_indices(rgb), matrix)
-
-
-def tricolour(rgb, matrix):
-    """The three emoji for `rgb`, as one string of three characters.
-
-    The contents of `.identicon/repository-identicon.tricolour`.
-    """
-    return "".join(PALETTE[i][0] for i in tricolour_indices(rgb, matrix))
-
-
-def tricolour_detail(rgb, matrix):
-    """Everything about the choice, for tests and for explaining a result.
-
-    `indices` is the multiset the fidelity search chose; `arranged` is the order
-    it is laid out in. Both are reported because they answer different
-    questions, and a result that looks wrong is usually wrong in only one.
-    """
-    indices = chosen_indices(rgb)
-    arranged = arrange(indices, matrix)
-    mix = _mix(indices)
-    target = _oklab(tuple(_linear(v) for v in rgb))
-    return {
-        "indices": indices,
-        "arranged": arranged,
-        "emoji": "".join(PALETTE[i][0] for i in arranged),
-        "names": tuple(PALETTE[i][1] for i in arranged),
-        "base": PALETTE[nearest_colour(rgb)][1],
-        "mix_hex": hex_colour(tuple(_encode(v) for v in mix)),
-        "delta_e": math.dist(_oklab(mix), target),
-    }
-
-
 # ---------------------------------------------------------------------------
-# The whole mark
+# The tricolour
+#
+# **This module renders a tricolour; it does not choose one.** Which three
+# colours, in what order, and which of them are circles are all decided in
+# `repository-identicon.py` from the seed's digest and the colour map. What
+# arrives here is the answer: three (colour name, shape) pairs.
+#
+# It was the other way round -- a fidelity search over PALETTE picked the
+# colours from the drawn `#rrggbb`. That search measured full Oklab distance
+# against the nominal primaries, so it compared a mark drawn at lightness 0.60
+# against a pure green at 0.87 and called it orange. The colour map replaces
+# it, and the search is gone rather than fixed.
 # ---------------------------------------------------------------------------
 
-def text(matrix, rgb, lattice=SEXTANT_LATTICE):
-    """A lattice and the tricolour composed: two lines, the tricolour ending
-    the lower one.
+def tricolour(pairs):
+    """The three emoji for `pairs`, as one string of three characters.
 
-    Takes the 5x5 matrix and the colour, and nothing else. This is the whole of
-    what `.txt` holds beyond `.sextant` and `.tricolour` -- one space between
-    them, and which line they share.
-
-    **Sextants by default**, because the default has to work on the host that
-    has fewer glyphs, and the octant set is four years younger. A caller that
-    knows its host can pass `OCTANT_LATTICE`; `.octant` is written from it so
-    that a consumer needs no argument either.
+    Each pair is `(colour name, "square" | "circle")`.
     """
-    lines = lattice_lines(matrix, lattice)
-    lines[-1] = f"{lines[-1]} {tricolour(rgb, matrix)}"
-    return "\n".join(lines)
+    return "".join(GLYPHS[name][shape == CIRCLE] for name, shape in pairs)
 
 
-# ---------------------------------------------------------------------------
-# Self-check and demo
-# ---------------------------------------------------------------------------
+def tricolour_names(pairs):
+    """The three colours as `colour` or `colour-circle`, in laid-out order."""
+    return tuple(f"{name}{'-circle' if shape == CIRCLE else ''}"
+                 for name, shape in pairs)
+
 
 def selftest():
     """Invariants that hold for any palette and any Unicode host."""
@@ -458,69 +300,26 @@ def selftest():
                               (0b111111, "FULL BLOCK")):
             assert unicodedata.name(SEXTANTS[pattern]) == name, pattern
 
-    # Every canonical colour is three of itself, with no special case.
-    # Three of a kind has one arrangement, so the matrix cannot change it.
-    sample_matrix = parse_matrix(".#.#.,.#.#.,#...#,#.#.#,.#.#.")
-    for index, (char, name, _, rgb) in enumerate(PALETTE):
-        detail = tricolour_detail(rgb, sample_matrix)
-        assert detail["indices"] == (index, index, index), (name, detail)
-        assert detail["delta_e"] == 0.0, (name, detail["delta_e"])
-        assert detail["emoji"] == char * 3, (name, detail["emoji"])
+    # The tricolour is rendered, not chosen. Every pair renders to the glyph
+    # its shape names, and every colour has both -- the shape channel is a flat
+    # three bits because there is no colour that cannot be a circle.
+    for square, circle, name, _rgb in PALETTE:
+        assert tricolour([(name, SQUARE)] * 3) == square * 3, name
+        assert tricolour([(name, CIRCLE)] * 3) == circle * 3, name
+        assert square != circle, name
+    assert len({g for pair in GLYPHS.values() for g in pair}) == 18, (
+        "eighteen glyphs: nine colours, two shapes")
 
-    # The majority constraint: some colour always appears at least twice.
-    for value in range(0, 0x1000000, 0x3F1D7):
-        indices = chosen_indices(((value >> 16) & 0xFF,
-                                  (value >> 8) & 0xFF, value & 0xFF))
-        assert len(set(indices)) <= 2, indices
+    # Shape and order are both carried, so two marks over the same three
+    # colours can still differ.
+    assert (tricolour([("blue", SQUARE), ("green", SQUARE), ("blue", SQUARE)])
+            != tricolour([("blue", CIRCLE), ("green", SQUARE), ("blue", SQUARE)]))
+    assert (tricolour([("blue", SQUARE), ("green", SQUARE), ("blue", SQUARE)])
+            != tricolour([("green", SQUARE), ("blue", SQUARE), ("blue", SQUARE)]))
 
-    # Arranging reorders and never substitutes: the multiset is what carries
-    # the colour, so arrangement must not be able to change it.
-    for value in range(0, 0x1000000, 0x3F1D7):
-        rgb = ((value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF)
-        indices = chosen_indices(rgb)
-        arranged = arrange(indices, sample_matrix)
-        assert sorted(arranged) == sorted(indices), (rgb, indices, arranged)
-        assert arrange(indices, sample_matrix) == arranged, "not deterministic"
-
-    # The colours come from the target alone, and the two sample matrices differ.
-    other = parse_matrix("#####,.....,#####,.....,#####")
-    assert (chosen_indices((0x26, 0x92, 0xD9))
-            == chosen_indices(parse_hex("#2692d9")))
-    assert (tricolour(parse_hex("#2692d9"), sample_matrix)
-            == tricolour((0x26, 0x92, 0xD9), sample_matrix))
-    assert matrix_bits(sample_matrix) != matrix_bits(other), "premise changed"
-
-    # Two projects landing on the same colour must not land on the same mark:
-    # hashing the order from the colour forced a shared arrangement.
-    shared = parse_hex("#2692d9")
-    marks = {tricolour(shared, g) for g in (sample_matrix, other)}
-    assert len(marks) == 2, (
-        "same colour, different patterns, still one mark: the arrangement is "
-        "not carrying identity")
-
-    # The pair that motivated arranging at all: three units apart in one
-    # channel, identical multiset, and they must not render alike. They have
-    # unrelated matrices in practice, which is what separates them now.
-    near_a, near_b = parse_hex("#2692d9"), parse_hex("#2695d9")
-    assert chosen_indices(near_a) == chosen_indices(near_b), "premise changed"
-    assert (tricolour(near_a, sample_matrix)
-            != tricolour(near_b, other)), (
-        "adjacent colours collapsed to one tricolour again")
-
-    # One mark pinned whole on each lattice, so a change to a table, a padding
-    # or the arrangement has to be written down here before it can ship. The
-    # colours are green, blue, blue by fidelity; the order comes from the matrix,
-    # so both lattices carry the same tricolour.
-    matrix = parse_matrix(".#.#.,.#.#.,#...#,#.#.#,.#.#.")
-    for lattice, expected in (
-            (SEXTANT_LATTICE, "\U0001FB26\U0001FB26 \n"
-                              "\U0001FB23\U0001FB22\U0001FB04 "
-                              "\U0001F7E6\U0001F7E9\U0001F7E6"),
-            (OCTANT_LATTICE, "\U0001CEA0\U0001CEA0  \n"
-                             "\U0001CD86\U0001CD82\U0001FBE6 "
-                             "\U0001F7E6\U0001F7E9\U0001F7E6")):
-        actual = text(matrix, parse_hex("#2692d9"), lattice)
-        assert actual == expected, actual
+    assert tricolour_names([("blue", CIRCLE), ("green", SQUARE),
+                            ("blue", SQUARE)]) == (
+        "blue-circle", "green", "blue")
 
     # Both lattices are lossless, which is the whole reason there is a choice
     # to make: neither loses a cell the other keeps.
@@ -531,12 +330,14 @@ def selftest():
             assert _recover(lattice_lines(source, lattice), lattice) == source, (
                 shape, lattice[1])
 
-    # The tricolour terminates the mark: it is on the last line, not the first.
-    full = parse_matrix("#" * 25)
-    mark = text(full, parse_hex("#2692d9"))
-    first, last = mark.split("\n")
-    assert not any(p[0] in first for p in PALETTE), first
-    assert last.endswith(tricolour(parse_hex("#2692d9"), full)), last
+    # A lattice carries no palette glyphs. Composing a lattice with a
+    # tricolour is a caller's concern now -- `.txt` and the function that
+    # built it are gone -- so what is checked here is that the two vocabularies
+    # do not overlap and a caller can tell them apart.
+    for shape in ("#" * 25, ".#.#.,#...#,.....,#...#,.#.#."):
+        for line in lattice_lines(parse_matrix(shape), SEXTANT_LATTICE):
+            assert not any(g in line for pair in GLYPHS.values()
+                           for g in pair), line
 
     # Whatever the padding or the pattern, either lattice is two lines of three
     # cells, and every line is the same number of columns wide -- which is the
