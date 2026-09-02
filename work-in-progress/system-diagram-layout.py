@@ -21,10 +21,10 @@ COLUMNS = {
 # page -> group heading -> column index
 GROUPS = {
     1: {
-        'WHAT APPLY READS': 0,
-        'WHAT APPLY DERIVES, ON THE FIRST RUN': 1,
+        'THE SETTINGS FILE': 0,
+        'DERIVING, ON THE FIRST RUN': 1,
         'REDUCING IT TO ONE STRING': 2,
-        'WHAT COMES OUT': 3,
+        'THE ONLY OTHER CALLER': 3,
     },
     2: {
         'THE DIGEST': 0,

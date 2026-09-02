@@ -119,7 +119,7 @@
 ┋┋ ━ Identity
 ┊┊┊ ┄ ⸖ $page=1
 ┊┊┊ ┄ ⸆ what apply reads, and what it derives on the first run only
-┋┋┋ ━ WHAT APPLY READS
+┋┋┋ ━ THE SETTINGS FILE
 ┋┋┋┋ ━ → install_into_repo
 ┊┊┊┊┊ ┄ ⸆ apply, and only apply, seeds a repository
 ┊┊┊┊┊ ┄ ⸖ $fn=r_apply
@@ -128,8 +128,16 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=read_settings
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
+┋┋┋┋ ━ .identicon/settings.json
+┊┊┊┊┊ ┄ ⸆ identicon.current · identicon.history · renders
+┊┊┊┊┊ ┄ ⸖ $number=1.1.2
+┊┊┊┊┊ ┄ ⸖ $fn=f_settings
+┊┊┊┊┊ ┄ ⸖ $kind=ext
+┊┊┊┊┊ ┄ ⸖ $term=the settings file
+┊┊┊┊┊ ┄ ⸖ $term=seed history
+┊┊┊┊┊ ┄ ⸖ $term=colour map
 ┋┋┋┋ ━ read_settings( repository_root)
-┊┊┊┊┊ ┄ ⸖ $number=1.1
+┊┊┊┊┊ ┄ ⸖ $number=1.1.3
 ┊┊┊┊┊ ┄ ⸖ $fn=read_settings
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
 ┊┊┊┊┊ ┄ ⸆ Parses the settings file. An unreadable one reads as empty, so the next apply writes a good one.
@@ -143,8 +151,17 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=identicon_seed
 ┊┊┊┊┊ ┄ ⸖ $sides=rl
 ┊┊┊┊┊ ┄ ⸖ $carries=value
+┋┋┋┋ ━ identicon_seed( settings)
+┊┊┊┊┊ ┄ ⸖ $number=1.1.4
+┊┊┊┊┊ ┄ ⸖ $fn=identicon_seed
+┊┊┊┊┊ ┄ ⸖ $kind=fn
+┊┊┊┊┊ ┄ ⸆ Takes the seed out of a settings mapping. Empty counts as unset, and a hand-typed value is normalised here.
+┊┊┊┊┊ ┄ ⸖ $term=stored seed
+┋┋┋┋┋ ━ returns
+┊┊┊┊┊┊ ┄ ⸖ $role=returns
+┋┋┋┋┋┋ ━ the seed, or None
 ┋┋┋┋ ━ write_settings( repository_root, settings)
-┊┊┊┊┊ ┄ ⸖ $number=1.2
+┊┊┊┊┊ ┄ ⸖ $number=1.1.5
 ┊┊┊┊┊ ┄ ⸖ $fn=write_settings
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
 ┊┊┊┊┊ ┄ ⸆ Writes the settings file and returns the bytes written. The one writer of it.
@@ -155,26 +172,19 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=f_settings
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=io
-┋┋┋┋ ━ .identicon/settings.json
-┊┊┊┊┊ ┄ ⸆ identiconSeed · identiconSeedHistory · colourMap
-┊┊┊┊┊ ┄ ⸖ $number=1.3
-┊┊┊┊┊ ┄ ⸖ $fn=f_settings
-┊┊┊┊┊ ┄ ⸖ $kind=ext
-┊┊┊┊┊ ┄ ⸖ $term=the settings file
-┊┊┊┊┊ ┄ ⸖ $term=seed history
-┊┊┊┊┊ ┄ ⸖ $term=colour map
-┋┋┋┋ ━ identicon_seed( settings)
-┊┊┊┊┊ ┄ ⸖ $number=1.4
-┊┊┊┊┊ ┄ ⸖ $fn=identicon_seed
+┋┋┋┋ ━ clear_identicon_seed( repository_root)
+┊┊┊┊┊ ┄ ⸖ $number=1.1.6
+┊┊┊┊┊ ┄ ⸖ $fn=clear_identicon_seed
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸆ Takes the seed out of a settings mapping. Empty counts as unset, and a hand-typed value is normalised here.
-┊┊┊┊┊ ┄ ⸖ $term=stored seed
+┊┊┊┊┊ ┄ ⸆ Moves the seed to the front of the history and empties the field, on disk. apply then reads the file back.
+┊┊┊┊┊ ┄ ⸖ $term=reseed
+┊┊┊┊┊ ┄ ⸖ $term=seed history
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ the seed, or None
-┋┋┋ ━ WHAT APPLY DERIVES, ON THE FIRST RUN
+┋┋┋┋┋┋ ━ the cleared settings, as written
+┋┋┋ ━ DERIVING, ON THE FIRST RUN
 ┋┋┋┋ ━ derive_identicon_seed( repository_root, derive_from)
-┊┊┊┊┊ ┄ ⸖ $number=1.5
+┊┊┊┊┊ ┄ ⸖ $number=1.2.1
 ┊┊┊┊┊ ┄ ⸖ $fn=derive_identicon_seed
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
 ┊┊┊┊┊ ┄ ⸆ Derives from one of auto, repo, path or uuid. A named source that cannot answer raises.
@@ -194,7 +204,7 @@
 ┊┊┊┊┊ ┄ ⸖ $sides=tt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls dashed
 ┋┋┋┋ ━ repo_remote_url( repository_root)
-┊┊┊┊┊ ┄ ⸖ $number=1.6
+┊┊┊┊┊ ┄ ⸖ $number=1.2.2
 ┊┊┊┊┊ ┄ ⸖ $fn=repo_remote_url
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
 ┊┊┊┊┊ ┄ ⸆ Invokes `git remote get-url origin`, then falls back to the first remote listed.
@@ -209,7 +219,7 @@
 ┊┊┊┊┊ ┄ ⸲ when a helpers page exists, or leave the note when it does not.
 ┋┋┋ ━ REDUCING IT TO ONE STRING
 ┋┋┋┋ ━ locate_repository_root( working_directory)
-┊┊┊┊┊ ┄ ⸖ $number=1.7
+┊┊┊┊┊ ┄ ⸖ $number=1.3.1
 ┊┊┊┊┊ ┄ ⸖ $fn=locate_repository_root
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
 ┊┊┊┊┊ ┄ ⸆ Walks up to the nearest ancestor holding a .git, which is where .identicon/ sits. A worktree has a file there, a checkout a dir.
@@ -217,7 +227,7 @@
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ a directory
 ┋┋┋┋ ━ extract_repository_name( repository_url)
-┊┊┊┊┊ ┄ ⸖ $number=1.8
+┊┊┊┊┊ ┄ ⸖ $number=1.3.2
 ┊┊┊┊┊ ┄ ⸖ $fn=extract_repository_name
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
 ┊┊┊┊┊ ┄ ⸆ Accepts ssh, https and scp-like URLs. Keeps the path segments and drops the host, so a move between forges keeps the mark.
@@ -229,7 +239,7 @@
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
 ┋┋┋┋ ━ extract_repository_path( repository_root)
-┊┊┊┊┊ ┄ ⸖ $number=1.9
+┊┊┊┊┊ ┄ ⸖ $number=1.3.3
 ┊┊┊┊┊ ┄ ⸖ $fn=extract_repository_path
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
 ┊┊┊┊┊ ┄ ⸆ Expands and absolutises the repository's own directory. Used where there is no remote to read.
@@ -241,7 +251,7 @@
 ┊┊┊┊┊ ┄ ⸖ $sides=rl
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
 ┋┋┋┋ ━ normalise_seed( value)
-┊┊┊┊┊ ┄ ⸖ $number=1.10
+┊┊┊┊┊ ┄ ⸖ $number=1.3.4
 ┊┊┊┊┊ ┄ ⸖ $fn=normalise_seed
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
 ┊┊┊┊┊ ┄ ⸆ Strips whitespace and a trailing separator, keeping case. Runs on every seed, a hand-typed one included.
@@ -252,22 +262,11 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=v_seed
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=value
-┋┋┋ ━ WHAT COMES OUT
-┋┋┋┋ ━ clear_identicon_seed( repository_root)
-┊┊┊┊┊ ┄ ⸖ $number=1.11
-┊┊┊┊┊ ┄ ⸖ $fn=clear_identicon_seed
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸆ Moves the seed to the front of the history and empties the field, on disk. apply then reads the file back.
-┊┊┊┊┊ ┄ ⸖ $term=reseed
-┊┊┊┊┊ ┄ ⸖ $term=seed history
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ the cleared settings, as written
 ┋┋┋┋ ━ seed
-┊┊┊┊┊ ┄ ⸖ $number=1.12
+┊┊┊┊┊ ┄ ⸖ $number=1.3.5
 ┊┊┊┊┊ ┄ ⸖ $fn=v_seed
-┊┊┊┊┊ ┄ ⸖ $kind=val
-┊┊┊┊┊ ┄ ⸆ The string that goes into the digest, spelled as the settings file spells it.
+┊┊┊┊┊ ┄ ⸖ $kind=effect
+┊┊┊┊┊ ┄ ⸆ Stored as written. Every later run reads it rather than deriving one.
 ┊┊┊┊┊ ┄ ⸖ $term=seed
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
@@ -275,13 +274,14 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=r_digest
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=value
-┋┋┋┋ ━ → _digest
+┋┋┋┋ ━ → hash_identicon_seed
 ┊┊┊┊┊ ┄ ⸖ $fn=r_digest
 ┊┊┊┊┊ ┄ ⸖ $offpage=out
-┊┊┊┊┊ ┄ ⸖ $target=_digest
+┊┊┊┊┊ ┄ ⸖ $target=hash_identicon_seed
 ┊┊┊┊┊ ┄ ⸆ the mark comes off its md5
+┋┋┋ ━ THE ONLY OTHER CALLER
 ┋┋┋┋ ━ cmd_doctor( args)
-┊┊┊┊┊ ┄ ⸖ $number=1.13
+┊┊┊┊┊ ┄ ⸖ $number=1.4.1
 ┊┊┊┊┊ ┄ ⸖ $fn=cmd_doctor
 ┊┊┊┊┊ ┄ ⸖ $kind=data
 ┊┊┊┊┊ ┄ ⸆ Reads the stored seed and derives one separately, and prints both. The only other caller of the derivation.
@@ -1402,17 +1402,17 @@
 ┋┋┋ ━ seed
 ┊┊┊┊ ┄ ⸖ $type=str
 ┊┊┊┊ ┄ ⸆ The one string the mark depends on, hashed exactly as settings.json spells it. owner/repo, or a path where there is no remote.
-┊┊┊┊ ┄ ⸖ $defines=1.12
-┊┊┊┊ ┄ ⸖ $defines=1.1
+┊┊┊┊ ┄ ⸖ $defines=1.3.5
+┊┊┊┊ ┄ ⸖ $defines=1.1.4
 ┋┋┋ ━ the settings file
 ┊┊┊┊ ┄ ⸖ $type=file → dict
 ┊┊┊┊ ┄ ⸆ .identicon/settings.json, committed. The only input to a repository's identity.
-┊┊┊┊ ┄ ⸖ $defines=1.4
-┊┊┊┊ ┄ ⸖ $defines=1.3
+┊┊┊┊ ┄ ⸖ $defines=1.1.4
+┊┊┊┊ ┄ ⸖ $defines=1.1.5
 ┋┋┋ ━ stored seed
 ┊┊┊┊ ┄ ⸖ $type=str | None
 ┊┊┊┊ ┄ ⸆ The identiconSeed field. Written when it is not set and never rewritten, so a rename, a move between forges and a clone all leave it alone.
-┊┊┊┊ ┄ ⸖ $defines=1.2
+┊┊┊┊ ┄ ⸖ $defines=1.1.3
 ┋┋┋ ━ seed history
 ┊┊┊┊ ┄ ⸖ $type=list[str]
 ┊┊┊┊ ┄ ⸆ identiconSeedHistory: the seeds this repository had before the current one, most recent first. Nothing derives from it.
@@ -1424,7 +1424,7 @@
 ┋┋┋ ━ seed source
 ┊┊┊┊ ┄ ⸖ $type=str, one of four
 ┊┊┊┊ ┄ ⸆ What a derivation draws from: auto, repo, path or uuid. A named source that cannot answer raises rather than falling back.
-┊┊┊┊ ┄ ⸖ $defines=1.5
+┊┊┊┊ ┄ ⸖ $defines=1.1.2
 ┋┋┋ ━ reseed
 ┊┊┊┊ ┄ ⸖ $type=str | None
 ┊┊┊┊ ┄ ⸆ The one act that moves a mark. Pushes the current seed onto the history and blanks the seed field; the ordinary rule then writes a new one.
@@ -1478,7 +1478,7 @@
 ┋┋┋ ━ the key file
 ┊┊┊┊ ┄ ⸖ $type=file
 ┊┊┊┊ ┄ ⸆ The exception: the only file in .identicon/ that is a source of truth.
-┊┊┊┊ ┄ ⸖ $defines=1.4
+┊┊┊┊ ┄ ⸖ $defines=1.1.4
 ┋┋┋ ━ prior
 ┊┊┊┊ ┄ ⸖ $type=file
 ┊┊┊┊ ┄ ⸆ stem.prior.suffix — the bytes a run replaced, kept one level deep.
