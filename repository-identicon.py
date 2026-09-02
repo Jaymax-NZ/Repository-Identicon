@@ -60,13 +60,31 @@ MATRIX_SIZE = 5
 
 # The block sizes `--block` accepts. The canvas follows from the block, never
 # the other way round; see `canvas_edge`.
+#
+# **These are CSS pixels.** One to five is a range chosen for a context that
+# resolves a CSS pixel to whatever the display needs -- a browser, a markdown
+# pane, anything that scales an asset for itself. It is an assumption and not
+# a unit the numbers carry, so nothing here can detect that it is wrong.
 BLOCKS = (1, 2, 3, 4, 5)
 BORDER = 1
 ARTIFACT_BLOCK = 5
 
-# The 4x artifact multiplies the block by four and the border by two. The
-# border is chrome rather than content, so quadrupling it would spend the new
-# pixels on empty edge instead of on the mark.
+# **The 4x artifact is for a context whose pixels are not CSS pixels.** Where
+# a pixel is a device pixel, the one-to-five range above is four times too
+# small, and the answer is the same drawing with every pixel repeated rather
+# than a mark redrawn at a larger size -- redrawing re-runs the geometry and
+# produces a different border ratio, so a consumer swapping between the two
+# sees the mark change shape.
+#
+# **It is not a requested size.** It belongs to the block family and follows
+# from it; a consumer does not ask for 104 pixels, it asks for the block-5
+# mark in a context where a pixel is smaller. A requested outer dimension
+# cannot express that -- asking for 104 gives block 19 and a different
+# drawing.
+#
+# The block is multiplied by four and the border only by two. The border is
+# chrome rather than content, so quadrupling it would spend the new pixels on
+# empty edge instead of on the mark.
 ARTIFACT_SCALE = 4
 SCALED_BORDER = 2
 

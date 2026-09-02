@@ -65,26 +65,33 @@ committed file and the only input to its identity:
 
 ```json
 {
-  "identiconSeed": "owner/repo",
-  "identiconSeedHistory": [],
-  "colourMap": 0
+  "identicon": {
+    "current": { "seed": "owner/repo", "colourMap": 0 },
+    "history": []
+  }
 }
 ```
 
-`identiconSeed` MUST be written when it is absent or empty, and MUST NOT be
-rewritten while it holds a value. An implementation MUST read it before
+`identicon.current.seed` MUST be written when it is absent or empty, and MUST
+NOT be rewritten while it holds a value. An implementation MUST read it before
 deriving anything, and MUST NOT run a derivation whose result it will discard.
 
 An empty string and an absent field mean the same thing: not set. Writing
 `""` is how an operator asks the next run to derive a seed.
 
-`identiconSeedHistory` lists the seeds this repository has had before the
-current one, **most recent first**. It is a record; nothing derives from it.
+`identicon.history` lists what this repository's identity was before the
+current one, **most recent first**. Each entry stamps `at` and carries only
+the fields that changed. It is a record; nothing derives from it.
 
-An implementation MUST accept a hand-edited `identiconSeed` and MUST apply the
-same normalisation to it as to a derived one. Choosing a seed by hand is a
-supported operation, and it is how a project takes a seed this specification
-would not have derived.
+An implementation MUST accept a hand-edited `identicon.current.seed` and MUST
+apply the same normalisation to it as to a derived one. Choosing a seed by
+hand is a supported operation, and it is how a project takes a seed this
+specification would not have derived.
+
+The file also holds what `apply` derives from the seed, and the renderings of
+it; see [What `settings.json` holds](#what-settingsjson-holds). A hand may set
+`identicon.current.seed` and `identicon.current.colourMap`, and an
+implementation MUST cope with a file where only those are present.
 
 An unreadable or malformed `settings.json` MUST be treated as though it were
 absent, so the next run writes a good one.
@@ -105,7 +112,7 @@ see [Reseeding](#reseeding).
 
 ### Deriving a seed
 
-This is how a repository with no seed set gets one. Once set, `identiconSeed`
+This is how a repository with no seed set gets one. Once set, `identicon.current.seed`
 outranks every row of this table.
 
 | # | Source | Seed | Stable across machines |
@@ -153,7 +160,8 @@ request names one source:
 | `uuid` | a fresh UUID version 4, derived from nothing |
 
 Reseeding is one operation: **push the current seed onto the front of
-`identiconSeedHistory`, and set `identiconSeed` to `""`.** The rule that writes
+`identicon.history` with the time it was retired, and set
+`identicon.current.seed` to `""`.** The rule that writes
 an unset seed then derives and stores a new one from the named source. Seeding
 a fresh repository and reseeding an established one are therefore the same
 rule applied to the same empty field, not two mechanisms that must be kept in
@@ -200,7 +208,7 @@ Every spelling of one repository MUST derive one seed. Given a remote URL:
 The host is parsed so that a URL carrying none can be rejected, and then
 dropped, so a project keeps its mark across a move between forges.
 `github.com/a/b` and `gitlab.com/a/b` therefore derive one seed; a repository
-that needs to differ writes its own `identiconSeed`.
+that needs to differ writes its own `identicon.current.seed`.
 
 All of these MUST yield `Owner/Repo`:
 
@@ -543,7 +551,7 @@ not a note of what the mark was made from; it holds what the mark is made from.
 
 ```
 .identicon/repository-identicon.png            block 5, 27px canvas
-.identicon/repository-identicon@4x.png         the mark magnified 4x, 104px
+.identicon/repository-identicon@4x.png         block 5 where a pixel is not a CSS pixel
 .identicon/repository-identicon-128.png        for a consumer that fixes the size
 .identicon/repository-identicon-256.png        likewise
 .identicon/repository-identicon.svg            vector, same geometry
@@ -722,7 +730,7 @@ audience is developers, so a file next to the new one is the whole recovery
 procedure, and it is worth more than any amount of asking first.
 
 `settings.json` is an input rather than an artifact and is not kept this way.
-Its own history is `identiconSeedHistory`.
+Its own history is `identicon.history`.
 
 For a fixed seed the write is idempotent: the mark is a pure function of the
 seed, so a later run produces identical bytes and need not touch the files.

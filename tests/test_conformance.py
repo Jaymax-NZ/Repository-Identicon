@@ -557,12 +557,20 @@ class TestTheDocumentsAndTheCodeAgreeOnTheArtifacts(unittest.TestCase):
 
     def test_both_documents_name_the_settings_file(self):
         """It is the only input to a repository's identity, so a document that
-        does not name it leaves the reader nowhere to look."""
+        does not name it leaves the reader nowhere to look.
+
+        **The whole path, not the field name.** `SEED_FIELD` is `seed`, a word
+        every one of these documents contains hundreds of times, so checking
+        for it alone passes whatever the documents say. It did: both described
+        the flat pre-nesting format for a full day after the nesting landed.
+        """
+        path = ".".join((identicon.IDENTICON_FIELD, identicon.CURRENT_FIELD,
+                         identicon.SEED_FIELD))
         for document in ("SPEC.md", "README.md"):
             with self.subTest(document=document):
                 body = (ROOT / document).read_text(encoding="utf-8")
                 self.assertIn(f".identicon/{identicon.SETTINGS_NAME}", body)
-                self.assertIn(identicon.SEED_FIELD, body)
+                self.assertIn(path, body)
 
     def test_every_artifact_has_content_derived_from_the_seed(self):
         """Not a placeholder, not empty, and different for a different seed.

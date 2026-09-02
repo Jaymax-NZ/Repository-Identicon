@@ -25,7 +25,7 @@ writes these:
 
 ```
 .identicon/repository-identicon.png            block 5, 27px canvas
-.identicon/repository-identicon@4x.png         the mark magnified 4x, 104px
+.identicon/repository-identicon@4x.png         block 5 where a pixel is not a CSS pixel
 .identicon/repository-identicon-128.png        for a consumer that fixes the size
 .identicon/repository-identicon-256.png        likewise
 .identicon/repository-identicon.svg            vector, same geometry
@@ -125,7 +125,7 @@ apply --reseed uuid     # a fresh uuid4, tied to nothing
 apply --seed owner/name # a seed you supply outright
 ```
 
-`--reseed` moves the current seed to the front of `identiconSeedHistory` and
+`--reseed` moves the current seed to the front of `identicon.history` and
 blanks the seed field; the ordinary rule then derives a new one and writes it,
 so seeding a fresh repository and reseeding an old one are one rule and not
 two. A named source that cannot answer — `--reseed repo` where there is no
@@ -143,7 +143,7 @@ the whole result without parsing prose.
 
 If the repository has no git remote the seed falls back to its path. That is
 still committed and still travels with a clone; if you would rather it named
-the project, edit `identiconSeed` in `.identicon/settings.json` before the
+the project, edit `identicon.current.seed` in `.identicon/settings.json` before the
 first `apply`.
 
 **The colour map is beside the seed and never inside the hash.** `colourMap`
