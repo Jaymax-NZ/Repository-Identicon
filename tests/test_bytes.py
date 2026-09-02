@@ -269,13 +269,14 @@ class TestThePngEncoderIsThisFilesOwn(unittest.TestCase):
         import struct
         import zlib
         seed = FIXTURE_SEEDS[0][1]
-        for block, border in ((identicon.ARTIFACT_BLOCK, identicon.BORDER),
-                              (identicon.ARTIFACT_BLOCK
-                               * identicon.DEVICE_PIXEL_SCALE,
-                               identicon.DEVICE_PIXEL_BORDER)):
-            with self.subTest(block=block):
-                edge = identicon.canvas_edge(block, border)
-                rgba = identicon.render_rgba(seed, block, border=border)
+        for geometry in (
+                identicon.geometry_for_block(identicon.ARTIFACT_BLOCK),
+                identicon.geometry_for_block(
+                    identicon.ARTIFACT_BLOCK * identicon.DEVICE_PIXEL_SCALE,
+                    identicon.DEVICE_PIXEL_BORDER)):
+            with self.subTest(block=geometry.block):
+                edge = geometry.canvas
+                rgba = identicon.render_rgba(seed, geometry)
                 png = identicon.encode_png(rgba, edge, edge)
                 idat = b""
                 pos = 8

@@ -816,26 +816,31 @@ only wants to conform does not.
 
 Some consumers will not take a vector and will not take a 27-pixel raster: a
 forge that asks for a logo of a stated size, a desktop icon directory, an
-`.ico` or `.icns` member. Those canvases are still derived from a block, not
-fitted to by a heuristic. For any canvas that is a multiple of 32:
+`.ico` or `.icns` member.
+
+**Asking by block and asking by canvas are one relationship read from opposite
+ends**, so an implementation resolves both to the same three numbers — a block,
+and the border on each side — and renders once:
 
 ```
-block  = 3 * canvas / 16
-border = canvas / 32
+floor  = ceil(canvas / 50)
+block  = (canvas - 2 * floor) / 5, rounded down
+pad    = canvas - 5 * block
+near   = pad / 2, rounded down
+far    = pad - near
 ```
 
-which satisfies `canvas = 5 * block + 2 * border` exactly, and puts the border
-at 3.1% of the canvas at every size — near enough the 3.7% at block 5 that the
-mark reads the same throughout.
+`near` is the top and left border, `far` the bottom and right. **They may
+differ by one pixel, and an implementation MUST allow that.** Requiring one
+thickness forces `5 * block + 2 * border` to hit the canvas exactly, which
+fixes the border modulo 5: only multiples of 32 have a solution at all, and
+the border swings from 1:12 to 1:50 across those that do. Letting the odd
+pixel fall on one side removes the constraint — every canvas from 7 pixels up
+has a geometry.
 
-**16 and 48 have no such geometry and MUST NOT be generated.** `canvas - 5 *
-block` has to be even, so the block matches the canvas in parity, and the
-thinnest border those two can carry is 18.8% and 8.3% respectively — several
-times the family ratio, which would make them look like different marks. A
-consumer needing them SHOULD take the SVG or downscale a larger raster.
-
-An implementation MUST refuse a canvas with no exact geometry rather than
-fitting the nearest block and padding the difference.
+The block takes everything the floor does not, so the mark is as large as the
+rule allows. An implementation MUST refuse a canvas too small to carry a block
+of at least one pixel rather than drawing a mark that is mostly border.
 
 #### The device-pixel raster
 

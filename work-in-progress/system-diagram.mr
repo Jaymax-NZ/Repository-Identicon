@@ -582,61 +582,104 @@
 ┋┋┋┋┋┋ ━ identicon.current.tricolour
 ┋┋ ━ Geometry
 ┊┊┊ ┄ ⸖ $page=3
-┊┊┊ ┄ the canvas maths
-┋┋┋ ━ GEOMETRY
-┊┊┊┊ ┄ ⸆ nothing here takes a key
-┋┋┋┋ ━ canvas_edge( block, border)
-┊┊┊┊┊ ┄ ⸖ $number=3.5
-┊┊┊┊┊ ┄ ⸖ $fn=canvas_edge
-┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:605
-┊┊┊┊┊ ┄ ⸆ The canvas is always derived from the block, never the reverse.
+┊┊┊ ┄ ⸆ how big the picture is, and nothing about what is in it
+┋┋┋ ━ THE RELATIONSHIP
+┊┊┊┊ ┄ ⸆ Nothing here reads a seed, a digest or a colour. One matrix cell is one block, and a canvas is five of them plus a border each side.
+┋┋┋┋ ━ Geometry( block, near, far)
+┊┊┊┊┊ ┄ ⸖ $number=3.1.1
+┊┊┊┊┊ ┄ ⸖ $fn=Geometry
+┊┊┊┊┊ ┄ ⸖ $kind=const
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:89
+┊┊┊┊┊ ┄ ⸆ The one definition of how the three relate. `near` is top and left, `far` bottom and right.
 ┊┊┊┊┊ ┄ ⸖ $term=block
 ┊┊┊┊┊ ┄ ⸖ $term=border
 ┊┊┊┊┊ ┄ ⸖ $term=canvas
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ the square canvas those imply
-┋┋┋┋ ━ large_geometry( canvas)
-┊┊┊┊┊ ┄ ⸖ $number=3.7
-┊┊┊┊┊ ┄ ⸖ $fn=large_geometry
+┋┋┋┋┋┋ ━ canvas = 5 × block + near + far
+┊┊┊┊┊ ┄ ⸖ $edge=geometry_for_block
+┊┊┊┊┊ ┄ ⸖ $sides=bt
+┊┊┊┊┊ ┄ ⸖ $carries=value
+┊┊┊┊┊ ┄ ⸖ $edge=geometry_for_canvas
+┊┊┊┊┊ ┄ ⸖ $sides=bt
+┊┊┊┊┊ ┄ ⸖ $carries=value
+┋┋┋ ━ ASKING BY BLOCK
+┊┊┊┊ ┄ ⸆ The block sizes are CSS pixels. `-devicepx` is the same range where a pixel is a device pixel.
+┋┋┋┋ ━ geometry_for_block( block, border)
+┊┊┊┊┊ ┄ ⸖ $number=3.2.1
+┊┊┊┊┊ ┄ ⸖ $fn=geometry_for_block
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:78
-┊┊┊┊┊ ┄ ⸆ Raises unless the canvas is a multiple of 32.
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:104
+┊┊┊┊┊ ┄ ⸆ The canvas follows. Deriving the block from a canvas instead needs a search, and a search does not scale linearly.
 ┊┊┊┊┊ ┄ ⸖ $term=block
 ┊┊┊┊┊ ┄ ⸖ $term=border
 ┊┊┊┊┊ ┄ ⸖ $term=canvas
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ (block, border), or it raises
-┋┋┋┋ ━ gone to Console-Colophon
-┊┊┊┊┊ ┄ ⸖ $number=3.8
-┊┊┊┊┊ ┄ ⸖ $fn=moved
-┊┊┊┊┊ ┄ ⸖ $kind=data
-┊┊┊┊┊ ┄ ⸆ profile_name · profile_filename · profile_body · install_icon · install_profile
-┋┋┋ ━ WHO USES THEM
-┊┊┊┊ ┄ SPEC.md fixed five derived names and now fixes none. Each was either a name for an icon this repository does not install, or a shortening of a project name that two implementations could disagree about without colliding.
-┋┋┋┋ ━ → c_show
-┊┊┊┊┊ ┄ ⸖ $fn=r_show3
-┊┊┊┊┊ ┄ ⸖ $offpage=in
-┊┊┊┊┊ ┄ ⸖ $target=c_show
-┊┊┊┊┊ ┄ ⸆ show prints all four names
-┋┋┋┋ ━ → render_rgba
-┊┊┊┊┊ ┄ ⸖ $fn=r_rgba4
+┋┋┋┋┋┋ ━ Geometry, borders equal
+┊┊┊┊┊ ┄ ⸖ $edge=r_png3
+┊┊┊┊┊ ┄ ⸖ $sides=rl
+┊┊┊┊┊ ┄ ⸖ $carries=value
+┋┋┋┋ ━ BLOCKS · BORDER · ARTIFACT_BLOCK
+┊┊┊┊┊ ┄ ⸖ $number=3.2.2
+┊┊┊┊┊ ┄ ⸖ $fn=BLOCKS
+┊┊┊┊┊ ┄ ⸖ $kind=const
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:68
+┊┊┊┊┊ ┄ ⸆ One to five CSS pixels a cell, border one. `--block` accepts these and `apply` writes block 5.
+┊┊┊┊┊ ┄ ⸖ $term=block
+┊┊┊┊┊ ┄ ⸖ $term=border
+┋┋┋┋┋ ━ returns
+┊┊┊┊┊┊ ┄ ⸖ $role=returns
+┋┋┋┋┋┋ ━ 1 2 3 4 5, and 1
+┋┋┋┋ ━ DEVICE_PIXEL_SCALE · DEVICE_PIXEL_BORDER
+┊┊┊┊┊ ┄ ⸖ $number=3.2.3
+┊┊┊┊┊ ┄ ⸖ $fn=DEVICE_PIXEL_SCALE
+┊┊┊┊┊ ┄ ⸖ $kind=const
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:88
+┊┊┊┊┊ ┄ ⸆ The block times four and the border times two. The border is chrome, so quadrupling it would spend the new pixels on empty edge.
+┊┊┊┊┊ ┄ ⸖ $term=block
+┊┊┊┊┊ ┄ ⸖ $term=border
+┋┋┋┋┋ ━ returns
+┊┊┊┊┊┊ ┄ ⸖ $role=returns
+┋┋┋┋┋┋ ━ 4, and 2
+┋┋┋ ━ ASKING BY A CANVAS SOMEBODY FIXED
+┊┊┊┊ ┄ ⸆ A forge wanting a logo of a stated size, an icon directory, an .ico member. The block is solved for rather than chosen.
+┋┋┋┋ ━ geometry_for_canvas( canvas, thinnest)
+┊┊┊┊┊ ┄ ⸖ $number=3.3.1
+┊┊┊┊┊ ┄ ⸖ $fn=geometry_for_canvas
+┊┊┊┊┊ ┄ ⸖ $kind=fn
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:117
+┊┊┊┊┊ ┄ ⸆ The block takes everything the border floor does not, so the mark is as large as the rule allows.
+┊┊┊┊┊ ┄ ⸖ $term=canvas
+┊┊┊┊┊ ┄ ⸖ $term=block
+┊┊┊┊┊ ┄ ⸖ $term=border
+┋┋┋┋┋ ━ returns
+┊┊┊┊┊┊ ┄ ⸖ $role=returns
+┋┋┋┋┋┋ ━ Geometry, borders within a pixel
+┊┊┊┊┊ ┄ ⸖ $edge=r_png3
+┊┊┊┊┊ ┄ ⸖ $sides=rl
+┊┊┊┊┊ ┄ ⸖ $carries=value
+┋┋┋┋ ━ THINNEST_BORDER
+┊┊┊┊┊ ┄ ⸖ $number=3.3.2
+┊┊┊┊┊ ┄ ⸖ $fn=THINNEST_BORDER
+┊┊┊┊┊ ┄ ⸖ $kind=const
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:112
+┊┊┊┊┊ ┄ ⸆ The thinnest border a requested canvas may end up with, as a fraction of it. Bounds the border from below and nothing else.
+┊┊┊┊┊ ┄ ⸖ $term=border
+┋┋┋┋┋ ━ returns
+┊┊┊┊┊┊ ┄ ⸖ $role=returns
+┋┋┋┋┋┋ ━ 50
+┊┊┊┊ ┄ ⸲ the two borders may differ by one pixel. Requiring one
+┊┊┊┊ ┄ ⸲ thickness fixes the border modulo five, so only multiples
+┊┊┊┊ ┄ ⸲ of 32 had a geometry and the ratio swung from 1:12 to
+┊┊┊┊ ┄ ⸲ 1:50. Every canvas from 7 pixels up has one now.
+┋┋┋┋ ━ → render_png
+┊┊┊┊┊ ┄ ⸖ $fn=r_png3
 ┊┊┊┊┊ ┄ ⸖ $offpage=out
-┊┊┊┊┊ ┄ ⸖ $target=render_rgba
-┊┊┊┊┊ ┄ ⸆ canvas_edge sizes the canvas
-┋┋┋┋ ━ → artifact_bytes
-┊┊┊┊┊ ┄ ⸖ $fn=r_bytes6
-┊┊┊┊┊ ┄ ⸖ $offpage=out
-┊┊┊┊┊ ┄ ⸖ $target=artifact_bytes
-┊┊┊┊┊ ┄ ⸆ large_geometry sizes 128 and 256
-┋┋┋┋ ━ → c_render
-┊┊┊┊┊ ┄ ⸖ $fn=r_render3
-┊┊┊┊┊ ┄ ⸖ $offpage=in
-┊┊┊┊┊ ┄ ⸖ $target=c_render
+┊┊┊┊┊ ┄ ⸖ $target=render_png
+┊┊┊┊┊ ┄ ⸆ one renderer, whichever way the caller asked
 ┋┋ ━ Rendering
-┊┊┊ ┄ ⸆ one key, five kinds of bytes — and the line § Scope draws just past them
+┊┊┊ ┄ ⸆ one seed, two kinds of bytes, and the line § Scope draws just past them
 ┊┊┊ ┄ ⸖ $page=4
 ┋┋┋ ━ WHAT ASKS FOR BYTES
 ┋┋┋┋ ━ → c_render
@@ -1459,15 +1502,15 @@
 ┋┋┋ ━ block
 ┊┊┊┊ ┄ ⸖ $type=int, px
 ┊┊┊┊ ┄ ⸆ The pixel edge of one matrix cell — the specified quantity.
-┊┊┊┊ ┄ ⸖ $defines=3.5
+┊┊┊┊ ┄ ⸖ $defines=3.1.1
 ┋┋┋ ━ border
 ┊┊┊┊ ┄ ⸖ $type=int, px
 ┊┊┊┊ ┄ ⸆ The margin in pixels on each side. Chrome rather than content.
-┊┊┊┊ ┄ ⸖ $defines=3.5
+┊┊┊┊ ┄ ⸖ $defines=3.1.1
 ┋┋┋ ━ canvas
 ┊┊┊┊ ┄ ⸖ $type=int, px
 ┊┊┊┊ ┄ ⸆ 5·block + 2·border. Always derived, never specified.
-┊┊┊┊ ┄ ⸖ $defines=3.5
+┊┊┊┊ ┄ ⸖ $defines=3.1.1
 ┋┋ ━ Names
 ┋┋ ━ In the repository
 ┋┋┋ ━ artifact

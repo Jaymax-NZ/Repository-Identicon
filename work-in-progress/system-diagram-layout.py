@@ -33,9 +33,9 @@ GROUPS = {
         'THE TRICOLOUR': 2,
     },
     3: {
-        'NAMES': 0,
-        'GEOMETRY': 1,
-        'WHO USES THEM': 2,
+        'THE RELATIONSHIP': 0,
+        'ASKING BY BLOCK': 1,
+        'ASKING BY A CANVAS SOMEBODY FIXED': 2,
     },
     4: {
         'WHAT ASKS FOR BYTES': 0,

@@ -695,7 +695,7 @@ the mark — (matrix, colour) — The matrix and the colour together — what a 
 <text xml:space="preserve" x="848" y="192.4" class="sb">Stored as three (colour, shape) pairs, in laid-out order.</text>
 </g>
 </svg></div></section>
-<section id="page-3"><h2><span class="pn">3</span>Geometry</h2><p class="note"></p><div class="scroll"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 316" width="1400" height="316" font-family="ui-sans-serif, system-ui, sans-serif" class="sheet">
+<section id="page-3"><h2><span class="pn">3</span>Geometry</h2><p class="note">how big the picture is, and nothing about what is in it</p><div class="scroll"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 366" width="1400" height="366" font-family="ui-sans-serif, system-ui, sans-serif" class="sheet">
 <defs>
 <marker id="a0p3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5c636b"/></marker>
 <marker id="a1p3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1d4ed8"/></marker>
@@ -747,46 +747,88 @@ the mark — (matrix, colour) — The matrix and the colour together — what a 
  .elab { font-family: ui-monospace, monospace; font-size: 10.5px; fill: #6b7280; }
  .elabg { font-family: ui-monospace, monospace; font-size: 10.5px; fill: #1d4ed8; }
 </style>
-<rect width="1400" height="316" fill="#ffffff"/>
-<text x="454" y="51" class="hd">GEOMETRY</text>
-<text x="454" y="65" class="hn">nothing here takes a key</text>
-<line x1="454" y1="71" x2="850" y2="71" class="rule"/>
-<text x="876" y="51" class="hd">WHO USES THEM</text>
-<line x1="876" y1="59" x2="1272" y2="59" class="rule"/>
-<g id="i3-5" class="item">
+<rect width="1400" height="366" fill="#ffffff"/>
+<text x="32" y="51" class="hd">THE RELATIONSHIP</text>
+<text x="32" y="65" class="hn">Nothing here reads a seed, a digest or a colour. One matrix cell is one</text>
+<text x="32" y="77" class="hn">block, and a canvas is five of them plus a border each side.</text>
+<line x1="32" y1="83" x2="428" y2="83" class="rule"/>
+<text x="454" y="51" class="hd">ASKING BY BLOCK</text>
+<text x="454" y="65" class="hn">The block sizes are CSS pixels. `-devicepx` is the same range where a</text>
+<text x="454" y="77" class="hn">pixel is a device pixel.</text>
+<line x1="454" y1="83" x2="850" y2="83" class="rule"/>
+<text x="876" y="51" class="hd">ASKING BY A CANVAS SOMEBODY FIXED</text>
+<text x="876" y="65" class="hn">A forge wanting a logo of a stated size, an icon directory, an .ico</text>
+<text x="876" y="77" class="hn">member. The block is solved for rather than chosen.</text>
+<line x1="876" y1="83" x2="1272" y2="83" class="rule"/>
+<path d="M230.0,159.3 L230.0,123.65 L652.0,123.65 L652.0,88" fill="none" stroke="#15181c" stroke-width="1.15" stroke-linejoin="round" marker-end="url(#a4p3)"/>
+<path d="M230.0,159.3 L230.0,166.3 L19.0,166.3 L19.0,81 L1074.0,81 L1074.0,88" fill="none" stroke="#15181c" stroke-width="1.15" stroke-linejoin="round" marker-end="url(#a4p3)"/>
+<path d="M850,123.7 L863.0,123.7 L863.0,267.6 L876,267.6" fill="none" stroke="#15181c" stroke-width="1.15" stroke-linejoin="round" marker-end="url(#a4p3)"/>
+<path d="M1272,123.7 L1279,123.7 L1279,72 L869,72 L869,267.6 L876,267.6" fill="none" stroke="#15181c" stroke-width="1.15" stroke-linejoin="round" marker-end="url(#a4p3)"/>
+<g id="i3-1-1" class="item">
 <title>block — int, px — The pixel edge of one matrix cell — the specified quantity.
 border — int, px — The margin in pixels on each side. Chrome rather than content.
 canvas — int, px — 5·block + 2·border. Always derived, never specified.</title>
-<rect x="454" y="76" width="396" height="58.7" rx="5" class="bfn"/>
-<text x="466" y="96" class="badge">3.5</text>
-<text xml:space="preserve" x="500" y="96.0" class="ti">canvas_edge( block, border)</text>
-<text xml:space="preserve" x="466" y="110.5" class="ret">→ the square canvas those imply</text>
-<text xml:space="preserve" x="466" y="123.1" class="sb">The canvas is always derived from the block, never the reverse.</text>
+<rect x="32" y="88" width="396" height="71.3" rx="5" class="bfn"/>
+<text x="44" y="108" class="badge">3.1.1</text>
+<text xml:space="preserve" x="84" y="108.0" class="ti">Geometry( block, near, far)</text>
+<text xml:space="preserve" x="44" y="122.5" class="ret">→ canvas = 5 × block + near + far</text>
+<text xml:space="preserve" x="44" y="135.1" class="sb">The one definition of how the three relate. `near` is top and left,</text>
+<text xml:space="preserve" x="44" y="147.7" class="sb">`far` bottom and right.</text>
 </g>
-<g id="i3-7" class="item">
+<g id="i3-2-1" class="item">
 <title>block — int, px — The pixel edge of one matrix cell — the specified quantity.
 border — int, px — The margin in pixels on each side. Chrome rather than content.
 canvas — int, px — 5·block + 2·border. Always derived, never specified.</title>
-<rect x="454" y="144.7" width="396" height="58.7" rx="5" class="bfn"/>
-<text x="466" y="164.7" class="badge">3.7</text>
-<text xml:space="preserve" x="500" y="164.7" class="ti">large_geometry( canvas)</text>
-<text xml:space="preserve" x="466" y="179.2" class="ret">→ (block, border), or it raises</text>
-<text xml:space="preserve" x="466" y="191.79999999999998" class="sb">Raises unless the canvas is a multiple of 32.</text>
+<rect x="454" y="88" width="396" height="71.3" rx="5" class="bfn"/>
+<text x="466" y="108" class="badge">3.2.1</text>
+<text xml:space="preserve" x="506" y="108.0" class="ti">geometry_for_block( block, border)</text>
+<text xml:space="preserve" x="466" y="122.5" class="ret">→ Geometry, borders equal</text>
+<text xml:space="preserve" x="466" y="135.1" class="sb">The canvas follows. Deriving the block from a canvas instead needs a</text>
+<text xml:space="preserve" x="466" y="147.7" class="sb">search, and a search does not scale linearly.</text>
 </g>
-<g id="i3-8" class="item">
-
-<rect x="454" y="213.39999999999998" width="396" height="58.7" rx="5" class="bdata"/>
-<text x="466" y="233.39999999999998" class="badge">3.8</text>
-<text xml:space="preserve" x="500" y="233.39999999999998" class="tid">gone to Console-Colophon</text>
-<text xml:space="preserve" x="466" y="247.89999999999998" class="sbd">profile_name · profile_filename · profile_body · install_icon</text>
-<text xml:space="preserve" x="466" y="260.5" class="sbd">· install_profile</text>
+<g id="i3-2-2" class="item">
+<title>block — int, px — The pixel edge of one matrix cell — the specified quantity.
+border — int, px — The margin in pixels on each side. Chrome rather than content.</title>
+<rect x="454" y="169.3" width="396" height="71.3" rx="5" class="bfn"/>
+<text x="466" y="189.3" class="badge">3.2.2</text>
+<text xml:space="preserve" x="506" y="189.3" class="ti">BLOCKS · BORDER · ARTIFACT_BLOCK</text>
+<text xml:space="preserve" x="466" y="203.8" class="ret">→ 1 2 3 4 5, and 1</text>
+<text xml:space="preserve" x="466" y="216.4" class="sb">One to five CSS pixels a cell, border one. `--block` accepts these and</text>
+<text xml:space="preserve" x="466" y="229.0" class="sb">`apply` writes block 5.</text>
 </g>
-<a href="#i0-4"><path d="M888,64 H1272 V98 H888 L876,81.0 Z" class="bref"/><text x="898" y="85" class="refn">0.4</text><text x="932" y="85" class="reft">show prints all four names</text></a>
-<a href="#i4-3"><path d="M876,108 H1260 L1272,125.0 L1260,142 H876 Z" class="bref"/><text x="888" y="129" class="refn">4.3</text><text x="922" y="129" class="reft">canvas_edge sizes the canvas</text></a>
-<a href="#i6-5"><path d="M876,152 H1260 L1272,169.0 L1260,186 H876 Z" class="bref"/><text x="888" y="173" class="refn">6.5</text><text x="922" y="173" class="reft">large_geometry sizes 128 and 256</text></a>
-<a href="#i0-5"><path d="M888,196 H1272 V230 H888 L876,213.0 Z" class="bref"/><text x="898" y="217" class="refn">0.5</text><text x="932" y="217" class="reft"></text></a>
+<g id="i3-2-3" class="item">
+<title>block — int, px — The pixel edge of one matrix cell — the specified quantity.
+border — int, px — The margin in pixels on each side. Chrome rather than content.</title>
+<rect x="454" y="250.60000000000002" width="396" height="71.3" rx="5" class="bfn"/>
+<text x="466" y="270.6" class="badge">3.2.3</text>
+<text xml:space="preserve" x="506" y="270.6" class="ti">DEVICE_PIXEL_SCALE · DEVICE_PIXEL_BORDER</text>
+<text xml:space="preserve" x="466" y="285.1" class="ret">→ 4, and 2</text>
+<text xml:space="preserve" x="466" y="297.70000000000005" class="sb">The block times four and the border times two. The border is chrome, so</text>
+<text xml:space="preserve" x="466" y="310.3" class="sb">quadrupling it would spend the new pixels on empty edge.</text>
+</g>
+<g id="i3-3-1" class="item">
+<title>canvas — int, px — 5·block + 2·border. Always derived, never specified.
+block — int, px — The pixel edge of one matrix cell — the specified quantity.
+border — int, px — The margin in pixels on each side. Chrome rather than content.</title>
+<rect x="876" y="88" width="396" height="71.3" rx="5" class="bfn"/>
+<text x="888" y="108" class="badge">3.3.1</text>
+<text xml:space="preserve" x="928" y="108.0" class="ti">geometry_for_canvas( canvas, thinnest)</text>
+<text xml:space="preserve" x="888" y="122.5" class="ret">→ Geometry, borders within a pixel</text>
+<text xml:space="preserve" x="888" y="135.1" class="sb">The block takes everything the border floor does not, so the mark is as</text>
+<text xml:space="preserve" x="888" y="147.7" class="sb">large as the rule allows.</text>
+</g>
+<g id="i3-3-2" class="item">
+<title>border — int, px — The margin in pixels on each side. Chrome rather than content.</title>
+<rect x="876" y="169.3" width="396" height="71.3" rx="5" class="bfn"/>
+<text x="888" y="189.3" class="badge">3.3.2</text>
+<text xml:space="preserve" x="928" y="189.3" class="ti">THINNEST_BORDER</text>
+<text xml:space="preserve" x="888" y="203.8" class="ret">→ 50</text>
+<text xml:space="preserve" x="888" y="216.4" class="sb">The thinnest border a requested canvas may end up with, as a fraction</text>
+<text xml:space="preserve" x="888" y="229.0" class="sb">of it. Bounds the border from below and nothing else.</text>
+</g>
+<a href="#i4-2"><path d="M876,250.60000000000002 H1260 L1272,267.6 L1260,284.6 H876 Z" class="bref"/><text x="888" y="271.6" class="refn">4.2</text><text x="922" y="271.6" class="reft">one renderer, whichever way the caller asked</text></a>
 </svg></div></section>
-<section id="page-4"><h2><span class="pn">4</span>Rendering</h2><p class="note">one key, five kinds of bytes — and the line § Scope draws just past them</p><div class="scroll"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1636 416" width="1636" height="416" font-family="ui-sans-serif, system-ui, sans-serif" class="sheet">
+<section id="page-4"><h2><span class="pn">4</span>Rendering</h2><p class="note">one seed, two kinds of bytes, and the line § Scope draws just past them</p><div class="scroll"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1636 416" width="1636" height="416" font-family="ui-sans-serif, system-ui, sans-serif" class="sheet">
 <defs>
 <marker id="a0p4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5c636b"/></marker>
 <marker id="a1p4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1d4ed8"/></marker>
@@ -1313,7 +1355,7 @@ prior — file — stem.prior.suffix — the bytes a run replaced, kept one leve
 </g>
 <a href="#i4-2"><path d="M1278,327.4 H1616 L1628,344.4 L1616,361.4 H1278 Z" class="bref"/><text x="1290" y="348.4" class="refn">4.2</text><text x="1324" y="348.4" class="reft">render_png · render_svg</text></a>
 <a href="#i2-2-2"><path d="M1278,371.4 H1616 L1628,388.4 L1616,405.4 H1278 Z" class="bref"/><text x="1290" y="392.4" class="refn">2.2.2</text><text x="1324" y="392.4" class="reft">matrix_text · hex_colour · _colour_for</text></a>
-<a href="#i3-7"><path d="M1278,415.4 H1616 L1628,432.4 L1616,449.4 H1278 Z" class="bref"/><text x="1290" y="436.4" class="refn">3.7</text><text x="1324" y="436.4" class="reft">large_geometry, for 128 and 256</text></a>
+<a href="#"><path d="M1278,415.4 H1616 L1628,432.4 L1616,449.4 H1278 Z" class="bref"/><text x="1290" y="436.4" class="refn">?</text><text x="1324" y="436.4" class="reft">large_geometry, for 128 and 256</text></a>
 <a href="#"><path d="M1278,459.4 H1616 L1628,476.4 L1616,493.4 H1278 Z" class="bref"/><text x="1290" y="480.4" class="refn">?</text><text x="1324" y="480.4" class="reft">text · sextant · octant · tricolour</text></a>
 <circle cx="432" cy="160" r="8" fill="#b3261e"/>
 <text x="432" y="164.5" class="wt">!</text>
@@ -1736,9 +1778,9 @@ rendering — bytes | str — Bytes for one medium, derived from the key. Not pa
 <tr><td class="t">lightness / chroma</td><td class="ty">float, float</td><td class="d">Oklab. Lightness is held at 0.60 for every hue; chroma is capped at 0.26, not flattened.</td><td class="n"><a href="#i2-3-6">2.3.6</a></td></tr>
 <tr><td class="t">gamut chroma</td><td class="ty">float</td><td class="d">The most chroma sRGB will take at that hue and lightness.</td><td class="n"><a href="#i2-3-3">2.3.3</a></td></tr>
 <tr class="g"><td colspan="4">Geometry</td></tr>
-<tr><td class="t">block</td><td class="ty">int, px</td><td class="d">The pixel edge of one matrix cell — the specified quantity.</td><td class="n"><a href="#i3-5">3.5</a></td></tr>
-<tr><td class="t">border</td><td class="ty">int, px</td><td class="d">The margin in pixels on each side. Chrome rather than content.</td><td class="n"><a href="#i3-5">3.5</a></td></tr>
-<tr><td class="t">canvas</td><td class="ty">int, px</td><td class="d">5·block + 2·border. Always derived, never specified.</td><td class="n"><a href="#i3-5">3.5</a></td></tr>
+<tr><td class="t">block</td><td class="ty">int, px</td><td class="d">The pixel edge of one matrix cell — the specified quantity.</td><td class="n"><a href="#i3-1-1">3.1.1</a></td></tr>
+<tr><td class="t">border</td><td class="ty">int, px</td><td class="d">The margin in pixels on each side. Chrome rather than content.</td><td class="n"><a href="#i3-1-1">3.1.1</a></td></tr>
+<tr><td class="t">canvas</td><td class="ty">int, px</td><td class="d">5·block + 2·border. Always derived, never specified.</td><td class="n"><a href="#i3-1-1">3.1.1</a></td></tr>
 <tr class="g"><td colspan="4">Names</td></tr>
 <tr class="g"><td colspan="4">In the repository</td></tr>
 <tr><td class="t">artifact</td><td class="ty">file, one of eleven</td><td class="d">One of the eleven rendered files in .identicon/ — a cache with a canonical location, not a source.</td><td class="n"><a href="#i6-3">6.3</a> · <a href="#i6-10">6.10</a></td></tr>
@@ -1798,9 +1840,12 @@ rendering — bytes | str — Bytes for one medium, derived from the key. Not pa
 <tr><td class="n"><a href="#i2-3-14">2.3.14</a></td><td class="s">colour block</td><td class="w">—</td></tr>
 <tr><td class="n"><a href="#i2-4-1">2.4.1</a></td><td class="s">identicon_tricolour( block, slices)</td><td class="w">repository-identicon.py:639</td></tr>
 <tr><td class="n"><a href="#i2-4-2">2.4.2</a></td><td class="s">tricolour</td><td class="w">—</td></tr>
-<tr><td class="n"><a href="#i3-5">3.5</a></td><td class="s">canvas_edge( block, border)</td><td class="w">repository-identicon.py:605</td></tr>
-<tr><td class="n"><a href="#i3-7">3.7</a></td><td class="s">large_geometry( canvas)</td><td class="w">repository-identicon.py:78</td></tr>
-<tr><td class="n"><a href="#i3-8">3.8</a></td><td class="s">gone to Console-Colophon</td><td class="w">—</td></tr>
+<tr><td class="n"><a href="#i3-1-1">3.1.1</a></td><td class="s">Geometry( block, near, far)</td><td class="w">repository-identicon.py:89</td></tr>
+<tr><td class="n"><a href="#i3-2-1">3.2.1</a></td><td class="s">geometry_for_block( block, border)</td><td class="w">repository-identicon.py:104</td></tr>
+<tr><td class="n"><a href="#i3-2-2">3.2.2</a></td><td class="s">BLOCKS · BORDER · ARTIFACT_BLOCK</td><td class="w">repository-identicon.py:68</td></tr>
+<tr><td class="n"><a href="#i3-2-3">3.2.3</a></td><td class="s">DEVICE_PIXEL_SCALE · DEVICE_PIXEL_BORDER</td><td class="w">repository-identicon.py:88</td></tr>
+<tr><td class="n"><a href="#i3-3-1">3.3.1</a></td><td class="s">geometry_for_canvas( canvas, thinnest)</td><td class="w">repository-identicon.py:117</td></tr>
+<tr><td class="n"><a href="#i3-3-2">3.3.2</a></td><td class="s">THINNEST_BORDER</td><td class="w">repository-identicon.py:112</td></tr>
 <tr><td class="n"><a href="#i4-1">4.1</a></td><td class="s">where § Scope cuts</td><td class="w">—</td></tr>
 <tr><td class="n"><a href="#i4-2">4.2</a></td><td class="s">render_png( key, block, **kwargs)</td><td class="w">repository-identicon.py:688</td></tr>
 <tr><td class="n"><a href="#i4-3">4.3</a></td><td class="s">render_rgba( key, block, border, chroma,</td><td class="w">repository-identicon.py:628</td></tr>

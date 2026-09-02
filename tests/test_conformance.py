@@ -352,13 +352,13 @@ class TestTheBlocksAndTheCanvas(unittest.TestCase):
     # Any key; a literal one because nothing here asserts a version-dependent value.
     SEED = "someone/a-project"
 
-    def area(self, rgba, block, border):
+    def area(self, rgba, geometry):
         """The MATRIX_SIZE x MATRIX_SIZE block region, with the border cropped off."""
-        edge = identicon.canvas_edge(block, border)
-        side = block * identicon.MATRIX_SIZE
+        edge, near = geometry.canvas, geometry.near
+        side = geometry.block * identicon.MATRIX_SIZE
         rows = []
-        for y in range(border, border + side):
-            start = (y * edge + border) * 4
+        for y in range(near, near + side):
+            start = (y * edge + near) * 4
             rows.append(rgba[start:start + side * 4])
         return b"".join(rows)
 
@@ -372,24 +372,26 @@ class TestTheBlocksAndTheCanvas(unittest.TestCase):
         return b"".join(rows)
 
     def test_the_canvas_is_five_blocks_and_two_borders(self):
-        self.assertEqual([7, 12, 17, 22, 27],
-                         [identicon.canvas_edge(b, 1) for b in identicon.BLOCKS])
-        self.assertEqual([24, 44, 64, 84, 104],
-                         [identicon.canvas_edge(b * identicon.DEVICE_PIXEL_SCALE,
-                                                identicon.DEVICE_PIXEL_BORDER)
-                          for b in identicon.BLOCKS])
+        self.assertEqual(
+            [7, 12, 17, 22, 27],
+            [identicon.geometry_for_block(b).canvas for b in identicon.BLOCKS])
+        self.assertEqual(
+            [24, 44, 64, 84, 104],
+            [identicon.geometry_for_block(b * identicon.DEVICE_PIXEL_SCALE,
+                                          identicon.DEVICE_PIXEL_BORDER).canvas
+             for b in identicon.BLOCKS])
 
     def test_the_scaled_mark_is_the_mark_magnified(self):
         scale, border2 = identicon.DEVICE_PIXEL_SCALE, identicon.DEVICE_PIXEL_BORDER
         for block in identicon.BLOCKS:
             with self.subTest(block=block):
-                one = identicon.render_rgba(self.SEED, block)
-                many = identicon.render_rgba(self.SEED, block * scale,
-                                             border=border2)
+                css = identicon.geometry_for_block(block)
+                device = identicon.geometry_for_block(block * scale, border2)
                 self.assertEqual(
-                    self.magnify(self.area(one, block, identicon.BORDER),
-                                 block * identicon.MATRIX_SIZE, scale),
-                    self.area(many, block * scale, border2))
+                    self.magnify(
+                        self.area(identicon.render_rgba(self.SEED, css), css),
+                        block * identicon.MATRIX_SIZE, scale),
+                    self.area(identicon.render_rgba(self.SEED, device), device))
 
     def test_the_border_doubles_rather_than_quadrupling(self):
         """The one part of the device-pixel raster that is not a magnification."""
@@ -400,22 +402,35 @@ class TestTheBlocksAndTheCanvas(unittest.TestCase):
     def test_the_pngs_declare_the_derived_canvas(self):
         for block in identicon.BLOCKS:
             with self.subTest(block=block):
-                png = identicon.render_png(self.SEED, block)
-                edge = identicon.canvas_edge(block, identicon.BORDER)
-                self.assertEqual((edge, edge),
+                geometry = identicon.geometry_for_block(block)
+                png = identicon.render_png(self.SEED, geometry)
+                self.assertEqual((geometry.canvas, geometry.canvas),
                                  struct.unpack(">II", png[16:24]))
 
-    def test_every_large_canvas_is_exact(self):
-        for canvas in identicon.LARGE_CANVASES:
+    def test_a_requested_canvas_is_hit_exactly(self):
+        """Every size from 7 pixels up, not only the multiples of 32 the old
+        equal-border rule could reach."""
+        for canvas in list(identicon.LARGE_CANVASES) + [7, 16, 48, 100, 104,
+                                                        333, 512, 1024]:
             with self.subTest(canvas=canvas):
-                block, border = identicon.large_geometry(canvas)
-                self.assertEqual(canvas, identicon.canvas_edge(block, border))
+                self.assertEqual(canvas,
+                                 identicon.geometry_for_canvas(canvas).canvas)
 
-    def test_a_canvas_with_no_exact_geometry_is_refused(self):
-        for canvas in (16, 48, 100):
+    def test_a_requested_canvas_keeps_its_border_above_the_floor(self):
+        for canvas in range(7, 600):
+            with self.subTest(canvas=canvas):
+                geometry = identicon.geometry_for_canvas(canvas)
+                self.assertGreaterEqual(
+                    geometry.near,
+                    max(1, -(-canvas // identicon.THINNEST_BORDER)))
+                self.assertLessEqual(abs(geometry.near - geometry.far), 1,
+                                     "the two borders differ by at most a pixel")
+
+    def test_a_canvas_too_small_to_carry_the_matrix_is_refused(self):
+        for canvas in (0, 1, 6):
             with self.subTest(canvas=canvas):
                 with self.assertRaises(ValueError):
-                    identicon.large_geometry(canvas)
+                    identicon.geometry_for_canvas(canvas)
 
     def test_the_large_pngs_declare_their_canvas(self):
         wanted = identicon.artifact_bytes(self.SEED)

@@ -59,7 +59,7 @@ import zlib
 MATRIX_SIZE = 5
 
 # The block sizes `--block` accepts. The canvas follows from the block, never
-# the other way round; see `canvas_edge`.
+# the other way round; see `geometry_for_block`.
 #
 # **These are CSS pixels.** One to five is a range chosen for a context that
 # resolves a CSS pixel to whatever the display needs -- a browser, a markdown
@@ -105,13 +105,63 @@ DEVICE_PIXEL_BORDER = 2
 LARGE_CANVASES = (128, 256)
 
 
-def large_geometry(canvas):
-    """The (block, border) for a canvas somebody else fixed. Exact or nothing."""
-    block, border = 3 * canvas // 16, canvas // 32
-    if MATRIX_SIZE * block + 2 * border != canvas:
-        raise ValueError(f"{canvas} is not a multiple of 32 and has no exact "
-                         f"block and border on a {MATRIX_SIZE}x{MATRIX_SIZE} matrix")
-    return block, border
+# **One shape, and two ways of arriving at it.** A raster is a block and the
+# border on each side, and everything a caller can ask for reduces to that.
+# Asking by block -- "the mark at N pixels a cell" -- and asking by canvas --
+# "the mark filling N pixels" -- are readings of one relationship from opposite
+# ends, so they are two constructors and not two renderers.
+#
+# `near` is the top and left border, `far` the bottom and right. They differ by
+# at most one pixel, and only when a requested canvas leaves an odd remainder.
+class Geometry(collections.namedtuple("Geometry", "block near far")):
+    """A block size and its borders.
+
+    `canvas` is the one definition of how the three relate, so nothing else
+    recomputes it.
+    """
+
+    __slots__ = ()
+
+    @property
+    def canvas(self):
+        return MATRIX_SIZE * self.block + self.near + self.far
+
+
+def geometry_for_block(block, border=BORDER):
+    """The geometry for a block somebody chose. The canvas follows.
+
+    Deriving the block from a canvas instead needs a search, and a search does
+    not scale linearly -- a mark that lands on a different block at a different
+    scale is two drawings rather than one.
+    """
+    return Geometry(block, border, border)
+
+
+# The thinnest border a requested canvas may end up with, as a fraction of that
+# canvas. It bounds the border from below and the block takes everything else,
+# so the mark is as large as the rule allows.
+THINNEST_BORDER = 50
+
+
+def geometry_for_canvas(canvas, thinnest=THINNEST_BORDER):
+    """The geometry for a canvas somebody else fixed.
+
+    **The two borders may differ by a pixel, and that is what makes every size
+    work.** Requiring one thickness forces `MATRIX_SIZE * block + 2 * border`
+    to hit the canvas exactly, which fixes the border modulo MATRIX_SIZE: only
+    multiples of 32 have a solution, and the border swings from 1:12 to 1:50
+    across those that do. Letting the odd pixel fall on one side removes the
+    constraint -- every canvas from 7 pixels up has a geometry, and the border
+    stays near the floor.
+    """
+    floor = max(1, -(-canvas // thinnest))
+    block = (canvas - 2 * floor) // MATRIX_SIZE
+    if block < 1:
+        raise ValueError(
+            f"{canvas} pixels cannot carry a {MATRIX_SIZE}x{MATRIX_SIZE} "
+            f"matrix with a border of at least 1:{thinnest}")
+    pad = canvas - MATRIX_SIZE * block
+    return Geometry(block, pad // 2, pad - pad // 2)
 
 
 # ---- The seed ----
@@ -713,28 +763,16 @@ def hex_colour(rgb):
 # ---- Rendering ----
 
 
-def canvas_edge(block, border):
-    """The square canvas a block and a border imply: MATRIX_SIZE blocks plus a border.
-
-    The block is the specified thing and the canvas is derived, never the other
-    way round. Deriving the block from a canvas needs a heuristic, a heuristic
-    does not scale linearly, and a mark that lands on a different block at a
-    different scale is two drawings rather than one.
-    """
-    return MATRIX_SIZE * block + 2 * border
-
-
-def render_rgba(seed, block, border=BORDER, chroma=MARK_CHROMA,
+def render_rgba(seed, geometry, chroma=MARK_CHROMA,
                 lightness=MARK_LIGHTNESS, background=None):
-    """Return raw RGBA bytes for a square identicon of `block`-pixel blocks.
+    """Return raw RGBA bytes for a square identicon at `geometry`.
 
-    The canvas is derived from the block and the border, never given. A caller
-    that has to fill a canvas somebody else fixed uses `large_geometry`, which
-    returns a block and a border that land on that canvas exactly.
+    Takes the geometry rather than a block, so a caller asking by block and a
+    caller asking by canvas reach one renderer.
     """
     matrix = identicon_matrix(seed)
     red, green, blue = identicon_colour(seed, chroma, lightness)
-    edge, margin = canvas_edge(block, border), border
+    block, edge, margin = geometry.block, geometry.canvas, geometry.near
 
     if background is None:
         back = bytes((0, 0, 0, 0))
@@ -952,16 +990,18 @@ def encode_png(rgba, width, height):
     )
 
 
-def render_png(seed, block, **kwargs):
-    edge = canvas_edge(block, kwargs.get("border", BORDER))
-    return encode_png(render_rgba(seed, block, **kwargs), edge, edge)
+def render_png(seed, geometry, **kwargs):
+    edge = geometry.canvas
+    return encode_png(render_rgba(seed, geometry, **kwargs), edge, edge)
 
 
-def render_svg(seed, block=ARTIFACT_BLOCK, border=BORDER, chroma=MARK_CHROMA,
+def render_svg(seed, geometry=None, chroma=MARK_CHROMA,
                lightness=MARK_LIGHTNESS, background=None):
+    if geometry is None:
+        geometry = geometry_for_block(ARTIFACT_BLOCK)
     matrix = identicon_matrix(seed)
     colour = hex_colour(identicon_colour(seed, chroma, lightness))
-    size = canvas_edge(block, border)
+    block, size = geometry.block, geometry.canvas
 
     parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size}" '
@@ -973,8 +1013,8 @@ def render_svg(seed, block=ARTIFACT_BLOCK, border=BORDER, chroma=MARK_CHROMA,
     for row in range(MATRIX_SIZE):
         for column in range(MATRIX_SIZE):
             if matrix[row][column]:
-                x = border + column * block
-                y = border + row * block
+                x = geometry.near + column * block
+                y = geometry.near + row * block
                 parts.append(
                     f'<rect x="{x}" y="{y}" width="{block}" height="{block}" fill="{colour}"/>'
                 )
@@ -1044,11 +1084,18 @@ ARTIFACT_STEM = "repository-identicon"
 # point the unqualified name is the ambiguous one.
 
 
-def artifact_names():
-    """Every artifact as (name, filename).
+def artifact_requests(block=ARTIFACT_BLOCK):
+    """Every artifact, as (name, filename, geometry, render).
 
-    One list, walked by both the path builder and the byte builder, so a file
-    that exists in one and not the other cannot happen.
+    **One table, so a request is a name and a geometry and nothing else.** Both
+    the path builder and the byte builder walk it, so a file in one and not the
+    other cannot happen -- and, more to the point, a new kind of request adds a
+    row here rather than a second mechanism writing PNGs into the same
+    directory.
+
+    Which constructor a row uses is which way the caller asked:
+    `geometry_for_block` for the block family, `geometry_for_canvas` for a size
+    somebody else fixed. There is one renderer either way.
 
     **Only the images are files.** The colour, the matrix, the tricolour and
     both lattices were files here and are fields in `settings.json` now: a
@@ -1056,11 +1103,22 @@ def artifact_names():
     write is built from `identicon.current` rather than waited for. An image
     stays a file because nothing but a file can be pointed at from a README.
     """
-    yield "png", f"{ARTIFACT_STEM}.png"
-    yield "devicepx", f"{ARTIFACT_STEM}-devicepx.png"
+    yield ("png", f"{ARTIFACT_STEM}.png",
+           geometry_for_block(block), render_png)
+    yield ("devicepx", f"{ARTIFACT_STEM}-devicepx.png",
+           geometry_for_block(block * DEVICE_PIXEL_SCALE, DEVICE_PIXEL_BORDER),
+           render_png)
     for canvas in LARGE_CANVASES:
-        yield f"png{canvas}", f"{ARTIFACT_STEM}-{canvas}.png"
-    yield "svg", f"{ARTIFACT_STEM}.svg"
+        yield (f"png{canvas}", f"{ARTIFACT_STEM}-{canvas}.png",
+               geometry_for_canvas(canvas), render_png)
+    yield ("svg", f"{ARTIFACT_STEM}.svg",
+           geometry_for_block(block), render_svg)
+
+
+def artifact_names(block=ARTIFACT_BLOCK):
+    """Every artifact as (name, filename)."""
+    for name, filename, _geometry, _render in artifact_requests(block):
+        yield name, filename
 
 
 def artifact_paths(root):
@@ -1293,17 +1351,15 @@ def artifact_bytes(seed, block=ARTIFACT_BLOCK, **render_kwargs):
     takes the part it has room for and does not have to split anything.
 
     Every text form of the mark is in `settings.json`; see `derived_settings`.
+
+    One loop over `artifact_requests`, so every artifact is made the same way
+    and a new one is a row in that table rather than a branch here.
     """
-    wanted = {
-        "png": render_png(seed, block, **render_kwargs),
-        "devicepx": render_png(seed, block * DEVICE_PIXEL_SCALE, border=DEVICE_PIXEL_BORDER,
-                            **render_kwargs),
-        "svg": render_svg(seed, block, **render_kwargs).encode("utf-8"),
-    }
-    for canvas in LARGE_CANVASES:
-        large_block, large_border = large_geometry(canvas)
-        wanted[f"png{canvas}"] = render_png(seed, large_block,
-                                            border=large_border, **render_kwargs)
+    wanted = {}
+    for name, _filename, geometry, render in artifact_requests(block):
+        drawn = render(seed, geometry, **render_kwargs)
+        wanted[name] = (drawn if isinstance(drawn, bytes)
+                        else drawn.encode("utf-8"))
     return wanted
 
 
@@ -1641,11 +1697,11 @@ def cmd_show(args):
 def cmd_render(args):
     seed = _seed_to_draw(args)
     kwargs = _render_kwargs(args)
-    block, extra = args.block, {}
+    geometry = geometry_for_block(args.block)
     if args.format == "svg":
-        data = render_svg(seed, block, **kwargs).encode("utf-8")
+        data = render_svg(seed, geometry, **kwargs).encode("utf-8")
     else:
-        data = render_png(seed, block, **extra, **kwargs)
+        data = render_png(seed, geometry, **kwargs)
     if args.out == "-":
         sys.stdout.buffer.write(data)
     else:
