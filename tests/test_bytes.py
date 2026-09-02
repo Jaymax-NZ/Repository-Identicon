@@ -271,8 +271,8 @@ class TestThePngEncoderIsThisFilesOwn(unittest.TestCase):
         seed = FIXTURE_SEEDS[0][1]
         for block, border in ((identicon.ARTIFACT_BLOCK, identicon.BORDER),
                               (identicon.ARTIFACT_BLOCK
-                               * identicon.ARTIFACT_SCALE,
-                               identicon.SCALED_BORDER)):
+                               * identicon.DEVICE_PIXEL_SCALE,
+                               identicon.DEVICE_PIXEL_BORDER)):
             with self.subTest(block=block):
                 edge = identicon.canvas_edge(block, border)
                 rgba = identicon.render_rgba(seed, block, border=border)

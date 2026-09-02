@@ -25,7 +25,7 @@ writes these:
 
 ```
 .identicon/repository-identicon.png            block 5, 27px canvas
-.identicon/repository-identicon@4x.png         block 5 where a pixel is not a CSS pixel
+.identicon/repository-identicon-devicepx.png         block 5 where a pixel is not a CSS pixel
 .identicon/repository-identicon-128.png        for a consumer that fixes the size
 .identicon/repository-identicon-256.png        likewise
 .identicon/repository-identicon.svg            vector, same geometry

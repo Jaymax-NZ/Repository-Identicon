@@ -343,9 +343,10 @@ class TestTheVectorsCanBeRegenerated(unittest.TestCase):
 class TestTheBlocksAndTheCanvas(unittest.TestCase):
     """The block is specified; the canvas is derived.
 
-    `@4x` multiplies the block by four and the border by two: the border is
-    chrome, so quadrupling it would spend the new pixels on empty edge. The 4x
-    magnifies the *mark*, not the canvas.
+    The block sizes are CSS pixels. `-devicepx.png` is the same mark where a
+    pixel is a device pixel, so it multiplies the block by four and the border
+    by two: the border is chrome, so quadrupling it would spend the new pixels
+    on empty edge. It magnifies the *mark*, not the canvas.
     """
 
     # Any key; a literal one because nothing here asserts a version-dependent value.
@@ -374,12 +375,12 @@ class TestTheBlocksAndTheCanvas(unittest.TestCase):
         self.assertEqual([7, 12, 17, 22, 27],
                          [identicon.canvas_edge(b, 1) for b in identicon.BLOCKS])
         self.assertEqual([24, 44, 64, 84, 104],
-                         [identicon.canvas_edge(b * identicon.ARTIFACT_SCALE,
-                                                identicon.SCALED_BORDER)
+                         [identicon.canvas_edge(b * identicon.DEVICE_PIXEL_SCALE,
+                                                identicon.DEVICE_PIXEL_BORDER)
                           for b in identicon.BLOCKS])
 
     def test_the_scaled_mark_is_the_mark_magnified(self):
-        scale, border2 = identicon.ARTIFACT_SCALE, identicon.SCALED_BORDER
+        scale, border2 = identicon.DEVICE_PIXEL_SCALE, identicon.DEVICE_PIXEL_BORDER
         for block in identicon.BLOCKS:
             with self.subTest(block=block):
                 one = identicon.render_rgba(self.SEED, block)
@@ -391,10 +392,10 @@ class TestTheBlocksAndTheCanvas(unittest.TestCase):
                     self.area(many, block * scale, border2))
 
     def test_the_border_doubles_rather_than_quadrupling(self):
-        """The one part of `@4x` that is not a magnification -- not a bug."""
-        self.assertEqual(2 * identicon.BORDER, identicon.SCALED_BORDER)
-        self.assertNotEqual(identicon.ARTIFACT_SCALE * identicon.BORDER,
-                            identicon.SCALED_BORDER)
+        """The one part of the device-pixel raster that is not a magnification."""
+        self.assertEqual(2 * identicon.BORDER, identicon.DEVICE_PIXEL_BORDER)
+        self.assertNotEqual(identicon.DEVICE_PIXEL_SCALE * identicon.BORDER,
+                            identicon.DEVICE_PIXEL_BORDER)
 
     def test_the_pngs_declare_the_derived_canvas(self):
         for block in identicon.BLOCKS:
@@ -500,7 +501,7 @@ class TestTheColourRule(unittest.TestCase):
     def test_there_is_one_of_each(self):
         """One file per artifact -- what one brightness across the wheel buys."""
         wanted = identicon.artifact_bytes(self.SEED)
-        for name in ("png", "png4x", "png128", "png256", "svg"):
+        for name in ("png", "devicepx", "png128", "png256", "svg"):
             self.assertIn(name, wanted)
         self.assertEqual(5, len(wanted))
 
@@ -535,7 +536,7 @@ class TestTheDocumentsAndTheCodeAgreeOnTheArtifacts(unittest.TestCase):
     def documented(self, path):
         """Every artifact filename the document names, taken whole.
 
-        Whole filenames, not the extension: `@4x.png`, `-128.png` and
+        Whole filenames, not the extension: `-devicepx.png`, `-128.png` and
         `-256.png` all end in `.png`, so an extension-only comparison passes
         while three of the four rasters go undocumented.
         """
@@ -618,7 +619,7 @@ class TestInstallingIntoARepository(unittest.TestCase):
         result = identicon.install_into_repo(self.tmp)
         self.assertEqual("someone/a-project", result["seed"])
         self.assertEqual("derived from auto", result["source"])
-        for name in ("png", "png4x", "svg"):
+        for name in ("png", "devicepx", "svg"):
             with self.subTest(artifact=name):
                 path = pathlib.Path(result["files"][name])
                 self.assertTrue(path.is_file(), path)
@@ -632,7 +633,7 @@ class TestInstallingIntoARepository(unittest.TestCase):
         written = {path.name for path
                    in (pathlib.Path(self.tmp) / identicon.IDENTICON_DIR).iterdir()}
         self.assertEqual({"repository-identicon.png",
-                          "repository-identicon@4x.png",
+                          "repository-identicon-devicepx.png",
                           "repository-identicon-128.png",
                           "repository-identicon-256.png",
                           "repository-identicon.svg",

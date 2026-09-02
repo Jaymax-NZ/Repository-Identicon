@@ -69,9 +69,10 @@ BLOCKS = (1, 2, 3, 4, 5)
 BORDER = 1
 ARTIFACT_BLOCK = 5
 
-# **The 4x artifact is for a context whose pixels are not CSS pixels.** Where
-# a pixel is a device pixel, the one-to-five range above is four times too
-# small, and the answer is the same drawing with every pixel repeated rather
+# **The device-pixel artifact is for a context whose pixels are not CSS
+# pixels.** Where a pixel is a device pixel, the one-to-five range above is
+# four times too small, and the answer is the same drawing with every pixel
+# repeated rather
 # than a mark redrawn at a larger size -- redrawing re-runs the geometry and
 # produces a different border ratio, so a consumer swapping between the two
 # sees the mark change shape.
@@ -85,8 +86,8 @@ ARTIFACT_BLOCK = 5
 # The block is multiplied by four and the border only by two. The border is
 # chrome rather than content, so quadrupling it would spend the new pixels on
 # empty edge instead of on the mark.
-ARTIFACT_SCALE = 4
-SCALED_BORDER = 2
+DEVICE_PIXEL_SCALE = 4
+DEVICE_PIXEL_BORDER = 2
 
 # **Canvases a consumer fixes rather than derives.** They need no fitting and
 # no heuristic, because they come out of the same rule as everything else. For
@@ -1056,7 +1057,7 @@ def artifact_names():
     stays a file because nothing but a file can be pointed at from a README.
     """
     yield "png", f"{ARTIFACT_STEM}.png"
-    yield "png4x", f"{ARTIFACT_STEM}@{ARTIFACT_SCALE}x.png"
+    yield "devicepx", f"{ARTIFACT_STEM}-devicepx.png"
     for canvas in LARGE_CANVASES:
         yield f"png{canvas}", f"{ARTIFACT_STEM}-{canvas}.png"
     yield "svg", f"{ARTIFACT_STEM}.svg"
@@ -1295,7 +1296,7 @@ def artifact_bytes(seed, block=ARTIFACT_BLOCK, **render_kwargs):
     """
     wanted = {
         "png": render_png(seed, block, **render_kwargs),
-        "png4x": render_png(seed, block * ARTIFACT_SCALE, border=SCALED_BORDER,
+        "devicepx": render_png(seed, block * DEVICE_PIXEL_SCALE, border=DEVICE_PIXEL_BORDER,
                             **render_kwargs),
         "svg": render_svg(seed, block, **render_kwargs).encode("utf-8"),
     }

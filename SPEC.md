@@ -551,7 +551,7 @@ not a note of what the mark was made from; it holds what the mark is made from.
 
 ```
 .identicon/repository-identicon.png            block 5, 27px canvas
-.identicon/repository-identicon@4x.png         block 5 where a pixel is not a CSS pixel
+.identicon/repository-identicon-devicepx.png         block 5 where a pixel is not a CSS pixel
 .identicon/repository-identicon-128.png        for a consumer that fixes the size
 .identicon/repository-identicon-256.png        likewise
 .identicon/repository-identicon.svg            vector, same geometry
@@ -837,11 +837,16 @@ consumer needing them SHOULD take the SVG or downscale a larger raster.
 An implementation MUST refuse a canvas with no exact geometry rather than
 fitting the nearest block and padding the difference.
 
-#### The 4x raster
+#### The device-pixel raster
 
-`@4x` multiplies the **block by four and the border by two**:
+**The block sizes above are CSS pixels.** One to five is a range for a context
+that resolves a CSS pixel to whatever the display needs. Where a pixel is a
+device pixel instead, that range is four times too small, and
+`-devicepx.png` is the same mark for that context.
 
-| block | border | canvas | | 4x block | 4x border | 4x canvas |
+It multiplies the **block by four and the border by two**:
+
+| block | border | canvas | | device block | device border | device canvas |
 |---|---|---|---|---|---|---|
 | 1 | 1 | 7 | | 4 | 2 | 24 |
 | 2 | 1 | 12 | | 8 | 2 | 44 |
@@ -851,8 +856,15 @@ fitting the nearest block and padding the difference.
 
 The mark is magnified exactly four times. The border is not, because the border
 is chrome rather than content and quadrupling it would spend the new pixels on
-empty edge. So `@4x` is not a magnification of the whole canvas, and an
-implementation MUST NOT produce it by rendering at four times the canvas size.
+empty edge. So it is not a magnification of the whole canvas, and an
+implementation **MUST NOT** produce it by rendering at four times the canvas
+size: re-running the geometry at the larger size gives a different border
+ratio, and a consumer swapping between the two would see the mark change shape.
+
+**It is not a requested size.** It follows from the block family rather than
+being asked for, so it is not one of the canvases under *Sizes a consumer
+fixes* and MUST NOT be requested as one. Asking for its canvas as an outer
+dimension produces a different drawing.
 
 ### Terminal
 
