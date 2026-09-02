@@ -625,23 +625,31 @@ def colour_map_block(angle, colour_map=COLOUR_MAP_LATEST):
         "tile the circle")
 
 
-def identicon_tricolour(seed, colour_map=COLOUR_MAP_LATEST):
-    """The three (colour name, shape) pairs for a seed.
+def identicon_colour_block(seed, colour_map=COLOUR_MAP_LATEST):
+    """The colour block a seed maps to. **The colour map's whole output.**
 
-    Three independent reads of the digest, each from its own slice:
-
-      the colour slice  which three colours, by looking up the block
-      arrangement       which order they are laid out in
-      shape             which of the three are circles
-
-    **Order and shape read their own characters, not the matrix's.** They were
-    both drawn from the matrix's fifteen bits, which is disjoint from the hue
-    but identical to the pattern -- so neither carried anything the pattern did
-    not already carry. Separate slices are independent by construction.
+    A block id and three colour names, unordered and unshaped. The colour map
+    decides which three colours stand for a stretch of the circle and nothing
+    else; order and shape are a separate question read from separate
+    characters, so a second map can move a block without touching either.
     """
-    slices = hash_identicon_seed(seed)
-    block = colour_map_block(colour_map_angle(seed), colour_map)
+    return colour_map_block(colour_map_angle(seed), colour_map)
 
+
+# ---- The tricolour ----
+
+
+def identicon_tricolour(block, slices):
+    """A colour block, ordered and shaped: three (colour name, shape) pairs.
+
+    Takes the block rather than a seed, because this is the step *after* the
+    colour map and takes nothing from it but the three colours.
+
+    **Order and shape read their own characters.** They were both drawn from
+    the matrix's fifteen bits, which is disjoint from the hue but identical to
+    the pattern -- so neither carried anything the pattern did not already
+    carry. Separate slices are independent by construction.
+    """
     # Sorted so the set of orders is the same wherever the block is read from,
     # and taken modulo however many distinct orders the multiset affords: 6 for
     # three distinct colours, 3 for a pair, 1 for three of a kind.
@@ -1070,6 +1078,7 @@ SEED_FIELD = "seed"
 COLOUR_MAP_FIELD = "colourMap"
 MATRIX_FIELD = "matrix"
 COLOUR_FIELD = "colour"
+COLOUR_BLOCK_FIELD = "colourBlock"
 TRICOLOUR_FIELD = "tricolour"
 COLOURS_FIELD = "colours"
 SHAPE_FIELD = "shape"
@@ -1316,7 +1325,8 @@ def derived_settings(seed, colour_map, **render_kwargs):
     """
     colour = _colour_for(seed, render_kwargs)
     matrix = identicon_matrix(seed)
-    pairs = identicon_tricolour(seed, colour_map)
+    block = identicon_colour_block(seed, colour_map)
+    pairs = identicon_tricolour(block, hash_identicon_seed(seed))
     text = _text_module()
     return (
         {
@@ -1324,6 +1334,7 @@ def derived_settings(seed, colour_map, **render_kwargs):
             COLOUR_MAP_FIELD: colour_map,
             MATRIX_FIELD: [list(row) for row in matrix],
             COLOUR_FIELD: hex_colour(colour),
+            COLOUR_BLOCK_FIELD: block["n"],
             TRICOLOUR_FIELD: {COLOURS_FIELD: [
                 {COLOUR_FIELD: name, SHAPE_FIELD: shape}
                 for name, shape in pairs]},

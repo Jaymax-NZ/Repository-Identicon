@@ -29,9 +29,8 @@ GROUPS = {
     2: {
         'THE DIGEST': 0,
         'THE MATRIX': 0,
-        'COLOUR MAP 0, THE COLOUR': 1,
-        'COLOUR MAP 0, THE TRICOLOUR': 2,
-        'WHAT COMES OUT': 3,
+        'THE COLOUR MAP': 1,
+        'THE TRICOLOUR': 2,
     },
     3: {
         'NAMES': 0,

@@ -2,6 +2,7 @@
   "identicon": {
     "current": {
       "colour": "#008fa9",
+      "colourBlock": 38,
       "colourMap": 0,
       "matrix": [
         [false, false, false, false, false],

@@ -147,8 +147,10 @@ class TestTheImplementationConforms(unittest.TestCase):
         reads of three disjoint slices, and the colour map decides the first."""
         for vector in vectors:
             with self.subTest(seed=vector["seed"]):
-                pairs = identicon.identicon_tricolour(vector["seed"],
-                                                      vector["colourMap"])
+                pairs = identicon.identicon_tricolour(
+                    identicon.identicon_colour_block(vector["seed"],
+                                                     vector["colourMap"]),
+                    identicon.hash_identicon_seed(vector["seed"]))
                 self.assertEqual(tuple(vector["tricolour"]),
                                  text_identicon.tricolour_names(pairs))
 
@@ -260,7 +262,9 @@ class TestTheTextRendering(unittest.TestCase):
     def test_the_tricolour_is_three_glyphs_for_every_vector(self):
         for vector in vectors:
             with self.subTest(seed=vector["seed"]):
-                pairs = identicon.identicon_tricolour(vector["seed"])
+                pairs = identicon.identicon_tricolour(
+                    identicon.identicon_colour_block(vector["seed"]),
+                    identicon.hash_identicon_seed(vector["seed"]))
                 self.assertEqual(3, len(pairs))
                 self.assertEqual(3, len(text_identicon.tricolour(pairs)))
 

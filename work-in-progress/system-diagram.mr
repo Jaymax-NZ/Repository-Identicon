@@ -315,10 +315,10 @@
 ┋┋┋┋┋┋ ━ colour
 ┊┊┊┊┊ ┄ ⸖ $edge=identicon_matrix
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=value
+┊┊┊┊┊ ┄ ⸖ $carries=matrix
 ┊┊┊┊┊ ┄ ⸖ $edge=colour_map_angle
-┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=value
+┊┊┊┊┊ ┄ ⸖ $sides=rl
+┊┊┊┊┊ ┄ ⸖ $carries=colour
 ┊┊┊┊┊ ┄ ⸖ $edge=identicon_tricolour
 ┊┊┊┊┊ ┄ ⸖ $sides=rl
 ┊┊┊┊┊ ┄ ⸖ $carries=value
@@ -335,7 +335,7 @@
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ five rows of five bools
 ┊┊┊┊┊ ┄ ⸖ $edge=v_matrix
-┊┊┊┊┊ ┄ ⸖ $sides=rl
+┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=matrix
 ┊┊┊┊┊ ┄ ⸖ $edge=matrix_text
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
@@ -345,19 +345,29 @@
 ┊┊┊┊┊ ┄ ⸖ $fn=matrix_text
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
 ┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:375
-┊┊┊┊┊ ┄ ⸆ The 01010 spelling vectors.json pins. Nothing in .identicon holds it; the stored matrix is booleans.
+┊┊┊┊┊ ┄ ⸆ The 01010 spelling vectors.json pins, and nothing else uses.
 ┊┊┊┊┊ ┄ ⸖ $term=matrix
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ five lines of 01010
-┋┋┋ ━ COLOUR MAP 0, THE COLOUR
-┊┊┊┊ ┄ ⸆ Everything in this group is colour map 0's rule. A second map replaces all of it at once.
+┋┋┋┋ ━ matrix
+┊┊┊┊┊ ┄ ⸖ $number=2.2.3
+┊┊┊┊┊ ┄ ⸖ $fn=v_matrix
+┊┊┊┊┊ ┄ ⸖ $kind=effect
+┊┊┊┊┊ ┄ ⸆ Stored as five rows of five booleans.
+┊┊┊┊┊ ┄ ⸖ $term=matrix
+┊┊┊┊┊ ┄ ⸖ $term=the mark
+┋┋┋┋┋ ━ returns
+┊┊┊┊┊┊ ┄ ⸖ $role=returns
+┋┋┋┋┋┋ ━ identicon.current.matrix
+┋┋┋ ━ THE COLOUR MAP
+┊┊┊┊ ┄ ⸆ One numbered file decides all of this: the blocks, and the three transforms the blocks were placed over.
 ┋┋┋┋ ━ colour_map_angle( seed)
 ┊┊┊┊┊ ┄ ⸖ $number=2.3.1
 ┊┊┊┊┊ ┄ ⸖ $fn=colour_map_angle
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
 ┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:386
-┊┊┊┊┊ ┄ ⸆ 28 bits as degrees. Not a hue: the colour map is indexed at this value and the hue is this value warped.
+┊┊┊┊┊ ┄ ⸆ 28 bits as degrees. Not a hue: the map is indexed at this value and the hue is this value warped.
 ┊┊┊┊┊ ┄ ⸖ $term=colour map angle
 ┊┊┊┊┊ ┄ ⸖ $term=hue
 ┋┋┋┋┋ ━ returns
@@ -366,8 +376,8 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=hue_angle
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=colour
-┊┊┊┊┊ ┄ ⸖ $edge=colour_map_block
-┊┊┊┊┊ ┄ ⸖ $sides=rl
+┊┊┊┊┊ ┄ ⸖ $edge=identicon_colour_block
+┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=colour
 ┋┋┋┋ ━ hue_angle( degrees, warp=HUE_WARP)
 ┊┊┊┊┊ ┄ ⸖ $number=2.3.2
@@ -398,7 +408,7 @@
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
 ┊┊┊┊┊ ┄ ⸖ $edge=identicon_colour
-┊┊┊┊┊ ┄ ⸖ $sides=rl
+┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=colour
 ┋┋┋┋ ━ _oklch_to_linear( lightness, chroma,
 ┊┊┊┊┊ ┄ ⸖ $signature=degrees)
@@ -423,7 +433,7 @@
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ one sRGB component, 0 to 255
 ┊┊┊┊┊ ┄ ⸖ $edge=identicon_colour
-┊┊┊┊┊ ┄ ⸖ $sides=rl
+┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
 ┋┋┋┋ ━ identicon_colour( seed, chroma,
 ┊┊┊┊┊ ┄ ⸖ $signature=lightness, colour_map)
@@ -435,7 +445,6 @@
 ┊┊┊┊┊ ┄ ⸖ $term=seed
 ┊┊┊┊┊ ┄ ⸖ $term=colour map
 ┊┊┊┊┊ ┄ ⸖ $term=lightness / chroma
-┊┊┊┊┊ ┄ ⸖ $term=the mark
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ (r, g, b), each 0 to 255
@@ -445,14 +454,11 @@
 ┊┊┊┊┊ ┄ ⸖ $edge=_colour_for
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
-┊┊┊┊┊ ┄ ⸖ $edge=v_colour
-┊┊┊┊┊ ┄ ⸖ $sides=rl
-┊┊┊┊┊ ┄ ⸖ $carries=colour
 ┋┋┋┋ ━ UnknownColourMap( ValueError)
 ┊┊┊┊┊ ┄ ⸖ $number=2.3.7
 ┊┊┊┊┊ ┄ ⸖ $fn=UnknownColourMap
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
-┊┊┊┊┊ ┄ ⸆ main() catches it and names the field to edit. Only a hand edit or a missing colour map file reaches it.
+┊┊┊┊┊ ┄ ⸆ main() catches it and names the field to edit. A hand edit or a missing map file reaches it.
 ┊┊┊┊┊ ┄ ⸖ $term=colour map
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
@@ -469,13 +475,15 @@
 ┋┋┋┋┋┋ ━ r
 ┋┋┋┋┋┋ ━ g
 ┋┋┋┋┋┋ ━ b
-┋┋┋ ━ COLOUR MAP 0, THE TRICOLOUR
+┊┊┊┊┊ ┄ ⸖ $edge=v_colour
+┊┊┊┊┊ ┄ ⸖ $sides=bt
+┊┊┊┊┊ ┄ ⸖ $carries=colour
 ┋┋┋┋ ━ load_colour_map( colour_map)
-┊┊┊┊┊ ┄ ⸖ $number=2.4.1
+┊┊┊┊┊ ┄ ⸖ $number=2.3.9
 ┊┊┊┊┊ ┄ ⸖ $fn=load_colour_map
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
 ┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:590
-┊┊┊┊┊ ┄ ⸆ Reads colour-map-0.json once and keeps it. A map file this build lacks raises rather than falling back.
+┊┊┊┊┊ ┄ ⸆ Reads the numbered file once and keeps it. A map this build lacks raises rather than falling back.
 ┊┊┊┊┊ ┄ ⸖ $term=colour map
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
@@ -484,7 +492,7 @@
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=calls
 ┋┋┋┋ ━ colour_map_block( angle, colour_map)
-┊┊┊┊┊ ┄ ⸖ $number=2.4.2
+┊┊┊┊┊ ┄ ⸖ $number=2.3.10
 ┊┊┊┊┊ ┄ ⸖ $fn=colour_map_block
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
 ┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:609
@@ -494,80 +502,84 @@
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ from, width, and three colour names
-┊┊┊┊┊ ┄ ⸖ $edge=identicon_tricolour
+┊┊┊┊┊ ┄ ⸖ $edge=identicon_colour_block
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
-┊┊┊┊┊ ┄ ⸖ $carries=value
-┋┋┋┋ ━ identicon_tricolour( seed, colour_map)
-┊┊┊┊┊ ┄ ⸖ $number=2.4.3
-┊┊┊┊┊ ┄ ⸖ $fn=identicon_tricolour
+┊┊┊┊┊ ┄ ⸖ $carries=calls
+┋┋┋┋ ━ identicon_colour_block( seed,
+┊┊┊┊┊ ┄ ⸖ $signature=colour_map)
+┊┊┊┊┊ ┄ ⸖ $number=2.3.11
+┊┊┊┊┊ ┄ ⸖ $fn=identicon_colour_block
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
 ┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:628
-┊┊┊┊┊ ┄ ⸆ Which three colours from the block, what order from character 15, which are circles from character 16. All nine colours circle.
-┊┊┊┊┊ ┄ ⸖ $term=the tricolour
+┊┊┊┊┊ ┄ ⸆ The colour map's whole output: which three colours, unordered and unshaped. Order and shape read other characters.
+┊┊┊┊┊ ┄ ⸖ $term=colour block
 ┊┊┊┊┊ ┄ ⸖ $term=colour map
-┊┊┊┊┊ ┄ ⸖ $term=the mark
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ three (colour, shape) pairs
-┊┊┊┊┊ ┄ ⸖ $edge=v_tricolour
+┋┋┋┋┋┋ ━ a block id, and three colour names
+┊┊┊┊┊ ┄ ⸖ $edge=v_block
+┊┊┊┊┊ ┄ ⸖ $sides=bt
+┊┊┊┊┊ ┄ ⸖ $carries=value
+┊┊┊┊┊ ┄ ⸖ $edge=identicon_tricolour
 ┊┊┊┊┊ ┄ ⸖ $sides=rl
-┊┊┊┊┊ ┄ ⸖ $carries=colour
-┋┋┋ ━ WHAT COMES OUT
-┊┊┊┊ ┄ ⸆ Stored in settings.json the moment they are derived. Nothing downstream re-derives them, so nothing downstream can derive them differently.
-┋┋┋┋ ━ matrix
-┊┊┊┊┊ ┄ ⸖ $number=2.5.1
-┊┊┊┊┊ ┄ ⸖ $fn=v_matrix
-┊┊┊┊┊ ┄ ⸖ $kind=matrix
-┊┊┊┊┊ ┄ ⸖ $term=matrix
-┊┊┊┊┊ ┄ ⸖ $term=the mark
-┋┋┋┋┋ ━ returns
-┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ 5×5 of bool
-┊┊┊┊┊ ┄ ⸖ $edge=r_settings
-┊┊┊┊┊ ┄ ⸖ $sides=ll
-┊┊┊┊┊ ┄ ⸖ $carries=matrix
+┊┊┊┊┊ ┄ ⸖ $carries=value
 ┋┋┋┋ ━ colour
-┊┊┊┊┊ ┄ ⸖ $number=2.5.2
+┊┊┊┊┊ ┄ ⸖ $number=2.3.12
 ┊┊┊┊┊ ┄ ⸖ $fn=v_colour
-┊┊┊┊┊ ┄ ⸖ $kind=col
+┊┊┊┊┊ ┄ ⸖ $kind=effect
+┊┊┊┊┊ ┄ ⸆ Stored as #rrggbb.
 ┊┊┊┊┊ ┄ ⸖ $term=the mark
 ┊┊┊┊┊ ┄ ⸖ $term=lightness / chroma
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ r
-┋┋┋┋┋┋ ━ g
-┋┋┋┋┋┋ ━ b
+┋┋┋┋┋┋ ━ identicon.current.colour
 ┊┊┊┊┊ ┄ ⸖ $edge=hex_colour
 ┊┊┊┊┊ ┄ ⸖ $sides=bt
 ┊┊┊┊┊ ┄ ⸖ $carries=colour
 ┋┋┋┋ ━ hex_colour( rgb)
-┊┊┊┊┊ ┄ ⸖ $number=2.5.3
+┊┊┊┊┊ ┄ ⸖ $number=2.3.13
 ┊┊┊┊┊ ┄ ⸖ $fn=hex_colour
 ┊┊┊┊┊ ┄ ⸖ $kind=fn
 ┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:672
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
 ┋┋┋┋┋┋ ━ #rrggbb
-┊┊┊┊┊ ┄ ⸖ $edge=r_settings
-┊┊┊┊┊ ┄ ⸖ $sides=ll
-┊┊┊┊┊ ┄ ⸖ $carries=colour
+┋┋┋┋ ━ colour block
+┊┊┊┊┊ ┄ ⸖ $number=2.3.14
+┊┊┊┊┊ ┄ ⸖ $fn=v_block
+┊┊┊┊┊ ┄ ⸖ $kind=effect
+┊┊┊┊┊ ┄ ⸆ Stored as the block's number. Which three colours, and nothing about how they are laid out.
+┊┊┊┊┊ ┄ ⸖ $term=colour block
+┋┋┋┋┋ ━ returns
+┊┊┊┊┊┊ ┄ ⸖ $role=returns
+┋┋┋┋┋┋ ━ identicon.current.colourBlock
+┋┋┋ ━ THE TRICOLOUR
+┋┋┋┋ ━ identicon_tricolour( block, slices)
+┊┊┊┊┊ ┄ ⸖ $number=2.4.1
+┊┊┊┊┊ ┄ ⸖ $fn=identicon_tricolour
+┊┊┊┊┊ ┄ ⸖ $kind=fn
+┊┊┊┊┊ ┄ ⸖ $source=repository-identicon.py:639
+┊┊┊┊┊ ┄ ⸆ Takes the block, not the seed: this is the step after the colour map and takes nothing from it but the three colours.
+┊┊┊┊┊ ┄ ⸖ $term=the tricolour
+┊┊┊┊┊ ┄ ⸖ $term=arrangement
+┊┊┊┊┊ ┄ ⸖ $term=shape
+┋┋┋┋┋ ━ returns
+┊┊┊┊┊┊ ┄ ⸖ $role=returns
+┋┋┋┋┋┋ ━ order from character 15
+┋┋┋┋┋┋ ━ shape from character 16
+┊┊┊┊┊ ┄ ⸖ $edge=v_tricolour
+┊┊┊┊┊ ┄ ⸖ $sides=bt
+┊┊┊┊┊ ┄ ⸖ $carries=value
 ┋┋┋┋ ━ tricolour
-┊┊┊┊┊ ┄ ⸖ $number=2.5.4
+┊┊┊┊┊ ┄ ⸖ $number=2.4.2
 ┊┊┊┊┊ ┄ ⸖ $fn=v_tricolour
-┊┊┊┊┊ ┄ ⸖ $kind=col
+┊┊┊┊┊ ┄ ⸖ $kind=effect
+┊┊┊┊┊ ┄ ⸆ Stored as three (colour, shape) pairs, in laid-out order.
 ┊┊┊┊┊ ┄ ⸖ $term=the tricolour
 ┊┊┊┊┊ ┄ ⸖ $term=the mark
 ┋┋┋┋┋ ━ returns
 ┊┊┊┊┊┊ ┄ ⸖ $role=returns
-┋┋┋┋┋┋ ━ (colour, shape) × 3
-┊┊┊┊┊ ┄ ⸖ $edge=r_settings
-┊┊┊┊┊ ┄ ⸖ $sides=ll
-┊┊┊┊┊ ┄ ⸖ $carries=colour
-┋┋┋┋ ━ → derived_settings
-┊┊┊┊┊ ┄ ⸖ $fn=r_settings
-┊┊┊┊┊ ┄ ⸖ $offpage=out
-┊┊┊┊┊ ┄ ⸖ $target=derived_settings
-┊┊┊┊┊ ┄ ⸆ written together, on the first run
+┋┋┋┋┋┋ ━ identicon.current.tricolour
 ┋┋ ━ Geometry
 ┊┊┊ ┄ ⸖ $page=3
 ┊┊┊ ┄ the canvas maths
@@ -1421,8 +1433,8 @@
 ┋┋┋ ━ the mark
 ┊┊┊┊ ┄ ⸖ $type=(matrix, colour)
 ┊┊┊┊ ┄ ⸆ The matrix and the colour together — what a reader recognises.
-┊┊┊┊ ┄ ⸖ $defines=2.5.1
-┊┊┊┊ ┄ ⸖ $defines=2.5.2
+┊┊┊┊ ┄ ⸖ $defines=2.2.3
+┊┊┊┊ ┄ ⸖ $defines=2.3.12
 ┋┋┋ ━ matrix
 ┊┊┊┊ ┄ ⸖ $type=5×5 of bool
 ┊┊┊┊ ┄ ⸆ From digest characters 0–14, drawn down the centre column and mirrored outwards.
@@ -1502,16 +1514,20 @@
 ┋┋┋ ━ shape
 ┊┊┊┊ ┄ ⸖ $type=square or circle
 ┊┊┊┊ ┄ ⸆ Which of the two glyphs a colour is drawn as, one bit per position from character 16 of the digest. Every colour has both.
-┊┊┊┊ ┄ ⸖ $defines=2.4.3
+┊┊┊┊ ┄ ⸖ $defines=2.4.1
+┋┋┋ ━ colour block
+┊┊┊┊ ┄ ⸖ $type=int, and 3 colour names
+┊┊┊┊ ┄ ⸆ One of the colour map's blocks: a stretch of the circle and the three colours that stand for it. Unordered and unshaped -- it is what the map decides, and nothing more.
+┊┊┊┊ ┄ ⸖ $defines=2.3.11
 ┋┋┋ ━ the tricolour
 ┊┊┊┊ ┄ ⸆ Three of the palette's nine colours, each drawn as a square or a circle, standing for the mark where neither an image nor an escape sequence survives.
 ┊┊┊┊ ┄ ⸖ $type=3 of 9 colours
-┊┊┊┊ ┄ ⸖ $defines=2.4.3
+┊┊┊┊ ┄ ⸖ $defines=2.4.1
 ┊┊┊┊ ┄ ⸖ $defines=5.3.1
 ┋┋┋ ━ arrangement
 ┊┊┊┊ ┄ ⸆ The order the three colours are laid out in, from character 15 of the digest.
 ┊┊┊┊ ┄ ⸖ $type=tuple of 3 int
-┊┊┊┊ ┄ ⸖ $defines=2.4.3
+┊┊┊┊ ┄ ⸖ $defines=2.4.1
 ┋┋┋ ━ the palette
 ┊┊┊┊ ┄ ⸆ Nine colours, each anchored on the colour word in the name of the character that carries it. Every colour exists as a square and as a circle; which it is comes from character 16 of the digest.
 ┊┊┊┊ ┄ ⸖ $type=9 colours

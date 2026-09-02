@@ -32,6 +32,11 @@ DATF, DATS = "#eff1f4", "#aeb6bf"
 REFF, REFS = "#eef1f5", "#7c8794"
 VALF = "#15181c"
 GRIDC, COLC = "#1d4ed8", "#c2410c"
+
+# **An effect box is a value that leaves the process.** It is what the section
+# it sits in produces and stores, so a reader finds the output beside the
+# routines that made it rather than in a collecting group at the far edge.
+EFFC = "#047857"
 WARN = "#b3261e"
 BANDS = "#e4e9ee"
 
@@ -529,7 +534,8 @@ def read_markright(source):
 # ================================================================== BUILDING ==
 
 KIND_OF = {"fn": "fn", "ext": "ext", "data": "data", "val": "val", "cmd": "cmd",
-           "thin": "thin", "grid": "grid", "col": "col", "dead": "dead"}
+           "thin": "thin", "grid": "grid", "col": "col", "dead": "dead",
+           "effect": "effect"}
 CARRIES = {"calls": LINE, "grid": GRIDC, "colour": COLC, "io": EXTS,
            "weak": FAINT, "value": VALF, "raises": WARN}
 
@@ -759,6 +765,7 @@ def render_node(n):
         "val": ("bval", "tiw", "sbw"), "cmd": ("bcmd", "ticm", "sb"),
         "thin": ("bthin", "ti", "sb"), "data": ("bdata", "tid", "sbd"),
         "grid": ("bgrid", "tig", "sb"), "col": ("bcol", "tic", "sb"),
+        "effect": ("beffect", "tief", "sb"),
     }[kind]
     rx = 10 if kind == "val" else (6 if kind == "cmd" else 5)
     anc = n.get("anchor", "")
@@ -800,6 +807,7 @@ STYLE = f"""
  .bthin {{ fill: #ffffff; fill-opacity: {BOX_FILL}; stroke: {BOXS}; stroke-width: 1; }}
  .bgrid {{ fill: #eef2ff; fill-opacity: {BOX_FILL}; stroke: {GRIDC}; stroke-width: 1.3; }}
  .bcol {{ fill: #fff3ea; fill-opacity: {BOX_FILL}; stroke: {COLC}; stroke-width: 1.3; }}
+ .beffect {{ fill: #e7f6ef; fill-opacity: {BOX_FILL}; stroke: {EFFC}; stroke-width: 1.6; }}
  .bref {{ fill: {REFF}; fill-opacity: {BOX_FILL}; stroke: {REFS}; stroke-width: 1.2; }}
  .bmod {{ fill: #ffffff; fill-opacity: {BOX_FILL}; stroke: {INK}; stroke-width: 1.4; }}
  .item[data-t] {{ cursor: help; }}
@@ -818,6 +826,7 @@ STYLE = f"""
  .tid {{ font-size: 11.5px; fill: #4a515a; }}
  .tig {{ font-size: 11.5px; fill: {GRIDC}; font-weight: 600; }}
  .tic {{ font-size: 11.5px; fill: {COLC}; font-weight: 600; }}
+ .tief {{ font-size: 11.5px; fill: {EFFC}; font-weight: 700; }}
  .ticm {{ font-size: 12.5px; fill: {INK}; font-weight: 600; }}
  .ret {{ font-size: 10.5px; fill: #3f6212; }}
  .sb {{ font-size: 10.5px; fill: {MUTED}; }}
